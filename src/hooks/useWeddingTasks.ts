@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -16,8 +15,20 @@ export interface WeddingTask {
 export const useWeddingTasks = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<WeddingTask[]>([]);
+  const [timelines, setTimelines] = useState<string[]>([
+    "12+ mesi prima",
+    "10-12 mesi prima",
+    "8-10 mesi prima",
+    "6-8 mesi prima",
+    "4-6 mesi prima",
+    "2-4 mesi prima",
+    "1-2 mesi prima",
+    "1-2 settimane prima",
+    "Ultimi giorni"
+  ]);
   const [loading, setLoading] = useState(true);
 
+  // Load tasks and timelines from localStorage
   useEffect(() => {
     const loadTasks = () => {
       try {
@@ -30,6 +41,14 @@ export const useWeddingTasks = () => {
         const userId = user?.id;
         const storedTasksKey = `weddingTasks_${userId}`;
         const storedTasks = localStorage.getItem(storedTasksKey);
+        
+        // Try to load custom timelines from localStorage
+        const storedTimelinesKey = `weddingTimelines_${userId}`;
+        const storedTimelines = localStorage.getItem(storedTimelinesKey);
+        
+        if (storedTimelines) {
+          setTimelines(JSON.parse(storedTimelines));
+        }
         
         if (storedTasks) {
           setTasks(JSON.parse(storedTasks));
@@ -93,17 +112,71 @@ export const useWeddingTasks = () => {
     }
   };
 
+  // Add new function to reorder tasks (for drag and drop)
+  const reorderTasks = (taskId: string, newTimeline: string) => {
+    const updatedTasks = tasks.map(task => 
+      task.id === taskId ? { ...task, timeline: newTimeline } : task
+    );
+    
+    setTasks(updatedTasks);
+    
+    // Save to localStorage
+    if (user?.id) {
+      localStorage.setItem(`weddingTasks_${user.id}`, JSON.stringify(updatedTasks));
+    }
+  };
+
+  // Add new function to add custom timeline
+  const addTimeline = (timelineName: string) => {
+    if (timelines.includes(timelineName)) return;
+    
+    const sortedTimelines = [...timelines, timelineName].sort((a, b) => {
+      // Custom sort for predefined timelines
+      const numA = getMonthsFromTimeline(a);
+      const numB = getMonthsFromTimeline(b);
+      return numB - numA;
+    });
+    
+    setTimelines(sortedTimelines);
+    
+    // Save to localStorage
+    if (user?.id) {
+      localStorage.setItem(`weddingTimelines_${user.id}`, JSON.stringify(sortedTimelines));
+    }
+  };
+
+  // Add new function to remove timeline
+  const removeTimeline = (timelineName: string) => {
+    // Don't remove if it contains tasks
+    const hasTasksInTimeline = tasks.some(task => task.timeline === timelineName);
+    if (hasTasksInTimeline) return false;
+    
+    const updatedTimelines = timelines.filter(t => t !== timelineName);
+    setTimelines(updatedTimelines);
+    
+    // Save to localStorage
+    if (user?.id) {
+      localStorage.setItem(`weddingTimelines_${user.id}`, JSON.stringify(updatedTimelines));
+    }
+    
+    return true;
+  };
+
   const completedTasks = tasks.filter(task => task.completed);
   const incompleteTasks = tasks.filter(task => !task.completed);
 
   return {
     tasks,
+    timelines,
     completedTasks,
     incompleteTasks,
     loading,
     updateTask,
     addTask,
-    deleteTask
+    deleteTask,
+    reorderTasks,
+    addTimeline,
+    removeTimeline
   };
 };
 
@@ -328,4 +401,23 @@ const generateDefaultTasks = (weddingDate: Date): WeddingTask[] => {
   });
   
   return tasks;
+};
+
+// Helper function to extract numeric months from timeline for sorting
+const getMonthsFromTimeline = (timeline: string): number => {
+  // Extract numeric values from the timeline string
+  if (timeline.includes('+')) {
+    const months = parseInt(timeline.split(' ')[0]);
+    return months || 0;
+  } else if (timeline.includes('-')) {
+    const range = timeline.split(' ')[0];
+    const months = parseInt(range.split('-')[1]);
+    return months || 0;
+  } else if (timeline.includes('settimane')) {
+    return 0.5; // weeks are less than a month
+  } else if (timeline === 'Ultimi giorni') {
+    return 0.1; // last few days are the closest to wedding
+  } else {
+    return 0; // custom timelines default to 0 (right before wedding)
+  }
 };
