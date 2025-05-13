@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layouts/MainLayout";
@@ -12,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Check, Calendar } from "lucide-react";
+import { CalendarIcon, Plus, Check, Calendar, CheckCircle } from "lucide-react";
 import { useWeddingTasks, WeddingTask } from "@/hooks/useWeddingTasks";
 import { useAuth } from "@/contexts/AuthContext";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -232,7 +231,7 @@ const ChecklistPage = () => {
               ))
             ) : (
               <div className="text-center py-12">
-                <CheckIcon className="h-12 w-12 text-wedding-sage mx-auto" />
+                <CheckCircle className="h-12 w-12 text-wedding-sage mx-auto" />
                 <h3 className="mt-4 text-lg font-medium text-gray-900">
                   Nessuna attività da completare
                 </h3>
