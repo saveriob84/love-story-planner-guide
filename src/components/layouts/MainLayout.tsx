@@ -165,18 +165,18 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - shown on desktop */}
         {!isMobile && (
-          <aside className="w-64 border-r border-gray-200 bg-white hidden md:block p-4">
-            <nav className="space-y-1 mt-4">
+          <aside className="w-64 border-r border-gray-200 bg-white hidden md:block p-4 relative">
+            <nav className="space-y-1 mt-4 mb-24">
               {navItems.map((item) => (
                 <NavItemContent key={item.path} item={item} />
               ))}
             </nav>
             
-            {/* Bottom section of sidebar */}
-            <div className="absolute bottom-4 left-4 right-4">
-              <div className="p-4 bg-wedding-blush/10 rounded-lg">
+            {/* Bottom section of sidebar - modified positioning */}
+            <div className="absolute bottom-4 left-4 right-4 max-w-[90%]">
+              <div className="p-4 bg-wedding-blush/10 rounded-lg border border-wedding-blush/20">
                 <h4 className="font-medium text-wedding-navy text-sm">Aiuto per la pianificazione?</h4>
-                <p className="text-xs text-gray-600 mt-1">Consulta le nostre guide e suggerimenti per un matrimonio perfetto.</p>
+                <p className="text-xs text-gray-600 mt-1 line-clamp-2">Consulta le nostre guide e suggerimenti per un matrimonio perfetto.</p>
                 <Button 
                   variant="ghost" 
                   className="mt-2 text-wedding-blush hover:bg-wedding-blush/20 hover:text-wedding-navy w-full text-xs h-auto py-1"
