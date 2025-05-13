@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layouts/MainLayout";
@@ -12,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { CalendarIcon, Plus, Check, Calendar, CheckCircle, Pencil, GripVertical, Move } from "lucide-react";
+import { CalendarIcon, Plus, Check, Calendar, CheckCircle, Pencil, GripVertical } from "lucide-react";
 import { useWeddingTasks, WeddingTask } from "@/hooks/useWeddingTasks";
 import { useAuth } from "@/contexts/AuthContext";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
