@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layouts/MainLayout";
@@ -18,20 +17,19 @@ interface BudgetItem {
   actualCost: number | null;
   paid: boolean;
 }
-
 const Budget = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>(() => {
     // Try to load from localStorage
     const savedItems = localStorage.getItem(`budget_items_${user?.id}`);
     return savedItems ? JSON.parse(savedItems) : [];
   });
-  
   const [totalBudget, setTotalBudget] = useState<number>(() => {
     const savedBudget = localStorage.getItem(`total_budget_${user?.id}`);
     return savedBudget ? parseInt(savedBudget) : 0;
   });
-  
   const [newItem, setNewItem] = useState({
     category: "",
     description: "",
@@ -41,8 +39,8 @@ const Budget = () => {
   // Calculate totals
   const totalEstimated = budgetItems.reduce((sum, item) => sum + item.estimatedCost, 0);
   const totalActual = budgetItems.reduce((sum, item) => sum + (item.actualCost || 0), 0);
-  const totalPaid = budgetItems.reduce((sum, item) => sum + (item.paid ? (item.actualCost || item.estimatedCost) : 0), 0);
-  
+  const totalPaid = budgetItems.reduce((sum, item) => sum + (item.paid ? item.actualCost || item.estimatedCost : 0), 0);
+
   // Save budget to localStorage
   const saveBudget = (items: BudgetItem[], budget: number) => {
     if (user?.id) {
@@ -62,11 +60,10 @@ const Budget = () => {
         actualCost: null,
         paid: false
       };
-      
       const updatedItems = [...budgetItems, item];
       setBudgetItems(updatedItems);
       saveBudget(updatedItems, totalBudget);
-      
+
       // Reset form
       setNewItem({
         category: "",
@@ -78,9 +75,10 @@ const Budget = () => {
 
   // Update budget item
   const updateBudgetItem = (id: string, updates: Partial<BudgetItem>) => {
-    const updatedItems = budgetItems.map(item => 
-      item.id === id ? { ...item, ...updates } : item
-    );
+    const updatedItems = budgetItems.map(item => item.id === id ? {
+      ...item,
+      ...updates
+    } : item);
     setBudgetItems(updatedItems);
     saveBudget(updatedItems, totalBudget);
   };
@@ -98,9 +96,7 @@ const Budget = () => {
     setTotalBudget(value);
     saveBudget(budgetItems, value);
   };
-
-  return (
-    <MainLayout>
+  return <MainLayout>
       <div className="py-6 px-4 sm:px-6">
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-bold text-wedding-navy">
@@ -121,13 +117,7 @@ const Budget = () => {
             <CardContent>
               <div className="flex items-center">
                 <Euro className="h-5 w-5 text-wedding-navy mr-2" />
-                <Input 
-                  type="number"
-                  value={totalBudget || ''}
-                  onChange={handleBudgetChange}
-                  className="text-2xl font-bold text-wedding-navy"
-                  placeholder="0"
-                />
+                <Input type="number" value={totalBudget || ''} onChange={handleBudgetChange} className="text-2xl font-bold text-wedding-navy" placeholder="0" />
               </div>
             </CardContent>
           </Card>
@@ -139,13 +129,9 @@ const Budget = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-wedding-navy">€{totalEstimated.toLocaleString()}</p>
-              <Progress value={(totalBudget > 0 ? (totalEstimated / totalBudget) * 100 : 0)} 
-                className="h-2 mt-2" 
-              />
+              <Progress value={totalBudget > 0 ? totalEstimated / totalBudget * 100 : 0} className="h-2 mt-2" />
               <p className="text-sm text-gray-500 mt-1">
-                {totalBudget > 0 
-                  ? `${Math.round((totalEstimated / totalBudget) * 100)}% del budget` 
-                  : "Imposta un budget totale"}
+                {totalBudget > 0 ? `${Math.round(totalEstimated / totalBudget * 100)}% del budget` : "Imposta un budget totale"}
               </p>
             </CardContent>
           </Card>
@@ -157,9 +143,7 @@ const Budget = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-wedding-navy">€{totalPaid.toLocaleString()}</p>
-              <Progress value={(totalEstimated > 0 ? (totalPaid / totalEstimated) * 100 : 0)} 
-                className="h-2 mt-2 bg-wedding-blush/20" 
-              />
+              <Progress value={totalEstimated > 0 ? totalPaid / totalEstimated * 100 : 0} className="h-2 mt-2 bg-wedding-blush/20" />
               <p className="text-sm text-gray-500 mt-1">
                 €{totalPaid.toLocaleString()} di €{totalEstimated.toLocaleString()} pagati
               </p>
@@ -176,37 +160,27 @@ const Budget = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="category">Categoria</Label>
-                <Input
-                  id="category"
-                  value={newItem.category}
-                  onChange={(e) => setNewItem({...newItem, category: e.target.value})}
-                  placeholder="Es. Location, Catering"
-                />
+                <Input id="category" value={newItem.category} onChange={e => setNewItem({
+                ...newItem,
+                category: e.target.value
+              })} placeholder="Es. Location, Catering" />
               </div>
               <div>
                 <Label htmlFor="description">Descrizione</Label>
-                <Input
-                  id="description"
-                  value={newItem.description}
-                  onChange={(e) => setNewItem({...newItem, description: e.target.value})}
-                  placeholder="Dettagli opzionali"
-                />
+                <Input id="description" value={newItem.description} onChange={e => setNewItem({
+                ...newItem,
+                description: e.target.value
+              })} placeholder="Dettagli opzionali" />
               </div>
               <div>
                 <Label htmlFor="estimatedCost">Costo stimato (€)</Label>
-                <Input
-                  id="estimatedCost"
-                  type="number"
-                  value={newItem.estimatedCost}
-                  onChange={(e) => setNewItem({...newItem, estimatedCost: e.target.value})}
-                  placeholder="0"
-                />
+                <Input id="estimatedCost" type="number" value={newItem.estimatedCost} onChange={e => setNewItem({
+                ...newItem,
+                estimatedCost: e.target.value
+              })} placeholder="0" />
               </div>
             </div>
-            <Button 
-              className="mt-4 bg-wedding-navy hover:bg-wedding-navy/80"
-              onClick={handleAddItem}
-            >
+            <Button onClick={handleAddItem} className="mt-4 bg-wedding-navy hover:bg-wedding-navy/80">
               <PlusCircle className="h-4 w-4 mr-2" /> Aggiungi voce
             </Button>
           </CardContent>
@@ -216,8 +190,7 @@ const Budget = () => {
         <div>
           <h2 className="font-serif text-xl font-bold text-wedding-navy mb-4">Voci di spesa</h2>
           
-          {budgetItems.length > 0 ? (
-            <div className="overflow-x-auto">
+          {budgetItems.length > 0 ? <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-left">
@@ -230,75 +203,52 @@ const Budget = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {budgetItems.map(item => (
-                    <tr key={item.id} className="border-b hover:bg-gray-50">
+                  {budgetItems.map(item => <tr key={item.id} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-3">{item.category}</td>
                       <td className="px-4 py-3">{item.description}</td>
                       <td className="px-4 py-3 text-right">€{item.estimatedCost.toLocaleString()}</td>
                       <td className="px-4 py-3 text-right">
-                        {item.actualCost !== null 
-                          ? `€${item.actualCost.toLocaleString()}` 
-                          : '-'}
+                        {item.actualCost !== null ? `€${item.actualCost.toLocaleString()}` : '-'}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          item.paid 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs ${item.paid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                           {item.paid ? 'Pagato' : 'Non pagato'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const actualCost = prompt('Inserisci il costo effettivo:', item.actualCost?.toString() || item.estimatedCost.toString());
-                              if (actualCost !== null) {
-                                updateBudgetItem(item.id, { 
-                                  actualCost: parseFloat(actualCost) || item.estimatedCost 
-                                });
-                              }
-                            }}
-                          >
+                          <Button variant="outline" size="sm" onClick={() => {
+                      const actualCost = prompt('Inserisci il costo effettivo:', item.actualCost?.toString() || item.estimatedCost.toString());
+                      if (actualCost !== null) {
+                        updateBudgetItem(item.id, {
+                          actualCost: parseFloat(actualCost) || item.estimatedCost
+                        });
+                      }
+                    }}>
                             Aggiorna
                           </Button>
                           
-                          <Button 
-                            variant={item.paid ? "outline" : "secondary"} 
-                            size="sm"
-                            onClick={() => updateBudgetItem(item.id, { paid: !item.paid })}
-                          >
+                          <Button variant={item.paid ? "outline" : "secondary"} size="sm" onClick={() => updateBudgetItem(item.id, {
+                      paid: !item.paid
+                    })}>
                             {item.paid ? 'Non pagato' : 'Segna pagato'}
                           </Button>
                           
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => {
-                              if (confirm('Sei sicuro di voler eliminare questa voce?')) {
-                                deleteBudgetItem(item.id);
-                              }
-                            }}
-                          >
+                          <Button variant="destructive" size="sm" onClick={() => {
+                      if (confirm('Sei sicuro di voler eliminare questa voce?')) {
+                        deleteBudgetItem(item.id);
+                      }
+                    }}>
                             Elimina
                           </Button>
                         </div>
                       </td>
-                    </tr>
-                  ))}
+                    </tr>)}
                 </tbody>
               </table>
-            </div>
-          ) : (
-            <p className="text-gray-500">Non hai ancora aggiunto voci di spesa al tuo budget.</p>
-          )}
+            </div> : <p className="text-gray-500">Non hai ancora aggiunto voci di spesa al tuo budget.</p>}
         </div>
       </div>
-    </MainLayout>
-  );
+    </MainLayout>;
 };
-
 export default Budget;
