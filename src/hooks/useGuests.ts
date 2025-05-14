@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 export const useGuests = () => {
   const { user } = useAuth();
@@ -62,11 +62,6 @@ export const useGuests = () => {
       };
       
       setGuests([...guests, guest]);
-      
-      toast({
-        title: "Ospite aggiunto",
-        description: "L'ospite è stato aggiunto con successo alla lista.",
-      });
       
       return true;
     }

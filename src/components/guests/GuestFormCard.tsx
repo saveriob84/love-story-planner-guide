@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { GroupMember } from "@/types/guest";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, UserPlus, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface GuestFormCardProps {
   onAddGuest: (guestData: {
@@ -22,6 +23,7 @@ interface GuestFormCardProps {
 }
 
 const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
+  const { toast } = useToast();
   const [newGuest, setNewGuest] = useState({
     name: "",
     email: "",
@@ -65,21 +67,35 @@ const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
   };
   
   const handleAddGuest = () => {
-    const success = onAddGuest(newGuest);
-    
-    if (success) {
-      // Reset form
-      setNewGuest({
-        name: "",
-        email: "",
-        phone: "",
-        relationship: "amici",
-        plusOne: false,
-        dietaryRestrictions: "",
-        notes: "",
-        groupMembers: []
+    if (!newGuest.name.trim()) {
+      toast({
+        title: "Errore",
+        description: "Il nome dell'ospite è obbligatorio.",
+        variant: "destructive"
       });
+      return;
     }
+
+    // Call the onAddGuest function without checking its return value
+    onAddGuest(newGuest);
+    
+    // Reset form after adding guest
+    setNewGuest({
+      name: "",
+      email: "",
+      phone: "",
+      relationship: "amici",
+      plusOne: false,
+      dietaryRestrictions: "",
+      notes: "",
+      groupMembers: []
+    });
+
+    // Show success toast
+    toast({
+      title: "Ospite aggiunto",
+      description: "L'ospite è stato aggiunto con successo."
+    });
   };
 
   return (
