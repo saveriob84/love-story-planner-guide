@@ -27,7 +27,10 @@ const TaskList = ({
   onToggleComplete,
   onTaskClick
 }: TaskListProps) => {
-  const isCompleted = activeTab === "completate";
+  // Ensure tasksByTimeline has a defined value for each timeline
+  const hasTasksInTimelines = timelines.some(timeline => 
+    Array.isArray(tasksByTimeline[timeline]) && tasksByTimeline[timeline].length > 0
+  );
   
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
@@ -38,19 +41,24 @@ const TaskList = ({
       
       <DragDropContext onDragEnd={onDragEnd}>
         <TabsContent value="da-fare" className="mt-6">
-          {timelines.filter(timeline => tasksByTimeline[timeline]?.length > 0).length > 0 ? (
-            timelines.map(timeline => (
-              tasksByTimeline[timeline]?.length > 0 && (
+          {hasTasksInTimelines ? (
+            timelines.map(timeline => {
+              // Skip rendering if the timeline doesn't exist in tasksByTimeline or has no tasks
+              if (!Array.isArray(tasksByTimeline[timeline]) || tasksByTimeline[timeline].length === 0) {
+                return null;
+              }
+              
+              return (
                 <TimelineSection
                   key={timeline}
                   timeline={timeline}
-                  tasks={tasksByTimeline[timeline] || []}
+                  tasks={tasksByTimeline[timeline]}
                   isCompleted={false}
                   onToggleComplete={onToggleComplete}
                   onTaskClick={onTaskClick}
                 />
-              )
-            ))
+              );
+            })
           ) : (
             <EmptyTasksMessage 
               isCompleted={false} 
@@ -60,19 +68,24 @@ const TaskList = ({
         </TabsContent>
       
         <TabsContent value="completate" className="mt-6">
-          {timelines.filter(timeline => tasksByTimeline[timeline]?.length > 0).length > 0 ? (
-            timelines.map(timeline => (
-              tasksByTimeline[timeline]?.length > 0 && (
+          {hasTasksInTimelines ? (
+            timelines.map(timeline => {
+              // Skip rendering if the timeline doesn't exist in tasksByTimeline or has no tasks
+              if (!Array.isArray(tasksByTimeline[timeline]) || tasksByTimeline[timeline].length === 0) {
+                return null;
+              }
+              
+              return (
                 <TimelineSection
                   key={timeline}
                   timeline={timeline}
-                  tasks={tasksByTimeline[timeline] || []}
+                  tasks={tasksByTimeline[timeline]}
                   isCompleted={true}
                   onToggleComplete={onToggleComplete}
                   onTaskClick={onTaskClick}
                 />
-              )
-            ))
+              );
+            })
           ) : (
             <EmptyTasksMessage 
               isCompleted={true} 
