@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -13,10 +14,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusCircle, Search, Users, UserCheck, UserX, Mail } from "lucide-react";
+import { PlusCircle, Search, Users, UserCheck, UserX, Mail, UserPlus, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog";
 
 // Guest interface
+interface GroupMember {
+  id: string;
+  name: string;
+  dietaryRestrictions?: string;
+}
+
 interface Guest {
   id: string;
   name: string;
@@ -27,6 +42,7 @@ interface Guest {
   plusOne: boolean;
   dietaryRestrictions: string;
   notes: string;
+  groupMembers: GroupMember[];  // Aggiungiamo i membri del gruppo
 }
 
 const GuestsPage = () => {
@@ -46,7 +62,13 @@ const GuestsPage = () => {
     relationship: "amici",
     plusOne: false,
     dietaryRestrictions: "",
-    notes: ""
+    notes: "",
+    groupMembers: [] as GroupMember[]
+  });
+
+  const [tempGroupMember, setTempGroupMember] = useState({
+    name: "",
+    dietaryRestrictions: ""
   });
   
   // Save guests to localStorage whenever the list changes
@@ -55,6 +77,32 @@ const GuestsPage = () => {
       localStorage.setItem(`wedding_guests_${user.id}`, JSON.stringify(guests));
     }
   }, [guests, user?.id]);
+
+  // Aggiungi membro al gruppo temporaneo
+  const handleAddGroupMember = () => {
+    if (tempGroupMember.name.trim()) {
+      setNewGuest({
+        ...newGuest,
+        groupMembers: [
+          ...newGuest.groupMembers,
+          {
+            id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            name: tempGroupMember.name,
+            dietaryRestrictions: tempGroupMember.dietaryRestrictions
+          }
+        ]
+      });
+      setTempGroupMember({ name: "", dietaryRestrictions: "" });
+    }
+  };
+
+  // Rimuovi membro dal gruppo temporaneo
+  const handleRemoveGroupMember = (id: string) => {
+    setNewGuest({
+      ...newGuest,
+      groupMembers: newGuest.groupMembers.filter(member => member.id !== id)
+    });
+  };
   
   // Add new guest
   const handleAddGuest = () => {
@@ -68,7 +116,8 @@ const GuestsPage = () => {
         rsvp: "pending",
         plusOne: newGuest.plusOne,
         dietaryRestrictions: newGuest.dietaryRestrictions,
-        notes: newGuest.notes
+        notes: newGuest.notes,
+        groupMembers: newGuest.groupMembers
       };
       
       setGuests([...guests, guest]);
@@ -81,7 +130,8 @@ const GuestsPage = () => {
         relationship: "amici",
         plusOne: false,
         dietaryRestrictions: "",
-        notes: ""
+        notes: "",
+        groupMembers: []
       });
     }
   };
@@ -97,6 +147,37 @@ const GuestsPage = () => {
   const removeGuest = (id: string) => {
     if (confirm("Sei sicuro di voler rimuovere questo ospite?")) {
       setGuests(guests.filter(guest => guest.id !== id));
+    }
+  };
+
+  // Edit group members
+  const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
+  const [editGroupMember, setEditGroupMember] = useState({
+    name: "",
+    dietaryRestrictions: ""
+  });
+
+  const handleEditGroupMember = () => {
+    if (editingGuest && editGroupMember.name.trim()) {
+      const updatedGuest = { ...editingGuest };
+      updatedGuest.groupMembers.push({
+        id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: editGroupMember.name,
+        dietaryRestrictions: editGroupMember.dietaryRestrictions
+      });
+      updateGuest(editingGuest.id, updatedGuest);
+      setEditGroupMember({ name: "", dietaryRestrictions: "" });
+    }
+  };
+
+  const handleRemoveEditGroupMember = (guestId: string, memberId: string) => {
+    const guest = guests.find(g => g.id === guestId);
+    if (guest) {
+      const updatedGuest = { ...guest };
+      updatedGuest.groupMembers = updatedGuest.groupMembers.filter(
+        member => member.id !== memberId
+      );
+      updateGuest(guestId, updatedGuest);
     }
   };
   
@@ -116,13 +197,17 @@ const GuestsPage = () => {
   const pendingGuests = guests.filter(g => g.rsvp === "pending").length;
   const declinedGuests = guests.filter(g => g.rsvp === "declined").length;
   
-  // Plus ones calculation
+  // Plus ones and group members calculation
+  const totalGroupMembers = guests.reduce((total, guest) => {
+    return total + (guest.rsvp === "confirmed" ? guest.groupMembers.length : 0);
+  }, 0);
+
   const plusOnes = guests.reduce((total, guest) => {
     return total + (guest.plusOne && guest.rsvp === "confirmed" ? 1 : 0);
   }, 0);
   
   // Total attending
-  const totalAttending = confirmedGuests + plusOnes;
+  const totalAttending = confirmedGuests + plusOnes + totalGroupMembers;
 
   return (
     <MainLayout>
@@ -147,7 +232,7 @@ const GuestsPage = () => {
                 <Users className="h-5 w-5 text-wedding-navy mr-2" />
                 <span className="text-3xl font-bold text-wedding-navy">{totalGuests}</span>
               </div>
-              <p className="text-sm text-gray-500 mt-1">persone</p>
+              <p className="text-sm text-gray-500 mt-1">nuclei familiari/singoli</p>
             </CardContent>
           </Card>
           
@@ -161,7 +246,7 @@ const GuestsPage = () => {
                 <span className="text-3xl font-bold text-green-600">{confirmedGuests}</span>
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                {totalAttending} con accompagnatori
+                {totalAttending} persone in totale
               </p>
             </CardContent>
           </Card>
@@ -282,6 +367,74 @@ const GuestsPage = () => {
                 placeholder="Note aggiuntive"
               />
             </div>
+
+            {/* Membri del gruppo */}
+            <div className="mt-6">
+              <div className="flex justify-between items-center mb-2">
+                <Label>Membri del gruppo</Label>
+              </div>
+              
+              <div className="border rounded-md p-4">
+                {newGuest.groupMembers.length > 0 ? (
+                  <div className="space-y-3 mb-4">
+                    {newGuest.groupMembers.map(member => (
+                      <div key={member.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <div>
+                          <p className="font-medium">{member.name}</p>
+                          {member.dietaryRestrictions && (
+                            <p className="text-sm text-gray-500">Dieta: {member.dietaryRestrictions}</p>
+                          )}
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleRemoveGroupMember(member.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm mb-4">Aggiungi membri del gruppo (famiglia, bambini, ecc.)</p>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="memberName">Nome</Label>
+                    <div className="flex space-x-2">
+                      <Input
+                        id="memberName"
+                        value={tempGroupMember.name}
+                        onChange={(e) => setTempGroupMember({...tempGroupMember, name: e.target.value})}
+                        placeholder="Nome membro"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="memberDiet">Restrizioni alimentari</Label>
+                    <Input
+                      id="memberDiet"
+                      value={tempGroupMember.dietaryRestrictions}
+                      onChange={(e) => setTempGroupMember(
+                        {...tempGroupMember, dietaryRestrictions: e.target.value}
+                      )}
+                      placeholder="Vegetariano, allergie, ecc."
+                    />
+                  </div>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-4"
+                  onClick={handleAddGroupMember}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" /> 
+                  Aggiungi membro
+                </Button>
+              </div>
+            </div>
             
             <Button 
               className="mt-6 bg-wedding-navy hover:bg-wedding-navy/80"
@@ -320,7 +473,8 @@ const GuestsPage = () => {
               <GuestList 
                 guests={filteredGuests()} 
                 onUpdate={updateGuest} 
-                onRemove={removeGuest} 
+                onRemove={removeGuest}
+                onEditMembers={setEditingGuest}
               />
             </TabsContent>
             
@@ -328,7 +482,8 @@ const GuestsPage = () => {
               <GuestList 
                 guests={filteredGuests("confirmed")} 
                 onUpdate={updateGuest} 
-                onRemove={removeGuest} 
+                onRemove={removeGuest}
+                onEditMembers={setEditingGuest}
               />
             </TabsContent>
             
@@ -336,7 +491,8 @@ const GuestsPage = () => {
               <GuestList 
                 guests={filteredGuests("pending")} 
                 onUpdate={updateGuest} 
-                onRemove={removeGuest} 
+                onRemove={removeGuest}
+                onEditMembers={setEditingGuest}
               />
             </TabsContent>
             
@@ -344,12 +500,88 @@ const GuestsPage = () => {
               <GuestList 
                 guests={filteredGuests("declined")} 
                 onUpdate={updateGuest} 
-                onRemove={removeGuest} 
+                onRemove={removeGuest}
+                onEditMembers={setEditingGuest}
               />
             </TabsContent>
           </Tabs>
         </div>
       </div>
+
+      {/* Dialog per modificare i membri del gruppo */}
+      <Dialog open={!!editingGuest} onOpenChange={(open) => !open && setEditingGuest(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifica membri del gruppo: {editingGuest?.name}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            {editingGuest?.groupMembers.length ? (
+              <div className="space-y-2">
+                {editingGuest.groupMembers.map(member => (
+                  <div key={member.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <div>
+                      <p className="font-medium">{member.name}</p>
+                      {member.dietaryRestrictions && (
+                        <p className="text-sm text-gray-500">Dieta: {member.dietaryRestrictions}</p>
+                      )}
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => handleRemoveEditGroupMember(editingGuest.id, member.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">Nessun membro aggiunto.</p>
+            )}
+
+            <div className="border-t pt-4 mt-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="editMemberName">Nome</Label>
+                  <Input
+                    id="editMemberName"
+                    value={editGroupMember.name}
+                    onChange={(e) => setEditGroupMember({...editGroupMember, name: e.target.value})}
+                    placeholder="Nome membro"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editMemberDiet">Restrizioni alimentari</Label>
+                  <Input
+                    id="editMemberDiet"
+                    value={editGroupMember.dietaryRestrictions}
+                    onChange={(e) => setEditGroupMember(
+                      {...editGroupMember, dietaryRestrictions: e.target.value}
+                    )}
+                    placeholder="Vegetariano, allergie, ecc."
+                  />
+                </div>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={handleEditGroupMember}
+              >
+                <UserPlus className="h-4 w-4 mr-2" /> 
+                Aggiungi membro
+              </Button>
+            </div>
+
+            <div className="flex justify-end mt-6">
+              <DialogClose asChild>
+                <Button variant="outline">Chiudi</Button>
+              </DialogClose>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };
@@ -358,11 +590,13 @@ const GuestsPage = () => {
 const GuestList = ({ 
   guests, 
   onUpdate, 
-  onRemove 
+  onRemove,
+  onEditMembers
 }: { 
   guests: Guest[], 
   onUpdate: (id: string, updates: Partial<Guest>) => void, 
-  onRemove: (id: string) => void 
+  onRemove: (id: string) => void,
+  onEditMembers: (guest: Guest) => void
 }) => {
   if (guests.length === 0) {
     return <p className="text-gray-500">Nessun ospite trovato.</p>;
@@ -377,7 +611,7 @@ const GuestList = ({
             <th className="px-4 py-2 border-b">Contatto</th>
             <th className="px-4 py-2 border-b">Relazione</th>
             <th className="px-4 py-2 border-b">RSVP</th>
-            <th className="px-4 py-2 border-b">+1</th>
+            <th className="px-4 py-2 border-b">Gruppo</th>
             <th className="px-4 py-2 border-b">Azioni</th>
           </tr>
         </thead>
@@ -413,8 +647,20 @@ const GuestList = ({
                   </SelectContent>
                 </Select>
               </td>
-              <td className="px-4 py-3 text-center">
-                {guest.plusOne ? "Sì" : "No"}
+              <td className="px-4 py-3">
+                <div className="flex items-center">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="h-8"
+                    onClick={() => onEditMembers(guest)}
+                  >
+                    <UserPlus className="h-4 w-4 mr-1" />
+                    {guest.groupMembers.length > 0 
+                      ? `${guest.name} +${guest.groupMembers.length}` 
+                      : "Aggiungi"}
+                  </Button>
+                </div>
               </td>
               <td className="px-4 py-3">
                 <div className="flex space-x-2">
