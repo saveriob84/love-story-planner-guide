@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { 
   Dialog, DialogContent, DialogHeader, 
   DialogTitle, DialogDescription, DialogFooter 
@@ -7,6 +7,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { 
+  ArrowDown, 
+  ArrowUp 
+} from "lucide-react";
 
 interface AddTimelineDialogProps {
   open: boolean;
@@ -73,13 +77,15 @@ interface EditTimelineDialogProps {
   onOpenChange: (open: boolean) => void;
   timelines: string[];
   onRemoveTimeline: (timeline: string) => void;
+  onMoveTimeline: (timeline: string, direction: 'up' | 'down') => void;
 }
 
 export const EditTimelineDialog = ({
   open,
   onOpenChange,
   timelines,
-  onRemoveTimeline
+  onRemoveTimeline,
+  onMoveTimeline
 }: EditTimelineDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -94,17 +100,37 @@ export const EditTimelineDialog = ({
         </DialogHeader>
         
         <div className="space-y-4 py-4 max-h-[50vh] overflow-y-auto">
-          {timelines.map(timeline => (
+          {timelines.map((timeline, index) => (
             <div key={timeline} className="flex justify-between items-center border-b pb-2">
               <span>{timeline}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                onClick={() => onRemoveTimeline(timeline)}
-              >
-                Rimuovi
-              </Button>
+              <div className="flex gap-1 items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-2"
+                  onClick={() => onMoveTimeline(timeline, 'up')}
+                  disabled={index === 0}
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-2"
+                  onClick={() => onMoveTimeline(timeline, 'down')}
+                  disabled={index === timelines.length - 1}
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  onClick={() => onRemoveTimeline(timeline)}
+                >
+                  Rimuovi
+                </Button>
+              </div>
             </div>
           ))}
         </div>

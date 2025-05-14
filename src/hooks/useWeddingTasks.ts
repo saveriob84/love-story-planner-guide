@@ -82,6 +82,11 @@ export const useWeddingTasks = () => {
     
     return result.success;
   };
+  
+  const moveTimeline = (timelineName: string, direction: 'up' | 'down') => {
+    const updatedTimelines = timelineManager.moveTimeline(timelines, timelineName, direction);
+    setTimelines(updatedTimelines);
+  };
 
   const completedTasks = tasks.filter(task => task.completed);
   const incompleteTasks = tasks.filter(task => !task.completed);
@@ -97,6 +102,7 @@ export const useWeddingTasks = () => {
     deleteTask,
     reorderTasks,
     addTimeline: addTimelineItem,
-    removeTimeline
+    removeTimeline,
+    moveTimeline
   };
 };

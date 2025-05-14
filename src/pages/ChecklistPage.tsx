@@ -39,7 +39,8 @@ const ChecklistPage = () => {
     addTask, 
     reorderTasks, 
     addTimeline, 
-    removeTimeline 
+    removeTimeline,
+    moveTimeline 
   } = useWeddingTasks();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -212,6 +213,16 @@ const ChecklistPage = () => {
     }
   };
   
+  const handleMoveTimeline = (timeline: string, direction: 'up' | 'down') => {
+    moveTimeline(timeline, direction);
+    
+    toast({
+      title: "Timeline spostata",
+      description: `"${timeline}" è stata spostata ${direction === 'up' ? 'su' : 'giù'}`,
+      duration: 3000,
+    });
+  };
+  
   return (
     <MainLayout>
       <div className="py-6 px-4 sm:px-6 lg:px-8">
@@ -302,6 +313,7 @@ const ChecklistPage = () => {
         onOpenChange={setIsEditTimelineOpen}
         timelines={timelines}
         onRemoveTimeline={handleRemoveTimeline}
+        onMoveTimeline={handleMoveTimeline}
       />
     </MainLayout>
   );

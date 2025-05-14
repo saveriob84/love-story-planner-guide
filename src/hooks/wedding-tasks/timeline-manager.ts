@@ -61,9 +61,31 @@ export function useTimelineManager(userId: string | undefined) {
     return { success: true, updatedTimelines };
   };
   
+  const moveTimeline = (timelines: string[], timelineName: string, direction: 'up' | 'down'): string[] => {
+    const index = timelines.indexOf(timelineName);
+    if (index === -1) return timelines;
+    
+    // Non possiamo spostare oltre i limiti dell'array
+    if (direction === 'up' && index === 0) return timelines;
+    if (direction === 'down' && index === timelines.length - 1) return timelines;
+    
+    const newTimelines = [...timelines];
+    
+    // Scambia la posizione con l'elemento adiacente
+    if (direction === 'up') {
+      [newTimelines[index - 1], newTimelines[index]] = [newTimelines[index], newTimelines[index - 1]];
+    } else {
+      [newTimelines[index], newTimelines[index + 1]] = [newTimelines[index + 1], newTimelines[index]];
+    }
+    
+    saveTimelines(newTimelines);
+    return newTimelines;
+  };
+  
   return {
     getStoredTimelines,
     addTimeline,
-    removeTimeline
+    removeTimeline,
+    moveTimeline
   };
 }
