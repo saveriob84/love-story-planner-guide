@@ -34,13 +34,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userData = localStorage.getItem("weddingPlannerUser");
         
         if (userData) {
-          const user = JSON.parse(userData);
-          setAuthState({
-            user,
-            isAuthenticated: true,
-            loading: false,
-            error: null,
-          });
+          try {
+            const user = JSON.parse(userData);
+            setAuthState({
+              user,
+              isAuthenticated: true,
+              loading: false,
+              error: null,
+            });
+          } catch (error) {
+            console.error("Failed to parse user data:", error);
+            // Invalid JSON in localStorage, clear it
+            localStorage.removeItem("weddingPlannerUser");
+            setAuthState({
+              ...initialState,
+              loading: false,
+              error: "Session data corrupted",
+            });
+          }
         } else {
           setAuthState({
             ...initialState,
@@ -48,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           });
         }
       } catch (error) {
+        console.error("Error checking logged in user:", error);
         setAuthState({
           ...initialState,
           loading: false,
@@ -65,8 +77,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // In a real app, this would be an API call
       // Mock login for demo purposes
       // Check local storage for matching registered user
-      const usersJson = localStorage.getItem('weddingPlannerUsers');
-      const users = usersJson ? JSON.parse(usersJson) : [];
+      let users = [];
+      try {
+        const usersJson = localStorage.getItem('weddingPlannerUsers');
+        users = usersJson ? JSON.parse(usersJson) : [];
+      } catch (error) {
+        console.error("Failed to parse users data:", error);
+        users = [];
+      }
       
       const user = users.find((u: any) => 
         u.email === credentials.email && u.password === credentials.password
@@ -93,6 +111,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("Email o password non validi");
       }
     } catch (error: any) {
+      console.error("Login error:", error);
       setAuthState({
         ...authState,
         error: error.message,
@@ -115,8 +134,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Here we're storing in localStorage for demo purposes
       
       // Get existing users or create empty array
-      const usersJson = localStorage.getItem('weddingPlannerUsers');
-      const users = usersJson ? JSON.parse(usersJson) : [];
+      let users = [];
+      try {
+        const usersJson = localStorage.getItem('weddingPlannerUsers');
+        users = usersJson ? JSON.parse(usersJson) : [];
+      } catch (error) {
+        console.error("Failed to parse users data:", error);
+        users = [];
+      }
       
       // Check if user already exists
       const existingUser = users.find((u: any) => u.email === credentials.email);
@@ -155,6 +180,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: "Il tuo account è stato creato con successo!",
       });
     } catch (error: any) {
+      console.error("Registration error:", error);
       setAuthState({
         ...authState,
         error: error.message,
@@ -200,27 +226,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user: updatedUser,
     });
     
-    // Update in localStorage
-    localStorage.setItem("weddingPlannerUser", JSON.stringify(updatedUser));
-    
-    // Update in users array
-    const usersJson = localStorage.getItem('weddingPlannerUsers');
-    if (usersJson) {
-      const users = JSON.parse(usersJson);
-      const updatedUsers = users.map((u: any) => {
-        if (u.id === updatedUser.id) {
-          return { ...u, ...userData };
-        }
-        return u;
-      });
+    try {
+      // Update in localStorage
+      localStorage.setItem("weddingPlannerUser", JSON.stringify(updatedUser));
       
-      localStorage.setItem('weddingPlannerUsers', JSON.stringify(updatedUsers));
+      // Update in users array
+      const usersJson = localStorage.getItem('weddingPlannerUsers');
+      if (usersJson) {
+        const users = JSON.parse(usersJson);
+        const updatedUsers = users.map((u: any) => {
+          if (u.id === updatedUser.id) {
+            return { ...u, ...userData, password: u.password };
+          }
+          return u;
+        });
+        
+        localStorage.setItem('weddingPlannerUsers', JSON.stringify(updatedUsers));
+      }
+      
+      toast({
+        title: "Profilo aggiornato",
+        description: "Le tue informazioni sono state aggiornate con successo.",
+      });
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante l'aggiornamento del profilo.",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Profilo aggiornato",
-      description: "Le tue informazioni sono state aggiornate con successo.",
-    });
   };
   
   const contextValue: AuthContextType = {

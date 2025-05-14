@@ -29,6 +29,9 @@ const App = () => (
             <Route path="/budget" element={<Budget />} />
             <Route path="/guests" element={<GuestsPage />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/calendar" element={<NotFound />} /> {/* Temporary Calendar route */}
+            <Route path="/settings" element={<NotFound />} /> {/* Temporary Settings route */}
+            <Route path="/guides" element={<NotFound />} /> {/* Temporary Guides route */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

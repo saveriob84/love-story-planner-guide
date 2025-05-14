@@ -24,6 +24,7 @@ import {
   DialogTrigger,
   DialogClose
 } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/use-toast";
 
 // Guest interface
 interface GroupMember {
@@ -42,17 +43,13 @@ interface Guest {
   plusOne: boolean;
   dietaryRestrictions: string;
   notes: string;
-  groupMembers: GroupMember[];  // Aggiungiamo i membri del gruppo
+  groupMembers: GroupMember[];
 }
 
 const GuestsPage = () => {
   const { user } = useAuth();
-  const [guests, setGuests] = useState<Guest[]>(() => {
-    // Try to load from localStorage
-    const savedGuests = localStorage.getItem(`wedding_guests_${user?.id}`);
-    return savedGuests ? JSON.parse(savedGuests) : [];
-  });
-  
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
   const [newGuest, setNewGuest] = useState({
@@ -70,11 +67,47 @@ const GuestsPage = () => {
     name: "",
     dietaryRestrictions: ""
   });
+
+  // Load guests from localStorage
+  useEffect(() => {
+    const loadGuests = () => {
+      setIsLoading(true);
+      try {
+        if (user?.id) {
+          const savedGuests = localStorage.getItem(`wedding_guests_${user.id}`);
+          if (savedGuests) {
+            const parsedGuests = JSON.parse(savedGuests);
+            setGuests(Array.isArray(parsedGuests) ? parsedGuests : []);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading guests:", error);
+        toast({
+          title: "Errore",
+          description: "Impossibile caricare la lista degli ospiti.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadGuests();
+  }, [user?.id]);
   
   // Save guests to localStorage whenever the list changes
   useEffect(() => {
-    if (user?.id) {
-      localStorage.setItem(`wedding_guests_${user.id}`, JSON.stringify(guests));
+    try {
+      if (user?.id) {
+        localStorage.setItem(`wedding_guests_${user.id}`, JSON.stringify(guests));
+      }
+    } catch (error) {
+      console.error("Error saving guests:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile salvare la lista degli ospiti.",
+        variant: "destructive",
+      });
     }
   }, [guests, user?.id]);
 
@@ -133,6 +166,11 @@ const GuestsPage = () => {
         notes: "",
         groupMembers: []
       });
+
+      toast({
+        title: "Ospite aggiunto",
+        description: "L'ospite è stato aggiunto con successo alla lista.",
+      });
     }
   };
 
@@ -147,6 +185,10 @@ const GuestsPage = () => {
   const removeGuest = (id: string) => {
     if (confirm("Sei sicuro di voler rimuovere questo ospite?")) {
       setGuests(guests.filter(guest => guest.id !== id));
+      toast({
+        title: "Ospite rimosso",
+        description: "L'ospite è stato rimosso dalla lista.",
+      });
     }
   };
 
@@ -208,6 +250,32 @@ const GuestsPage = () => {
   
   // Total attending
   const totalAttending = confirmedGuests + plusOnes + totalGroupMembers;
+
+  // If still loading, show loading state
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <p className="text-xl text-gray-600">Caricamento degli ospiti...</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // If no user, show login message
+  if (!user) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-screen">
+          <div className="text-center">
+            <p className="text-xl text-gray-600">Effettua il login per vedere la lista degli ospiti.</p>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
