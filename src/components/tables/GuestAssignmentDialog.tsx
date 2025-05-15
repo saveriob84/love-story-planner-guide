@@ -28,6 +28,7 @@ interface GuestAssignmentDialogProps {
   onClose: () => void;
   guests: Guest[];
   assignedGuestIds: Set<string>;
+  assignedGroupMemberIds: Map<string, string>;
   onAddGuestToTable: (tableId: string, guest: Guest) => void;
   onAddGroupMemberToTable: (tableId: string, guestId: string, member: { id: string; name: string; isChild: boolean }) => void;
 }
@@ -37,6 +38,7 @@ const GuestAssignmentDialog = ({
   onClose,
   guests,
   assignedGuestIds,
+  assignedGroupMemberIds,
   onAddGuestToTable,
   onAddGroupMemberToTable
 }: GuestAssignmentDialogProps) => {
@@ -46,13 +48,30 @@ const GuestAssignmentDialog = ({
   if (!table) return null;
 
   // Filter guests based on search and already assigned status
-  // Now we allow group members to appear even if some members are assigned
-  const filteredGuests = guests.filter(guest => 
-    (guest.name.toLowerCase().includes(searchGuest.toLowerCase()) || 
-      guest.groupMembers.some(m => m.name.toLowerCase().includes(searchGuest.toLowerCase()))) &&
-    !assignedGuestIds.has(guest.id) &&
-    guest.rsvp === "confirmed" // Only show confirmed guests
-  );
+  const filteredGuests = guests.filter(guest => {
+    // Filter by search term
+    const matchesSearch = 
+      guest.name.toLowerCase().includes(searchGuest.toLowerCase()) || 
+      guest.groupMembers.some(m => m.name.toLowerCase().includes(searchGuest.toLowerCase()));
+    
+    // Check if guest is confirmed
+    const isConfirmed = guest.rsvp === "confirmed";
+    
+    // Check if guest is already assigned
+    const isGuestAssigned = assignedGuestIds.has(guest.id);
+    
+    // For guests with group members, check if all members are already assigned
+    const allGroupMembersAssigned = guest.groupMembers.length > 0 && 
+      guest.groupMembers.every(member => 
+        assignedGroupMemberIds.has(member.id) && 
+        assignedGroupMemberIds.get(member.id) === guest.id
+      );
+    
+    // Show the guest if they match the search, are confirmed, and either:
+    // 1. They are not assigned, or
+    // 2. They have group members that are not all assigned yet
+    return matchesSearch && isConfirmed && (!isGuestAssigned || !allGroupMembersAssigned);
+  });
 
   return (
     <Dialog open={!!table} onOpenChange={(open) => !open && onClose()}>
@@ -82,49 +101,66 @@ const GuestAssignmentDialog = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredGuests.map((guest) => (
-                    <TableRow key={guest.id}>
-                      <TableCell>{guest.name}</TableCell>
-                      <TableCell>
-                        {guest.groupMembers.length > 0 && (
-                          <div className="flex items-center">
-                            <Users className="h-4 w-4 mr-1" /> 
-                            <span>
-                              {guest.name} + {guest.groupMembers.length} 
-                              {guest.groupMembers.some(m => m.isChild) ? ' (include bambini)' : ''}
-                            </span>
-                          </div>
-                        )}
-                        {guest.groupMembers.length === 0 && (
-                          <div className="flex items-center text-gray-500">
-                            <UserRound className="h-4 w-4 mr-1" /> Singolo
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button 
-                            size="sm"
-                            onClick={() => {
-                              onAddGuestToTable(table.id, guest);
-                            }}
-                          >
-                            {guest.groupMembers.length > 0 ? 
-                              `Aggiungi gruppo (${guest.groupMembers.length + 1})` : 
-                              'Aggiungi'}
-                          </Button>
-                          
+                  {filteredGuests.map((guest) => {
+                    // Check if the guest is already assigned
+                    const isGuestAssigned = assignedGuestIds.has(guest.id);
+                    
+                    // Calculate how many group members are already assigned
+                    const assignedMembers = guest.groupMembers.filter(member => 
+                      assignedGroupMemberIds.has(member.id) && 
+                      assignedGroupMemberIds.get(member.id) === guest.id
+                    ).length;
+                    
+                    // Calculate how many group members are not yet assigned
+                    const unassignedMembers = guest.groupMembers.length - assignedMembers;
+                    
+                    return (
+                      <TableRow key={guest.id}>
+                        <TableCell>{guest.name}</TableCell>
+                        <TableCell>
                           {guest.groupMembers.length > 0 && (
-                            <GroupMembersAssignDialog 
-                              guest={guest} 
-                              table={table}
-                              onAddGroupMember={onAddGroupMemberToTable}
-                            />
+                            <div className="flex items-center">
+                              <Users className="h-4 w-4 mr-1" /> 
+                              <span>
+                                {guest.name} + {guest.groupMembers.length} 
+                                {guest.groupMembers.some(m => m.isChild) ? ' (include bambini)' : ''}
+                              </span>
+                            </div>
                           )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          {guest.groupMembers.length === 0 && (
+                            <div className="flex items-center text-gray-500">
+                              <UserRound className="h-4 w-4 mr-1" /> Singolo
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {!isGuestAssigned && (
+                              <Button 
+                                size="sm"
+                                onClick={() => {
+                                  onAddGuestToTable(table.id, guest);
+                                }}
+                              >
+                                {guest.groupMembers.length > 0 ? 
+                                  `Aggiungi gruppo (${guest.groupMembers.length + 1})` : 
+                                  'Aggiungi'}
+                              </Button>
+                            )}
+                            
+                            {guest.groupMembers.length > 0 && unassignedMembers > 0 && (
+                              <GroupMembersAssignDialog 
+                                guest={guest} 
+                                table={table}
+                                onAddGroupMember={onAddGroupMemberToTable}
+                                assignedGroupMemberIds={assignedGroupMemberIds}
+                              />
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </UITable>
             ) : (

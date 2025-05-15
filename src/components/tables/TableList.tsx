@@ -10,6 +10,7 @@ interface TableListProps {
   tables: Table[];
   guests: Guest[];
   assignedGuestIds: Set<string>;
+  assignedGroupMemberIds: Map<string, string>;
   onUpdateTable: (id: string, updates: Partial<Table>) => void;
   onRemoveTable: (id: string) => void;
   onAddGuestToTable: (tableId: string, guest: Guest) => void;
@@ -21,6 +22,7 @@ const TableList = ({
   tables,
   guests,
   assignedGuestIds,
+  assignedGroupMemberIds,
   onUpdateTable,
   onRemoveTable,
   onAddGuestToTable,
@@ -91,6 +93,7 @@ const TableList = ({
         onClose={() => setSelectedTable(null)}
         guests={guests}
         assignedGuestIds={assignedGuestIds}
+        assignedGroupMemberIds={assignedGroupMemberIds}
         onAddGuestToTable={onAddGuestToTable}
         onAddGroupMemberToTable={onAddGroupMemberToTable}
       />

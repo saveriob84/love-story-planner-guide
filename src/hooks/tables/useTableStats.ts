@@ -10,17 +10,22 @@ export const useTableStats = (tables: Table[]) => {
   
   // Get assigned guests IDs (to filter out already assigned guests)
   const assignedGuestIds = new Set<string>();
-  // Track assigned group member IDs separately to allow adding the main guest
-  // even if some group members are already assigned
-  const assignedGroupMemberIds = new Set<string>();
+  // Track assigned group member IDs to prevent duplicate assignments
+  const assignedGroupMemberIds = new Map<string, string>(); // Format: memberId -> guestId
 
   tables.forEach(table => {
     table.guests.forEach(guest => {
-      if (guest.id.includes("table-guest-") && guest.id.includes("-")) {
-        // This is a group member, track it separately
-        assignedGroupMemberIds.add(guest.id);
+      if (guest.id.includes('-')) {
+        // This is a group member
+        const parts = guest.id.split('-');
+        if (parts.length >= 4) {
+          // Format is "table-guest-guestId-memberId"
+          const guestId = parts[2];
+          const memberId = parts[3];
+          assignedGroupMemberIds.set(memberId, guestId);
+        }
       } else {
-        // This is a main guest, track it normally
+        // This is a main guest
         assignedGuestIds.add(guest.guestId);
       }
     });

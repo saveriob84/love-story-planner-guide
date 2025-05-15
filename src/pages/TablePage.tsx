@@ -19,7 +19,8 @@ const TablePage = () => {
     addGroupMemberToTable,
     removeGuestFromTable,
     stats,
-    assignedGuestIds
+    assignedGuestIds,
+    assignedGroupMemberIds
   } = useTables();
   
   const isLoading = guestsLoading || tablesLoading;
@@ -47,6 +48,7 @@ const TablePage = () => {
               tables={tables}
               guests={guests}
               assignedGuestIds={assignedGuestIds as Set<string>}
+              assignedGroupMemberIds={assignedGroupMemberIds as Map<string, string>}
               onUpdateTable={updateTable}
               onRemoveTable={removeTable}
               onAddGuestToTable={addGuestToTable}

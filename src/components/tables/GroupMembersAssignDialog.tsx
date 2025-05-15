@@ -17,33 +17,16 @@ interface GroupMembersAssignDialogProps {
   guest: Guest;
   table: Table;
   onAddGroupMember: (tableId: string, guestId: string, member: { id: string; name: string; isChild: boolean }) => void;
+  assignedGroupMemberIds: Map<string, string>;
 }
 
 const GroupMembersAssignDialog = ({ 
   guest, 
   table,
-  onAddGroupMember
+  onAddGroupMember,
+  assignedGroupMemberIds
 }: GroupMembersAssignDialogProps) => {
   const { toast } = useToast();
-  const [assignedMemberIds, setAssignedMemberIds] = useState<Set<string>>(new Set());
-  
-  // Check which members are already assigned to any table
-  useEffect(() => {
-    const assignedIds = new Set<string>();
-    table.guests.forEach(tableGuest => {
-      // Check if this is a group member and extract the member ID
-      if (tableGuest.id.includes(`table-guest-${guest.id}`)) {
-        const memberName = tableGuest.name;
-        // Find the matching group member by name
-        guest.groupMembers.forEach(member => {
-          if (member.name === memberName) {
-            assignedIds.add(member.id);
-          }
-        });
-      }
-    });
-    setAssignedMemberIds(assignedIds);
-  }, [table.guests, guest]);
   
   return (
     <Dialog>
@@ -60,7 +43,17 @@ const GroupMembersAssignDialog = ({
           <p>Seleziona i membri del gruppo di {guest.name} da aggiungere al tavolo:</p>
           <div className="space-y-2">
             {guest.groupMembers.map((member) => {
-              const isAssigned = assignedMemberIds.has(member.id);
+              // Check if this member is already assigned anywhere
+              const isAssignedAnywhere = assignedGroupMemberIds.has(member.id);
+              
+              // Check if this member is assigned to this specific guest's group
+              const isAssignedToThisGuest = isAssignedAnywhere && 
+                assignedGroupMemberIds.get(member.id) === guest.id;
+              
+              // Check if this member is assigned to another guest's group
+              const isAssignedToOtherGuest = isAssignedAnywhere && 
+                assignedGroupMemberIds.get(member.id) !== guest.id;
+              
               return (
                 <div key={member.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
                   <div className="flex items-center">
@@ -69,12 +62,11 @@ const GroupMembersAssignDialog = ({
                   </div>
                   <Button 
                     size="sm"
-                    disabled={isAssigned}
-                    variant={isAssigned ? "outline" : "default"}
+                    disabled={isAssignedAnywhere}
+                    variant={isAssignedToThisGuest ? "outline" : "default"}
                     onClick={() => {
-                      if (!isAssigned) {
+                      if (!isAssignedAnywhere) {
                         onAddGroupMember(table.id, guest.id, member);
-                        setAssignedMemberIds(prev => new Set([...prev, member.id]));
                         toast({
                           title: "Membro aggiunto",
                           description: `${member.name} è stato aggiunto a ${table.name}`
@@ -82,7 +74,8 @@ const GroupMembersAssignDialog = ({
                       }
                     }}
                   >
-                    {isAssigned ? 'Aggiunto' : 'Aggiungi'}
+                    {isAssignedToThisGuest ? 'Aggiunto' : 
+                     isAssignedToOtherGuest ? 'Già assegnato' : 'Aggiungi'}
                   </Button>
                 </div>
               );
