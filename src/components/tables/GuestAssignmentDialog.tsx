@@ -47,7 +47,7 @@ const GuestAssignmentDialog = ({
   
   if (!table) return null;
 
-  // Filter guests based on search and already assigned status
+  // Filter guests based on search, already assigned status, and RSVP confirmation
   const filteredGuests = guests.filter(guest => {
     // Filter by search term
     const matchesSearch = 
@@ -60,17 +60,18 @@ const GuestAssignmentDialog = ({
     // Check if guest is already assigned
     const isGuestAssigned = assignedGuestIds.has(guest.id);
     
-    // For guests with group members, check if all members are already assigned
-    const allGroupMembersAssigned = guest.groupMembers.length > 0 && 
-      guest.groupMembers.every(member => 
-        assignedGroupMemberIds.has(member.id) && 
-        assignedGroupMemberIds.get(member.id) === guest.id
-      );
+    // Check how many group members are already assigned
+    const assignedMembers = guest.groupMembers.filter(member => 
+      assignedGroupMemberIds.has(member.id)
+    ).length;
     
-    // Show the guest if they match the search, are confirmed, and either:
-    // 1. They are not assigned, or
-    // 2. They have group members that are not all assigned yet
-    return matchesSearch && isConfirmed && (!isGuestAssigned || !allGroupMembersAssigned);
+    // If ALL members are assigned and the guest is assigned, hide the guest completely
+    if (isGuestAssigned && assignedMembers === guest.groupMembers.length) {
+      return false;
+    }
+    
+    // Show the guest if they match the search, are confirmed, and are not fully assigned
+    return matchesSearch && isConfirmed;
   });
 
   return (
@@ -107,12 +108,16 @@ const GuestAssignmentDialog = ({
                     
                     // Calculate how many group members are already assigned
                     const assignedMembers = guest.groupMembers.filter(member => 
-                      assignedGroupMemberIds.has(member.id) && 
-                      assignedGroupMemberIds.get(member.id) === guest.id
+                      assignedGroupMemberIds.has(member.id)
                     ).length;
                     
                     // Calculate how many group members are not yet assigned
                     const unassignedMembers = guest.groupMembers.length - assignedMembers;
+                    
+                    // Show in the UI how many members are available to assign
+                    const availableMembersCount = isGuestAssigned ? 
+                      unassignedMembers : 
+                      guest.groupMembers.length + 1;
                     
                     return (
                       <TableRow key={guest.id}>
@@ -143,12 +148,12 @@ const GuestAssignmentDialog = ({
                                 }}
                               >
                                 {guest.groupMembers.length > 0 ? 
-                                  `Aggiungi gruppo (${guest.groupMembers.length + 1})` : 
+                                  `Aggiungi gruppo (${availableMembersCount})` : 
                                   'Aggiungi'}
                               </Button>
                             )}
                             
-                            {guest.groupMembers.length > 0 && unassignedMembers > 0 && (
+                            {unassignedMembers > 0 && (
                               <GroupMembersAssignDialog 
                                 guest={guest} 
                                 table={table}

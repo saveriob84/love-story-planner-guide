@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Baby } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 interface GroupMembersAssignDialogProps {
   guest: Guest;
@@ -28,11 +28,19 @@ const GroupMembersAssignDialog = ({
 }: GroupMembersAssignDialogProps) => {
   const { toast } = useToast();
   
+  // Filter out already assigned members
+  const unassignedMembers = guest.groupMembers.filter(member => !assignedGroupMemberIds.has(member.id));
+  
+  // If all members are assigned, don't show the dialog button
+  if (unassignedMembers.length === 0) {
+    return null;
+  }
+  
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Gruppo
+          Gruppo ({unassignedMembers.length})
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -44,15 +52,7 @@ const GroupMembersAssignDialog = ({
           <div className="space-y-2">
             {guest.groupMembers.map((member) => {
               // Check if this member is already assigned anywhere
-              const isAssignedAnywhere = assignedGroupMemberIds.has(member.id);
-              
-              // Check if this member is assigned to this specific guest's group
-              const isAssignedToThisGuest = isAssignedAnywhere && 
-                assignedGroupMemberIds.get(member.id) === guest.id;
-              
-              // Check if this member is assigned to another guest's group
-              const isAssignedToOtherGuest = isAssignedAnywhere && 
-                assignedGroupMemberIds.get(member.id) !== guest.id;
+              const isAssigned = assignedGroupMemberIds.has(member.id);
               
               return (
                 <div key={member.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
@@ -62,10 +62,10 @@ const GroupMembersAssignDialog = ({
                   </div>
                   <Button 
                     size="sm"
-                    disabled={isAssignedAnywhere}
-                    variant={isAssignedToThisGuest ? "outline" : "default"}
+                    disabled={isAssigned}
+                    variant={isAssigned ? "outline" : "default"}
                     onClick={() => {
-                      if (!isAssignedAnywhere) {
+                      if (!isAssigned) {
                         onAddGroupMember(table.id, guest.id, member);
                         toast({
                           title: "Membro aggiunto",
@@ -74,8 +74,7 @@ const GroupMembersAssignDialog = ({
                       }
                     }}
                   >
-                    {isAssignedToThisGuest ? 'Aggiunto' : 
-                     isAssignedToOtherGuest ? 'Già assegnato' : 'Aggiungi'}
+                    {isAssigned ? 'Già assegnato' : 'Aggiungi'}
                   </Button>
                 </div>
               );
