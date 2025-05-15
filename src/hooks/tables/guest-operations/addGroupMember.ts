@@ -45,6 +45,17 @@ export const useAddGroupMember = ({ tables, setTables }: AddGroupMemberProps) =>
       return;
     }
     
+    // Determine the correct ID format based on whether this is a main guest or a group member
+    let guestInstanceId: string;
+    
+    if (member.id === guestId) {
+      // This is the main guest (capogruppo)
+      guestInstanceId = `table-guest-${guestId}`;
+    } else {
+      // This is a group member
+      guestInstanceId = `table-guest-${guestId}-${member.id}`;
+    }
+    
     // Add the member to the selected table
     setTables(tables.map(table => {
       if (table.id === tableId) {
@@ -53,7 +64,7 @@ export const useAddGroupMember = ({ tables, setTables }: AddGroupMemberProps) =>
           guests: [
             ...table.guests,
             {
-              id: `table-guest-${guestId}-${member.id}`,
+              id: guestInstanceId,
               guestId: guestId, // Parent guest ID
               name: member.name,
               isChild: member.isChild

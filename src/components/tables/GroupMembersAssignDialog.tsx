@@ -64,7 +64,7 @@ const GroupMembersAssignDialog = ({
           <p>Seleziona i membri del gruppo di {guest.name} da aggiungere al tavolo:</p>
           <div className="space-y-2">
             {allMembers.map((member) => {
-              // Verifica se questo membro è già assegnato da qualche parte
+              // Verifica se questo membro è già assegnato usando la mappa
               const isAssigned = assignedGroupMemberIds.has(member.id);
               
               return (

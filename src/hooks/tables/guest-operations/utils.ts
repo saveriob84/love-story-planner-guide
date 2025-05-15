@@ -19,16 +19,31 @@ export const isGuestAssigned = (tables: Table[], guestId: string): boolean => {
 export const isGroupMemberAssigned = (tables: Table[], memberId: string): boolean => {
   for (const table of tables) {
     for (const guest of table.guests) {
-      // Verifica tutti i formati possibili per un ID membro:
-      // 1. Format diretto: "table-guest-memberId"
-      // 2. Format con ID gruppo: "table-guest-guestId-memberId"  
-      // 3. Quando il membro è registrato con il suo ID come guestId
-      if (
-        guest.id === `table-guest-${memberId}` || 
-        guest.id.endsWith(`-${memberId}`) ||
-        guest.guestId === memberId
-      ) {
+      // Check all possible formats for a member ID:
+      
+      // 1. Direct format: "table-guest-memberId" (when member added directly)
+      if (guest.id === `table-guest-${memberId}`) {
         return true;
+      }
+      
+      // 2. Group member format: "table-guest-guestId-memberId"  
+      if (guest.id.includes('-') && guest.id.endsWith(`-${memberId}`)) {
+        return true;
+      }
+      
+      // 3. When the member is registered with their ID as guestId
+      if (guest.guestId === memberId) {
+        return true;
+      }
+      
+      // 4. Special case: When we are searching for a member that was added as part of a group
+      // Extract memberId from format "table-guest-guestId-memberId"
+      const parts = guest.id.split('-');
+      if (parts.length >= 4) {
+        const extractedMemberId = parts[3];
+        if (extractedMemberId === memberId) {
+          return true;
+        }
       }
     }
   }

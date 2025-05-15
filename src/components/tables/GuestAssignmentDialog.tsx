@@ -97,37 +97,32 @@ const GuestAssignmentDialog = ({
                     // Verifica se l'ospite principale è già stato assegnato
                     const isMainGuestAssigned = assignedGuestIds.has(guest.id);
                     
-                    // Conta membri del gruppo già assegnati (compreso il capogruppo)
-                    let totalAssignedMembers = 0;
+                    // Verifica se il capogruppo è assegnato (usando la mappa dei membri assegnati)
+                    const isLeaderAssigned = assignedGroupMemberIds.has(guest.id);
                     
-                    // Verifica se il capogruppo è assegnato
-                    if (assignedGroupMemberIds.has(guest.id)) {
-                      totalAssignedMembers++;
-                    }
-                    
-                    // Verifica quanti membri del gruppo sono già assegnati
-                    const assignedMembers = guest.groupMembers.filter(member => 
+                    // Conta quanti membri del gruppo sono già assegnati (escluso il capogruppo)
+                    const assignedMembersCount = guest.groupMembers.filter(member => 
                       assignedGroupMemberIds.has(member.id)
                     ).length;
                     
-                    totalAssignedMembers += assignedMembers;
+                    // Calcola il numero totale di membri già assegnati (incluso il capogruppo se presente)
+                    const totalAssignedMembers = (isLeaderAssigned ? 1 : 0) + assignedMembersCount;
+                    
+                    // Calcola il numero totale di membri nel gruppo (incluso il capogruppo)
+                    const totalGroupSize = 1 + guest.groupMembers.length;
                     
                     // Calcola quanti membri del gruppo non sono ancora assegnati
-                    // Consideriamo anche il capogruppo nel conteggio totale
-                    const totalGroupSize = 1 + guest.groupMembers.length;
                     const unassignedMembers = totalGroupSize - totalAssignedMembers;
                     
                     // Controlla se tutto il gruppo è già assegnato
                     const isEntireGroupAssigned = totalAssignedMembers === totalGroupSize;
                     
-                    // Verifica se tutti i membri del gruppo sono assegnati
-                    // questa logica è importante per determinare se mostrare il pulsante 
-                    // "Aggiungi gruppo" come attivo o disabilitato
-                    const areAllMembersAssigned = guest.groupMembers.length === 0 || 
-                                               guest.groupMembers.every(member => assignedGroupMemberIds.has(member.id));
-                    
                     // Determina se questo ospite è disponibile per l'assegnazione
+                    // (né lui né i suoi membri di gruppo sono già assegnati)
                     const isGuestAvailable = !isMainGuestAssigned && !isEntireGroupAssigned;
+                    
+                    // Controlla se ci sono ancora membri non assegnati che possono essere aggiunti individualmente
+                    const hasUnassignedMembers = unassignedMembers > 0;
                     
                     return (
                       <TableRow key={guest.id}>
@@ -167,7 +162,7 @@ const GuestAssignmentDialog = ({
                                   'Aggiungi')}
                             </Button>
                             
-                            {unassignedMembers > 0 && !isEntireGroupAssigned && (
+                            {hasUnassignedMembers && (
                               <GroupMembersAssignDialog 
                                 guest={guest} 
                                 table={table}

@@ -18,7 +18,7 @@ export const useTableStats = (tables: Table[]) => {
       // Add all guestIds to the assignedGuestIds set
       assignedGuestIds.add(guest.guestId);
       
-      // Per il capogruppo (quando l'ID guest è uguale all'ID della tabella-guest)
+      // Gestione del capogruppo (quando l'ID guest è uguale all'ID della tabella-guest)
       if (guest.id === `table-guest-${guest.guestId}`) {
         // Segna l'ID principale dell'ospite come assegnato
         assignedGroupMemberIds.set(guest.guestId, guest.guestId);
@@ -32,16 +32,16 @@ export const useTableStats = (tables: Table[]) => {
           const guestId = parts[2];
           const memberId = parts[3];
           
-          // Segna sia il membro che il suo capogruppo
+          // Segna questo membro come assegnato
           assignedGroupMemberIds.set(memberId, guestId);
-          
-          // Segna anche questo ID come membro assegnato per la ricerca diretta
-          // Questo garantisce che tutti i membri siano visibili come assegnati
-          // indipendentemente dal formato utilizzato per cercarli
-          if (memberId !== guestId) {
-            assignedGroupMemberIds.set(memberId, memberId);
-          }
         }
+      }
+      
+      // Caso speciale per i membri assegnati individualmente
+      // Se l'ID contiene "table-guest-" ma non è un ID di gruppo (non ha parti aggiuntive)
+      if (guest.id.startsWith('table-guest-') && !guest.id.includes('-', 12)) {
+        const directMemberId = guest.id.substring(12); // Rimuove "table-guest-"
+        assignedGroupMemberIds.set(directMemberId, directMemberId);
       }
     });
   });
