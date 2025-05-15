@@ -41,7 +41,7 @@ const GroupMembersAssignDialog = ({
     ...guest.groupMembers
   ];
   
-  // Filtra membri già assegnati
+  // Filtra membri già assegnati - questo è cruciale per mostrare correttamente lo stato
   const unassignedMembers = allMembers.filter(member => !assignedGroupMemberIds.has(member.id));
   
   // Non mostrare il dialogo se non ci sono membri non assegnati

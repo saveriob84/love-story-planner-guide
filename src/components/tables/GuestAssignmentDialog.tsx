@@ -105,7 +105,7 @@ const GuestAssignmentDialog = ({
                       totalAssignedMembers++;
                     }
                     
-                    // Conta i membri del gruppo già assegnati
+                    // Verifica quanti membri del gruppo sono già assegnati
                     const assignedMembers = guest.groupMembers.filter(member => 
                       assignedGroupMemberIds.has(member.id)
                     ).length;
@@ -121,8 +121,13 @@ const GuestAssignmentDialog = ({
                     const isEntireGroupAssigned = totalAssignedMembers === totalGroupSize;
                     
                     // Verifica se tutti i membri del gruppo sono assegnati
-                    const isAllMembersAssigned = guest.groupMembers.length === 0 || 
+                    // questa logica è importante per determinare se mostrare il pulsante 
+                    // "Aggiungi gruppo" come attivo o disabilitato
+                    const areAllMembersAssigned = guest.groupMembers.length === 0 || 
                                                guest.groupMembers.every(member => assignedGroupMemberIds.has(member.id));
+                    
+                    // Determina se questo ospite è disponibile per l'assegnazione
+                    const isGuestAvailable = !isMainGuestAssigned && !isEntireGroupAssigned;
                     
                     return (
                       <TableRow key={guest.id}>
@@ -147,16 +152,16 @@ const GuestAssignmentDialog = ({
                           <div className="flex items-center space-x-2">
                             <Button 
                               size="sm"
-                              disabled={isMainGuestAssigned || isEntireGroupAssigned}
+                              disabled={!isGuestAvailable}
                               onClick={() => {
-                                if (!isMainGuestAssigned && !isEntireGroupAssigned) {
+                                if (isGuestAvailable) {
                                   onAddGuestToTable(table.id, guest);
                                   // Chiude il dialogo dopo aver aggiunto un ospite
                                   onClose();
                                 }
                               }}
                             >
-                              {isMainGuestAssigned || isEntireGroupAssigned ? 'Già assegnato' : 
+                              {!isGuestAvailable ? 'Già assegnato' : 
                                 (guest.groupMembers.length > 0 ? 
                                   `Aggiungi gruppo` : 
                                   'Aggiungi')}
