@@ -19,7 +19,7 @@ export const isGuestAssigned = (tables: Table[], guestId: string): boolean => {
 export const isGroupMemberAssigned = (tables: Table[], memberId: string): boolean => {
   for (const table of tables) {
     for (const guest of table.guests) {
-      // Verifica sia il formato standard che il formato diretto (quando memberId è uguale a guestId)
+      // Verifica sia nel formato "table-guest-guestId-memberId" che nel formato diretto "table-guest-memberId"
       if (guest.id.includes(`-${memberId}`) || guest.id === `table-guest-${memberId}`) {
         return true;
       }

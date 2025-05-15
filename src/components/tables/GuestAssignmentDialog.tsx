@@ -120,6 +120,10 @@ const GuestAssignmentDialog = ({
                     // Controlla se tutto il gruppo è già assegnato
                     const isEntireGroupAssigned = totalAssignedMembers === totalGroupSize;
                     
+                    // Verifica se tutti i membri del gruppo sono assegnati
+                    const isAllMembersAssigned = guest.groupMembers.length === 0 || 
+                                               guest.groupMembers.every(member => assignedGroupMemberIds.has(member.id));
+                    
                     return (
                       <TableRow key={guest.id}>
                         <TableCell>{guest.name}</TableCell>

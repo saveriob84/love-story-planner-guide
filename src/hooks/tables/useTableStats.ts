@@ -26,7 +26,7 @@ export const useTableStats = (tables: Table[]) => {
         assignedGroupMemberIds.set(guest.guestId, guest.guestId);
       }
       
-      // For group members with format "table-guest-guestId-memberId"
+      // Per membri del gruppo con formato "table-guest-guestId-memberId"
       if (guest.id.includes('-')) {
         const parts = guest.id.split('-');
         if (parts.length >= 4) {

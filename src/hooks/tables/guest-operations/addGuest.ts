@@ -88,7 +88,7 @@ export const useAddGuest = ({ tables, setTables }: AddGuestProps) => {
     
     toast({
       title: "Ospiti aggiunti",
-      description: `${guest.name} e i membri disponibili del gruppo sono stati aggiunti al tavolo.`
+      description: `${guest.name} e i membri del gruppo sono stati aggiunti al tavolo.`
     });
   };
 
