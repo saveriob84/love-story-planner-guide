@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export const useGuests = () => {
   const { user } = useAuth();
@@ -18,12 +18,26 @@ export const useGuests = () => {
           const savedGuests = localStorage.getItem(`wedding_guests_${user.id}`);
           if (savedGuests) {
             const parsedGuests = JSON.parse(savedGuests);
-            setGuests(Array.isArray(parsedGuests) ? parsedGuests : []);
+            
+            // Assicuriamoci che tutti i membri del gruppo abbiano la proprietà isChild
+            const updatedGuests = parsedGuests.map((guest: Guest) => {
+              const updatedGroupMembers = guest.groupMembers.map(member => ({
+                ...member,
+                isChild: member.isChild !== undefined ? member.isChild : false
+              }));
+              
+              return {
+                ...guest,
+                groupMembers: updatedGroupMembers
+              };
+            });
+            
+            setGuests(Array.isArray(updatedGuests) ? updatedGuests : []);
           }
         }
       } catch (error) {
         console.error("Error loading guests:", error);
-        toast({
+        useToast().toast({
           title: "Errore",
           description: "Impossibile caricare la lista degli ospiti.",
           variant: "destructive",
@@ -44,7 +58,7 @@ export const useGuests = () => {
       }
     } catch (error) {
       console.error("Error saving guests:", error);
-      toast({
+      useToast().toast({
         title: "Errore",
         description: "Impossibile salvare la lista degli ospiti.",
         variant: "destructive",
@@ -79,7 +93,7 @@ export const useGuests = () => {
   const removeGuest = (id: string) => {
     if (confirm("Sei sicuro di voler rimuovere questo ospite?")) {
       setGuests(guests.filter(guest => guest.id !== id));
-      toast({
+      useToast().toast({
         title: "Ospite rimosso",
         description: "L'ospite è stato rimosso dalla lista.",
       });

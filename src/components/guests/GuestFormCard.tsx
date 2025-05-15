@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -5,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { GroupMember } from "@/types/guest";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, UserPlus, X } from "lucide-react";
+import { PlusCircle, UserPlus, X, Baby } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+
 interface GuestFormCardProps {
   onAddGuest: (guestData: {
     name: string;
@@ -37,7 +40,8 @@ const GuestFormCard = ({
   });
   const [tempGroupMember, setTempGroupMember] = useState({
     name: "",
-    dietaryRestrictions: ""
+    dietaryRestrictions: "",
+    isChild: false
   });
 
   // Aggiungi membro al gruppo temporaneo
@@ -48,12 +52,14 @@ const GuestFormCard = ({
         groupMembers: [...newGuest.groupMembers, {
           id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           name: tempGroupMember.name,
-          dietaryRestrictions: tempGroupMember.dietaryRestrictions
+          dietaryRestrictions: tempGroupMember.dietaryRestrictions,
+          isChild: tempGroupMember.isChild
         }]
       });
       setTempGroupMember({
         name: "",
-        dietaryRestrictions: ""
+        dietaryRestrictions: "",
+        isChild: false
       });
     }
   };
@@ -180,8 +186,16 @@ const GuestFormCard = ({
             {newGuest.groupMembers.length > 0 ? <div className="space-y-3 mb-4">
                 {newGuest.groupMembers.map(member => <div key={member.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <div>
-                      <p className="font-medium">{member.name}</p>
-                      {member.dietaryRestrictions && <p className="text-sm text-gray-500">Dieta: {member.dietaryRestrictions}</p>}
+                      <div className="flex items-center">
+                        <p className="font-medium">{member.name}</p>
+                        {member.isChild && <Baby className="h-4 w-4 ml-2 text-blue-500" />}
+                      </div>
+                      {member.dietaryRestrictions && <p className="text-sm text-gray-500">
+                        Dieta: {member.dietaryRestrictions}
+                      </p>}
+                      {member.isChild && <p className="text-sm text-blue-500">
+                        Menù bambino
+                      </p>}
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => handleRemoveGroupMember(member.id)}>
                       <X className="h-4 w-4" />
@@ -206,6 +220,21 @@ const GuestFormCard = ({
                 dietaryRestrictions: e.target.value
               })} placeholder="Vegetariano, allergie, ecc." />
               </div>
+            </div>
+
+            <div className="flex items-center space-x-2 mt-4">
+              <Checkbox 
+                id="childMenu" 
+                checked={tempGroupMember.isChild} 
+                onCheckedChange={(checked) => setTempGroupMember({
+                  ...tempGroupMember,
+                  isChild: checked === true ? true : false
+                })} 
+              />
+              <Label htmlFor="childMenu" className="flex items-center">
+                <Baby className="h-4 w-4 mr-1 text-blue-500" /> 
+                Bambino / Menù bambino
+              </Label>
             </div>
             
             <Button variant="outline" size="sm" className="mt-4" onClick={handleAddGroupMember}>

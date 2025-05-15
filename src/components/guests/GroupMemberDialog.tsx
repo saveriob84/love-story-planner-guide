@@ -6,12 +6,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose
+  DialogClose,
+  DialogDescription
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus, X, Baby } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface GroupMemberDialogProps {
   guest: Guest | null;
@@ -22,7 +24,8 @@ interface GroupMemberDialogProps {
 const GroupMemberDialog = ({ guest, onClose, onUpdateGuest }: GroupMemberDialogProps) => {
   const [editGroupMember, setEditGroupMember] = useState({
     name: "",
-    dietaryRestrictions: ""
+    dietaryRestrictions: "",
+    isChild: false
   });
 
   const handleEditGroupMember = () => {
@@ -31,10 +34,11 @@ const GroupMemberDialog = ({ guest, onClose, onUpdateGuest }: GroupMemberDialogP
       updatedGuest.groupMembers.push({
         id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: editGroupMember.name,
-        dietaryRestrictions: editGroupMember.dietaryRestrictions
+        dietaryRestrictions: editGroupMember.dietaryRestrictions,
+        isChild: editGroupMember.isChild
       });
       onUpdateGuest(guest.id, updatedGuest);
-      setEditGroupMember({ name: "", dietaryRestrictions: "" });
+      setEditGroupMember({ name: "", dietaryRestrictions: "", isChild: false });
     }
   };
 
@@ -53,6 +57,7 @@ const GroupMemberDialog = ({ guest, onClose, onUpdateGuest }: GroupMemberDialogP
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Modifica membri del gruppo: {guest?.name}</DialogTitle>
+          <DialogDescription>Aggiungi o rimuovi membri del gruppo e specifica se sono bambini.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
@@ -61,9 +66,15 @@ const GroupMemberDialog = ({ guest, onClose, onUpdateGuest }: GroupMemberDialogP
               {guest.groupMembers.map(member => (
                 <div key={member.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                   <div>
-                    <p className="font-medium">{member.name}</p>
+                    <div className="flex items-center">
+                      <p className="font-medium">{member.name}</p>
+                      {member.isChild && <Baby className="h-4 w-4 ml-2 text-blue-500" />}
+                    </div>
                     {member.dietaryRestrictions && (
                       <p className="text-sm text-gray-500">Dieta: {member.dietaryRestrictions}</p>
+                    )}
+                    {member.isChild && (
+                      <p className="text-sm text-blue-500">Menù bambino</p>
                     )}
                   </div>
                   <Button 
@@ -101,6 +112,21 @@ const GroupMemberDialog = ({ guest, onClose, onUpdateGuest }: GroupMemberDialogP
                   )}
                   placeholder="Vegetariano, allergie, ecc."
                 />
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="editChildMenu" 
+                  checked={editGroupMember.isChild} 
+                  onCheckedChange={(checked) => setEditGroupMember({
+                    ...editGroupMember,
+                    isChild: checked === true ? true : false
+                  })} 
+                />
+                <Label htmlFor="editChildMenu" className="flex items-center">
+                  <Baby className="h-4 w-4 mr-1 text-blue-500" /> 
+                  Bambino / Menù bambino
+                </Label>
               </div>
             </div>
             

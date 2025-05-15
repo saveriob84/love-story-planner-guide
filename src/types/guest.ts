@@ -3,6 +3,7 @@ export interface GroupMember {
   id: string;
   name: string;
   dietaryRestrictions?: string;
+  isChild: boolean;
 }
 
 export interface Guest {
