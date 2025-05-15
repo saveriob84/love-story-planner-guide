@@ -97,13 +97,28 @@ const GuestAssignmentDialog = ({
                     // Verifica se l'ospite principale è già stato assegnato
                     const isMainGuestAssigned = assignedGuestIds.has(guest.id);
                     
-                    // Conta membri del gruppo già assegnati
+                    // Conta membri del gruppo già assegnati (compreso il capogruppo)
+                    let totalAssignedMembers = 0;
+                    
+                    // Verifica se il capogruppo è assegnato
+                    if (assignedGroupMemberIds.has(guest.id)) {
+                      totalAssignedMembers++;
+                    }
+                    
+                    // Conta i membri del gruppo già assegnati
                     const assignedMembers = guest.groupMembers.filter(member => 
                       assignedGroupMemberIds.has(member.id)
                     ).length;
                     
+                    totalAssignedMembers += assignedMembers;
+                    
                     // Calcola quanti membri del gruppo non sono ancora assegnati
-                    const unassignedMembers = guest.groupMembers.length - assignedMembers;
+                    // Consideriamo anche il capogruppo nel conteggio totale
+                    const totalGroupSize = 1 + guest.groupMembers.length;
+                    const unassignedMembers = totalGroupSize - totalAssignedMembers;
+                    
+                    // Controlla se tutto il gruppo è già assegnato
+                    const isEntireGroupAssigned = totalAssignedMembers === totalGroupSize;
                     
                     return (
                       <TableRow key={guest.id}>
@@ -128,22 +143,22 @@ const GuestAssignmentDialog = ({
                           <div className="flex items-center space-x-2">
                             <Button 
                               size="sm"
-                              disabled={isMainGuestAssigned}
+                              disabled={isMainGuestAssigned || isEntireGroupAssigned}
                               onClick={() => {
-                                if (!isMainGuestAssigned) {
+                                if (!isMainGuestAssigned && !isEntireGroupAssigned) {
                                   onAddGuestToTable(table.id, guest);
                                   // Chiude il dialogo dopo aver aggiunto un ospite
                                   onClose();
                                 }
                               }}
                             >
-                              {isMainGuestAssigned ? 'Già assegnato' : 
+                              {isMainGuestAssigned || isEntireGroupAssigned ? 'Già assegnato' : 
                                 (guest.groupMembers.length > 0 ? 
                                   `Aggiungi gruppo` : 
                                   'Aggiungi')}
                             </Button>
                             
-                            {unassignedMembers > 0 && (
+                            {unassignedMembers > 0 && !isEntireGroupAssigned && (
                               <GroupMembersAssignDialog 
                                 guest={guest} 
                                 table={table}

@@ -18,13 +18,15 @@ export const useTableStats = (tables: Table[]) => {
       // Add all guestIds to the assignedGuestIds set
       assignedGuestIds.add(guest.guestId);
       
-      // Track the guest's main ID to prevent duplicate assignments
+      // Track both the main guest ID and all group members
+      
+      // For the main guest (when the guest ID equals the table-guest ID)
       if (guest.id === `table-guest-${guest.guestId}`) {
-        // This is a main guest - mark their ID as assigned
+        // Mark the main guest's ID as assigned
         assignedGroupMemberIds.set(guest.guestId, guest.guestId);
       }
       
-      // For group members, track their memberId as well
+      // For group members with format "table-guest-guestId-memberId"
       if (guest.id.includes('-')) {
         const parts = guest.id.split('-');
         if (parts.length >= 4) {
