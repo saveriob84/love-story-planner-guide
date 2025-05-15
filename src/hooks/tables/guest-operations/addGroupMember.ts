@@ -52,7 +52,7 @@ export const useAddGroupMember = ({ tables, setTables }: AddGroupMemberProps) =>
       // This is the main guest (capogruppo)
       guestInstanceId = `table-guest-${guestId}`;
     } else {
-      // This is a group member
+      // This is a group member - ALWAYS use the consistent format "table-guest-guestId-memberId"
       guestInstanceId = `table-guest-${guestId}-${member.id}`;
     }
     

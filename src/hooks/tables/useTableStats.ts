@@ -1,5 +1,6 @@
 
 import { Table } from "@/types/table";
+import { extractMemberIdFromGuestId } from "./guest-operations/utils";
 
 export const useTableStats = (tables: Table[]) => {
   // Calculate stats
@@ -18,30 +19,35 @@ export const useTableStats = (tables: Table[]) => {
       // Add all guestIds to the assignedGuestIds set
       assignedGuestIds.add(guest.guestId);
       
-      // Gestione del capogruppo (quando l'ID guest è uguale all'ID della tabella-guest)
+      // Case 1: Main guest (capogruppo) - format "table-guest-guestId"
       if (guest.id === `table-guest-${guest.guestId}`) {
-        // Segna l'ID principale dell'ospite come assegnato
+        // Mark the guest's own ID as assigned
         assignedGroupMemberIds.set(guest.guestId, guest.guestId);
       }
       
-      // Per membri del gruppo con formato "table-guest-guestId-memberId"
+      // Case 2: Group member format "table-guest-guestId-memberId"
       if (guest.id.includes('-')) {
         const parts = guest.id.split('-');
-        if (parts.length >= 4) {
+        if (parts.length === 4) {
           // Format is "table-guest-guestId-memberId"
           const guestId = parts[2];
           const memberId = parts[3];
           
-          // Segna questo membro come assegnato
+          // Mark this member as assigned
           assignedGroupMemberIds.set(memberId, guestId);
         }
       }
       
-      // Caso speciale per i membri assegnati individualmente
-      // Se l'ID contiene "table-guest-" ma non è un ID di gruppo (non ha parti aggiuntive)
+      // Case 3: Directly assigned member (when added individually) - format "table-guest-memberId"
       if (guest.id.startsWith('table-guest-') && !guest.id.includes('-', 12)) {
-        const directMemberId = guest.id.substring(12); // Rimuove "table-guest-"
+        const directMemberId = guest.id.substring(12); // Remove "table-guest-"
         assignedGroupMemberIds.set(directMemberId, directMemberId);
+      }
+      
+      // Case 4: Extract member ID using our utility function as a fallback
+      const extractedMemberId = extractMemberIdFromGuestId(guest.id);
+      if (extractedMemberId) {
+        assignedGroupMemberIds.set(extractedMemberId, guest.guestId);
       }
     });
   });

@@ -54,3 +54,21 @@ export const isGroupMemberAssigned = (tables: Table[], memberId: string): boolea
 export const findTableById = (tables: Table[], tableId: string): Table | undefined => {
   return tables.find(table => table.id === tableId);
 };
+
+// Utility function to extract member ID from a table guest ID
+export const extractMemberIdFromGuestId = (guestId: string): string | null => {
+  // Format: "table-guest-guestId-memberId" or "table-guest-memberId"
+  const parts = guestId.split('-');
+  
+  // Case 1: "table-guest-guestId-memberId" format
+  if (parts.length === 4) {
+    return parts[3]; // Return the memberId
+  }
+  
+  // Case 2: "table-guest-memberId" format (direct assignment)
+  if (parts.length === 3) {
+    return parts[2]; // Return the memberId
+  }
+  
+  return null;
+};

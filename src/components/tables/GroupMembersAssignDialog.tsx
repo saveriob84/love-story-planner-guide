@@ -41,11 +41,11 @@ const GroupMembersAssignDialog = ({
     ...guest.groupMembers
   ];
   
-  // Filtra membri già assegnati - questo è cruciale per mostrare correttamente lo stato
-  const unassignedMembers = allMembers.filter(member => !assignedGroupMemberIds.has(member.id));
+  // Count unassigned members for the button label
+  const unassignedCount = allMembers.filter(member => !assignedGroupMemberIds.has(member.id)).length;
   
-  // Non mostrare il dialogo se non ci sono membri non assegnati
-  if (unassignedMembers.length === 0) {
+  // Don't show the dialog if there are no members to assign
+  if (unassignedCount === 0) {
     return null;
   }
   
@@ -53,7 +53,7 @@ const GroupMembersAssignDialog = ({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
-          Gruppo ({unassignedMembers.length})
+          Gruppo ({unassignedCount})
         </Button>
       </DialogTrigger>
       <DialogContent>
@@ -64,7 +64,7 @@ const GroupMembersAssignDialog = ({
           <p>Seleziona i membri del gruppo di {guest.name} da aggiungere al tavolo:</p>
           <div className="space-y-2">
             {allMembers.map((member) => {
-              // Verifica se questo membro è già assegnato usando la mappa
+              // Check if this member is already assigned using the map
               const isAssigned = assignedGroupMemberIds.has(member.id);
               
               return (
