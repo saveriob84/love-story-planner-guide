@@ -8,7 +8,8 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogDescription
 } from "@/components/ui/dialog";
 import {
   Table as UITable,
@@ -57,16 +58,10 @@ const GuestAssignmentDialog = ({
     // Check if guest is confirmed
     const isConfirmed = guest.rsvp === "confirmed";
     
-    // Check if guest is already assigned
+    // Check if guest is already assigned (remove from list completely if main guest is assigned)
     const isGuestAssigned = assignedGuestIds.has(guest.id);
-    
-    // Check if all group members are already assigned
-    const allMembersAssigned = guest.groupMembers.length > 0 && 
-      guest.groupMembers.every(member => assignedGroupMemberIds.has(member.id));
-    
-    // If guest is assigned and all members are assigned, hide completely
-    if (isGuestAssigned && (guest.groupMembers.length === 0 || allMembersAssigned)) {
-      return false;
+    if (isGuestAssigned) {
+      return false; // If the main guest is assigned, don't show in the list at all
     }
     
     // Show the guest if they match the search and are confirmed
@@ -78,6 +73,9 @@ const GuestAssignmentDialog = ({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Assegna Ospiti a {table.name}</DialogTitle>
+          <DialogDescription>
+            Seleziona gli ospiti da assegnare a questo tavolo
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
@@ -102,10 +100,7 @@ const GuestAssignmentDialog = ({
                 </TableHeader>
                 <TableBody>
                   {filteredGuests.map((guest) => {
-                    // Check if the guest is already assigned
-                    const isGuestAssigned = assignedGuestIds.has(guest.id);
-                    
-                    // Calculate how many group members are already assigned
+                    // Count how many group members are already assigned
                     const assignedMembers = guest.groupMembers.filter(member => 
                       assignedGroupMemberIds.has(member.id)
                     ).length;
@@ -113,10 +108,8 @@ const GuestAssignmentDialog = ({
                     // Calculate how many group members are not yet assigned
                     const unassignedMembers = guest.groupMembers.length - assignedMembers;
                     
-                    // Show in the UI how many members are available to assign
-                    const availableMembersCount = isGuestAssigned ? 
-                      unassignedMembers : 
-                      unassignedMembers + 1;
+                    // Calculate the total available members to add (the guest plus unassigned members)
+                    const availableMembersCount = unassignedMembers + 1;
                     
                     return (
                       <TableRow key={guest.id}>
@@ -139,20 +132,18 @@ const GuestAssignmentDialog = ({
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
-                            {!isGuestAssigned && (
-                              <Button 
-                                size="sm"
-                                onClick={() => {
-                                  onAddGuestToTable(table.id, guest);
-                                  // Close the dialog after adding a guest
-                                  onClose();
-                                }}
-                              >
-                                {guest.groupMembers.length > 0 ? 
-                                  `Aggiungi gruppo (${availableMembersCount})` : 
-                                  'Aggiungi'}
-                              </Button>
-                            )}
+                            <Button 
+                              size="sm"
+                              onClick={() => {
+                                onAddGuestToTable(table.id, guest);
+                                // Close the dialog after adding a guest
+                                onClose();
+                              }}
+                            >
+                              {guest.groupMembers.length > 0 ? 
+                                `Aggiungi gruppo (${availableMembersCount})` : 
+                                'Aggiungi'}
+                            </Button>
                             
                             {unassignedMembers > 0 && (
                               <GroupMembersAssignDialog 
