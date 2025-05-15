@@ -48,22 +48,17 @@ const GuestAssignmentDialog = ({
   
   if (!table) return null;
 
-  // Filter guests based on search, already assigned status, and RSVP confirmation
+  // Mostriamo tutti gli ospiti che non sono già assegnati
   const filteredGuests = guests.filter(guest => {
-    // Check if the guest is already assigned to any table
-    if (assignedGuestIds.has(guest.id)) {
-      return false; // Skip this guest entirely if they're already assigned
-    }
-    
-    // Filter by search term
+    // Filtra per termine di ricerca
     const matchesSearch = 
       guest.name.toLowerCase().includes(searchGuest.toLowerCase()) || 
       guest.groupMembers.some(m => m.name.toLowerCase().includes(searchGuest.toLowerCase()));
     
-    // Check if guest is confirmed
+    // Verifica se l'ospite è confermato
     const isConfirmed = guest.rsvp === "confirmed";
     
-    // Show the guest if they match the search and are confirmed
+    // Mostra l'ospite se corrisponde alla ricerca, è confermato ed è visualizzabile
     return matchesSearch && isConfirmed;
   });
 
@@ -99,16 +94,16 @@ const GuestAssignmentDialog = ({
                 </TableHeader>
                 <TableBody>
                   {filteredGuests.map((guest) => {
-                    // Count how many group members are already assigned
+                    // Verifica se l'ospite principale è già stato assegnato
+                    const isMainGuestAssigned = assignedGuestIds.has(guest.id);
+                    
+                    // Conta membri del gruppo già assegnati
                     const assignedMembers = guest.groupMembers.filter(member => 
                       assignedGroupMemberIds.has(member.id)
                     ).length;
                     
-                    // Calculate how many group members are not yet assigned
+                    // Calcola quanti membri del gruppo non sono ancora assegnati
                     const unassignedMembers = guest.groupMembers.length - assignedMembers;
-                    
-                    // Calculate the total available members to add (the guest plus unassigned members)
-                    const availableMembersCount = unassignedMembers + 1;
                     
                     return (
                       <TableRow key={guest.id}>
@@ -133,15 +128,19 @@ const GuestAssignmentDialog = ({
                           <div className="flex items-center space-x-2">
                             <Button 
                               size="sm"
+                              disabled={isMainGuestAssigned}
                               onClick={() => {
-                                onAddGuestToTable(table.id, guest);
-                                // Close the dialog after adding a guest
-                                onClose();
+                                if (!isMainGuestAssigned) {
+                                  onAddGuestToTable(table.id, guest);
+                                  // Chiude il dialogo dopo aver aggiunto un ospite
+                                  onClose();
+                                }
                               }}
                             >
-                              {guest.groupMembers.length > 0 ? 
-                                `Aggiungi gruppo (${availableMembersCount})` : 
-                                'Aggiungi'}
+                              {isMainGuestAssigned ? 'Già assegnato' : 
+                                (guest.groupMembers.length > 0 ? 
+                                  `Aggiungi gruppo` : 
+                                  'Aggiungi')}
                             </Button>
                             
                             {unassignedMembers > 0 && (

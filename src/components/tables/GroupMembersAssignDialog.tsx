@@ -72,8 +72,8 @@ const GroupMembersAssignDialog = ({
                           title: "Membro aggiunto",
                           description: `${member.name} è stato aggiunto a ${table.name}`
                         });
-                        // Close the dialog after adding a member
-                        setOpen(false);
+                        // Non chiudiamo il dialogo dopo l'aggiunta di un membro
+                        // così l'utente può aggiungere più membri consecutivamente
                       }
                     }}
                   >
