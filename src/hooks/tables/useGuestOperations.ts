@@ -120,7 +120,7 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
       toast({
         title: "Membro già assegnato",
         description: `${member.name} è già stato assegnato a questo tavolo.`,
-        variant: "warning",
+        variant: "default", // Changed from "warning" to "default"
       });
       return;
     }
