@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Baby } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
 
 interface GroupMembersAssignDialogProps {
   guest: Guest;
@@ -24,6 +25,25 @@ const GroupMembersAssignDialog = ({
   onAddGroupMember
 }: GroupMembersAssignDialogProps) => {
   const { toast } = useToast();
+  const [assignedMemberIds, setAssignedMemberIds] = useState<Set<string>>(new Set());
+  
+  // Check which members are already assigned to any table
+  useEffect(() => {
+    const assignedIds = new Set<string>();
+    table.guests.forEach(tableGuest => {
+      // Check if this is a group member and extract the member ID
+      if (tableGuest.id.includes(`table-guest-${guest.id}`)) {
+        const memberName = tableGuest.name;
+        // Find the matching group member by name
+        guest.groupMembers.forEach(member => {
+          if (member.name === memberName) {
+            assignedIds.add(member.id);
+          }
+        });
+      }
+    });
+    setAssignedMemberIds(assignedIds);
+  }, [table.guests, guest]);
   
   return (
     <Dialog>
@@ -39,26 +59,34 @@ const GroupMembersAssignDialog = ({
         <div className="space-y-4">
           <p>Seleziona i membri del gruppo di {guest.name} da aggiungere al tavolo:</p>
           <div className="space-y-2">
-            {guest.groupMembers.map((member) => (
-              <div key={member.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
-                <div className="flex items-center">
-                  <p className="font-medium">{member.name}</p>
-                  {member.isChild && <Baby className="h-4 w-4 ml-2 text-blue-500" />}
+            {guest.groupMembers.map((member) => {
+              const isAssigned = assignedMemberIds.has(member.id);
+              return (
+                <div key={member.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                  <div className="flex items-center">
+                    <p className="font-medium">{member.name}</p>
+                    {member.isChild && <Baby className="h-4 w-4 ml-2 text-blue-500" />}
+                  </div>
+                  <Button 
+                    size="sm"
+                    disabled={isAssigned}
+                    variant={isAssigned ? "outline" : "default"}
+                    onClick={() => {
+                      if (!isAssigned) {
+                        onAddGroupMember(table.id, guest.id, member);
+                        setAssignedMemberIds(prev => new Set([...prev, member.id]));
+                        toast({
+                          title: "Membro aggiunto",
+                          description: `${member.name} è stato aggiunto a ${table.name}`
+                        });
+                      }
+                    }}
+                  >
+                    {isAssigned ? 'Aggiunto' : 'Aggiungi'}
+                  </Button>
                 </div>
-                <Button 
-                  size="sm"
-                  onClick={() => {
-                    onAddGroupMember(table.id, guest.id, member);
-                    toast({
-                      title: "Membro aggiunto",
-                      description: `${member.name} è stato aggiunto a ${table.name}`
-                    });
-                  }}
-                >
-                  Aggiungi
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </DialogContent>

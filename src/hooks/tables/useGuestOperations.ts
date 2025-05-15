@@ -17,7 +17,7 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
     const updatedTables = tables.map(table => {
       return {
         ...table,
-        guests: table.guests.filter(g => g.guestId !== guest.id)
+        guests: table.guests.filter(g => g.guestId !== guest.id || g.id.includes("-"))
       };
     });
     
@@ -63,7 +63,7 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
         // Add all group members
         guest.groupMembers.forEach((member, index) => {
           newGuests.push({
-            id: `table-guest-${Date.now()}-${index}`,
+            id: `table-guest-${guest.id}-${member.id}`,
             guestId: guest.id, // Parent guest ID
             name: member.name,
             isChild: member.isChild
@@ -89,33 +89,51 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
 
   // Add group member to table (now only used for individual member additions)
   const addGroupMemberToTable = (tableId: string, guestId: string, member: { id: string; name: string; isChild: boolean }) => {
-    // First, remove the member from any other table they might be in
-    const updatedTables = tables.map(table => {
-      return {
-        ...table,
-        guests: table.guests.filter(g => g.id !== member.id)
-      };
-    });
+    // Find the target table
+    const targetTable = tables.find(table => table.id === tableId);
     
-    // Then add them to the selected table
-    const finalTables = updatedTables.map(table => {
+    if (!targetTable) {
+      toast({
+        title: "Errore",
+        description: "Tavolo non trovato.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if the table is already at capacity
+    if (targetTable.guests.length >= targetTable.capacity) {
+      toast({
+        title: "Tavolo pieno",
+        description: `Il tavolo ${targetTable.name} ha già raggiunto la capacità massima.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Check if this specific member is already assigned to this table
+    const isAlreadyAssigned = targetTable.guests.some(
+      guest => guest.name === member.name && guest.id.includes(`-${member.id}`)
+    );
+    
+    if (isAlreadyAssigned) {
+      toast({
+        title: "Membro già assegnato",
+        description: `${member.name} è già stato assegnato a questo tavolo.`,
+        variant: "warning",
+      });
+      return;
+    }
+    
+    // Add the member to the selected table
+    setTables(tables.map(table => {
       if (table.id === tableId) {
-        // Check if the table is already at capacity
-        if (table.guests.length >= table.capacity) {
-          toast({
-            title: "Tavolo pieno",
-            description: `Il tavolo ${table.name} ha già raggiunto la capacità massima.`,
-            variant: "destructive",
-          });
-          return table;
-        }
-        
         return {
           ...table,
           guests: [
             ...table.guests,
             {
-              id: `table-guest-${member.id}`,
+              id: `table-guest-${guestId}-${member.id}`,
               guestId: guestId, // Parent guest ID
               name: member.name,
               isChild: member.isChild
@@ -124,13 +142,22 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
         };
       }
       return table;
-    });
+    }));
     
-    setTables(finalTables);
+    toast({
+      title: "Membro aggiunto",
+      description: `${member.name} è stato aggiunto al tavolo ${targetTable.name}.`
+    });
   };
 
   // Remove guest from table
   const removeGuestFromTable = (tableId: string, guestInstanceId: string) => {
+    const tableGuest = tables.find(t => t.id === tableId)?.guests.find(g => g.id === guestInstanceId);
+    
+    if (!tableGuest) {
+      return;
+    }
+    
     setTables(tables.map(table => {
       if (table.id === tableId) {
         return {
@@ -140,6 +167,11 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
       }
       return table;
     }));
+    
+    toast({
+      title: "Ospite rimosso",
+      description: `${tableGuest.name} è stato rimosso dal tavolo.`
+    });
   };
 
   return {

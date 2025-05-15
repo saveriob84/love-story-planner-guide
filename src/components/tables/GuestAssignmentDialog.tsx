@@ -46,6 +46,7 @@ const GuestAssignmentDialog = ({
   if (!table) return null;
 
   // Filter guests based on search and already assigned status
+  // Now we allow group members to appear even if some members are assigned
   const filteredGuests = guests.filter(guest => 
     (guest.name.toLowerCase().includes(searchGuest.toLowerCase()) || 
       guest.groupMembers.some(m => m.name.toLowerCase().includes(searchGuest.toLowerCase()))) &&

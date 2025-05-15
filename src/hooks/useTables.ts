@@ -8,7 +8,7 @@ export const useTables = () => {
   const { tables, setTables, isLoading } = useTablesState();
   const { addTable, updateTable, removeTable } = useTableOperations({ tables, setTables });
   const { addGuestToTable, addGroupMemberToTable, removeGuestFromTable } = useGuestOperations({ tables, setTables });
-  const { stats, assignedGuestIds } = useTableStats(tables);
+  const { stats, assignedGuestIds, assignedGroupMemberIds } = useTableStats(tables);
 
   return {
     // Table state
@@ -27,6 +27,7 @@ export const useTables = () => {
     
     // Stats and utilities
     stats,
-    assignedGuestIds
+    assignedGuestIds,
+    assignedGroupMemberIds
   };
 };
