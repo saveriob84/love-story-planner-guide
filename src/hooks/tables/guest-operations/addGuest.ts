@@ -58,15 +58,15 @@ export const useAddGuest = ({ tables, setTables }: AddGuestProps) => {
         // Create new guests array
         const newGuests = [...table.guests];
         
-        // Add the main guest
+        // Add the main guest with a consistent ID format
         newGuests.push({
-          id: `table-guest-${guest.id}-${Date.now()}`,
+          id: `table-guest-${guest.id}`,
           guestId: guest.id,
           name: guest.name,
           isChild: false
         });
         
-        // Add unassigned group members
+        // Add unassigned group members with consistent ID format
         unassignedMembers.forEach(member => {
           newGuests.push({
             id: `table-guest-${guest.id}-${member.id}`,

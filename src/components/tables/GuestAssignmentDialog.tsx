@@ -23,7 +23,6 @@ import { Users, UserRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import GroupMembersAssignDialog from "./GroupMembersAssignDialog";
-import { isGuestAssigned, isGroupMemberAssigned } from "@/hooks/tables/guest-operations/utils";
 
 interface GuestAssignmentDialogProps {
   table: Table | null;

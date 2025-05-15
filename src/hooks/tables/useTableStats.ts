@@ -15,19 +15,17 @@ export const useTableStats = (tables: Table[]) => {
 
   tables.forEach(table => {
     table.guests.forEach(guest => {
-      const guestId = guest.guestId;
+      // Add all guestIds to the assignedGuestIds set, regardless of whether they're main guests or group members
+      assignedGuestIds.add(guest.guestId);
       
+      // For group members, track their memberId as well
       if (guest.id.includes('-')) {
-        // This is potentially a group member
         const parts = guest.id.split('-');
         if (parts.length >= 4) {
           // Format is "table-guest-guestId-memberId"
           const memberId = parts[3];
-          assignedGroupMemberIds.set(memberId, guestId);
+          assignedGroupMemberIds.set(memberId, guest.guestId);
         }
-      } else {
-        // This is a main guest
-        assignedGuestIds.add(guestId);
       }
     });
   });

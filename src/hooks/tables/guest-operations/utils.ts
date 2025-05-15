@@ -3,28 +3,28 @@ import { Table } from "@/types/table";
 
 // Helper function to check if a guest is already assigned to any table
 export const isGuestAssigned = (tables: Table[], guestId: string): boolean => {
-  let assigned = false;
-  tables.forEach(table => {
-    table.guests.forEach(g => {
-      if (g.guestId === guestId && !g.id.includes('-')) {
-        assigned = true;
+  // Simplified logic: check if any guest in any table has this guestId
+  for (const table of tables) {
+    for (const guest of table.guests) {
+      if (guest.guestId === guestId) {
+        // If we find a guest with this guestId, they're assigned
+        return true;
       }
-    });
-  });
-  return assigned;
+    }
+  }
+  return false;
 };
 
 // Helper function to check if a group member is already assigned
 export const isGroupMemberAssigned = (tables: Table[], memberId: string): boolean => {
-  let assigned = false;
-  tables.forEach(table => {
-    table.guests.forEach(g => {
-      if (g.id.includes(`-${memberId}`)) {
-        assigned = true;
+  for (const table of tables) {
+    for (const guest of table.guests) {
+      if (guest.id.includes(`-${memberId}`)) {
+        return true;
       }
-    });
-  });
-  return assigned;
+    }
+  }
+  return false;
 };
 
 // Helper function to find a table by ID
