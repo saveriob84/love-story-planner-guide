@@ -61,16 +61,15 @@ const GuestAssignmentDialog = ({
     const isGuestAssigned = assignedGuestIds.has(guest.id);
     
     // Check how many group members are already assigned
-    const assignedMembers = guest.groupMembers.filter(member => 
-      assignedGroupMemberIds.has(member.id)
-    ).length;
+    const allMembersAssigned = guest.groupMembers.length > 0 && 
+      guest.groupMembers.every(member => assignedGroupMemberIds.has(member.id));
     
-    // If ALL members are assigned and the guest is assigned, hide the guest completely
-    if (isGuestAssigned && assignedMembers === guest.groupMembers.length) {
+    // If guest is assigned and all members are assigned, hide completely
+    if (isGuestAssigned && allMembersAssigned) {
       return false;
     }
     
-    // Show the guest if they match the search, are confirmed, and are not fully assigned
+    // Show the guest if they match the search, are confirmed, and either they or some of their members are unassigned
     return matchesSearch && isConfirmed;
   });
 
@@ -145,6 +144,8 @@ const GuestAssignmentDialog = ({
                                 size="sm"
                                 onClick={() => {
                                   onAddGuestToTable(table.id, guest);
+                                  // Close the dialog after adding a guest
+                                  onClose();
                                 }}
                               >
                                 {guest.groupMembers.length > 0 ? 

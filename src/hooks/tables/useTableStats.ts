@@ -15,18 +15,19 @@ export const useTableStats = (tables: Table[]) => {
 
   tables.forEach(table => {
     table.guests.forEach(guest => {
+      const guestId = guest.guestId;
+      
       if (guest.id.includes('-')) {
-        // This is a group member
+        // This is potentially a group member
         const parts = guest.id.split('-');
         if (parts.length >= 4) {
           // Format is "table-guest-guestId-memberId"
-          const guestId = parts[2];
           const memberId = parts[3];
           assignedGroupMemberIds.set(memberId, guestId);
         }
       } else {
         // This is a main guest
-        assignedGuestIds.add(guest.guestId);
+        assignedGuestIds.add(guestId);
       }
     });
   });

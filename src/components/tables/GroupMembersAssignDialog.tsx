@@ -27,6 +27,7 @@ const GroupMembersAssignDialog = ({
   assignedGroupMemberIds
 }: GroupMembersAssignDialogProps) => {
   const { toast } = useToast();
+  const [open, setOpen] = useState(false);
   
   // Filter out already assigned members
   const unassignedMembers = guest.groupMembers.filter(member => !assignedGroupMemberIds.has(member.id));
@@ -37,7 +38,7 @@ const GroupMembersAssignDialog = ({
   }
   
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           Gruppo ({unassignedMembers.length})
@@ -71,6 +72,8 @@ const GroupMembersAssignDialog = ({
                           title: "Membro aggiunto",
                           description: `${member.name} è stato aggiunto a ${table.name}`
                         });
+                        // Close the dialog after adding a member
+                        setOpen(false);
                       }
                     }}
                   >

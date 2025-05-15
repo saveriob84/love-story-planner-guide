@@ -11,20 +11,36 @@ interface GuestOperationsProps {
 export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) => {
   const { toast } = useToast();
 
-  // Add guest to table
-  const addGuestToTable = (tableId: string, guest: Guest) => {
-    // First, check if the guest is already assigned to any table
-    let isGuestAlreadyAssigned = false;
-    
+  // Helper function to check if a guest is already assigned to any table
+  const isGuestAssigned = (guestId: string): boolean => {
+    let assigned = false;
     tables.forEach(table => {
       table.guests.forEach(g => {
-        if (g.guestId === guest.id && !g.id.includes('-')) {
-          isGuestAlreadyAssigned = true;
+        if (g.guestId === guestId && !g.id.includes('-')) {
+          assigned = true;
         }
       });
     });
-    
-    if (isGuestAlreadyAssigned) {
+    return assigned;
+  };
+  
+  // Helper function to check if a group member is already assigned
+  const isGroupMemberAssigned = (memberId: string): boolean => {
+    let assigned = false;
+    tables.forEach(table => {
+      table.guests.forEach(g => {
+        if (g.id.includes(`-${memberId}`)) {
+          assigned = true;
+        }
+      });
+    });
+    return assigned;
+  };
+
+  // Add guest to table
+  const addGuestToTable = (tableId: string, guest: Guest) => {
+    // First, check if the guest is already assigned to any table
+    if (isGuestAssigned(guest.id)) {
       toast({
         title: "Ospite già assegnato",
         description: `${guest.name} è già stato assegnato a un tavolo.`,
@@ -45,22 +61,11 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
       return;
     }
     
-    // Count how many members are already assigned
-    const alreadyAssignedMembers = guest.groupMembers.filter(member => {
-      // Check if this member is already assigned to any table
-      let isAssigned = false;
-      tables.forEach(table => {
-        table.guests.forEach(g => {
-          if (g.id.includes(`-${member.id}`)) {
-            isAssigned = true;
-          }
-        });
-      });
-      return isAssigned;
-    }).length;
+    // Count how many unassigned members we have
+    const unassignedMembers = guest.groupMembers.filter(member => !isGroupMemberAssigned(member.id));
     
     // Calculate how many new guests we need to add
-    const totalNewGuests = 1 + (guest.groupMembers.length - alreadyAssignedMembers);
+    const totalNewGuests = 1 + unassignedMembers.length;
     const availableSeats = targetTable.capacity - targetTable.guests.length;
     
     if (availableSeats < totalNewGuests) {
@@ -75,15 +80,13 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
     // Add the main guest and all unassigned group members to the selected table
     const updatedTables = tables.map(table => {
       if (table.id === tableId) {
-        // Add the main guest
+        // Create new guests array
         const newGuests = [...table.guests];
         
         // Add the main guest if not already in the table
-        const mainGuestAlreadyInTable = newGuests.some(g => g.guestId === guest.id && !g.id.includes('-'));
-        
-        if (!mainGuestAlreadyInTable) {
+        if (!isGuestAssigned(guest.id)) {
           newGuests.push({
-            id: `table-guest-${Date.now()}`,
+            id: `table-guest-${guest.id}-${Date.now()}`,
             guestId: guest.id,
             name: guest.name,
             isChild: false
@@ -91,25 +94,13 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
         }
         
         // Add unassigned group members
-        guest.groupMembers.forEach(member => {
-          // Check if this member is already assigned to any table
-          let isAssigned = false;
-          tables.forEach(t => {
-            t.guests.forEach(g => {
-              if (g.id.includes(`-${member.id}`)) {
-                isAssigned = true;
-              }
-            });
+        unassignedMembers.forEach(member => {
+          newGuests.push({
+            id: `table-guest-${guest.id}-${member.id}`,
+            guestId: guest.id, // Parent guest ID
+            name: member.name,
+            isChild: member.isChild
           });
-          
-          if (!isAssigned) {
-            newGuests.push({
-              id: `table-guest-${guest.id}-${member.id}`,
-              guestId: guest.id, // Parent guest ID
-              name: member.name,
-              isChild: member.isChild
-            });
-          }
         });
         
         return {
@@ -131,17 +122,7 @@ export const useGuestOperations = ({ tables, setTables }: GuestOperationsProps) 
   // Add group member to table
   const addGroupMemberToTable = (tableId: string, guestId: string, member: { id: string; name: string; isChild: boolean }) => {
     // Check if this member is already assigned to any table
-    let isAlreadyAssigned = false;
-    
-    tables.forEach(table => {
-      table.guests.forEach(g => {
-        if (g.id.includes(`-${member.id}`)) {
-          isAlreadyAssigned = true;
-        }
-      });
-    });
-    
-    if (isAlreadyAssigned) {
+    if (isGroupMemberAssigned(member.id)) {
       toast({
         title: "Membro già assegnato",
         description: `${member.name} è già stato assegnato a un tavolo.`,
