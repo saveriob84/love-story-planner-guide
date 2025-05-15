@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,6 @@ import { GroupMember } from "@/types/guest";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, UserPlus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
 interface GuestFormCardProps {
   onAddGuest: (guestData: {
     name: string;
@@ -21,9 +19,12 @@ interface GuestFormCardProps {
     groupMembers: GroupMember[];
   }) => void;
 }
-
-const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
-  const { toast } = useToast();
+const GuestFormCard = ({
+  onAddGuest
+}: GuestFormCardProps) => {
+  const {
+    toast
+  } = useToast();
   const [newGuest, setNewGuest] = useState({
     name: "",
     email: "",
@@ -34,7 +35,6 @@ const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
     notes: "",
     groupMembers: [] as GroupMember[]
   });
-
   const [tempGroupMember, setTempGroupMember] = useState({
     name: "",
     dietaryRestrictions: ""
@@ -45,16 +45,16 @@ const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
     if (tempGroupMember.name.trim()) {
       setNewGuest({
         ...newGuest,
-        groupMembers: [
-          ...newGuest.groupMembers,
-          {
-            id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            name: tempGroupMember.name,
-            dietaryRestrictions: tempGroupMember.dietaryRestrictions
-          }
-        ]
+        groupMembers: [...newGuest.groupMembers, {
+          id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: tempGroupMember.name,
+          dietaryRestrictions: tempGroupMember.dietaryRestrictions
+        }]
       });
-      setTempGroupMember({ name: "", dietaryRestrictions: "" });
+      setTempGroupMember({
+        name: "",
+        dietaryRestrictions: ""
+      });
     }
   };
 
@@ -65,7 +65,6 @@ const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
       groupMembers: newGuest.groupMembers.filter(member => member.id !== id)
     });
   };
-  
   const handleAddGuest = () => {
     if (!newGuest.name.trim()) {
       toast({
@@ -78,7 +77,7 @@ const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
 
     // Call the onAddGuest function without checking its return value
     onAddGuest(newGuest);
-    
+
     // Reset form after adding guest
     setNewGuest({
       name: "",
@@ -97,9 +96,7 @@ const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
       description: "L'ospite è stato aggiunto con successo."
     });
   };
-
-  return (
-    <Card className="mb-8">
+  return <Card className="mb-8">
       <CardHeader>
         <CardTitle>Aggiungi nuovo ospite</CardTitle>
       </CardHeader>
@@ -107,42 +104,34 @@ const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <Label htmlFor="name">Nome e Cognome*</Label>
-            <Input
-              id="name"
-              value={newGuest.name}
-              onChange={(e) => setNewGuest({...newGuest, name: e.target.value})}
-              placeholder="Nome Cognome"
-              required
-            />
+            <Input id="name" value={newGuest.name} onChange={e => setNewGuest({
+            ...newGuest,
+            name: e.target.value
+          })} placeholder="Nome Cognome" required />
           </div>
           
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={newGuest.email}
-              onChange={(e) => setNewGuest({...newGuest, email: e.target.value})}
-              placeholder="email@esempio.com"
-            />
+            <Input id="email" type="email" value={newGuest.email} onChange={e => setNewGuest({
+            ...newGuest,
+            email: e.target.value
+          })} placeholder="email@esempio.com" />
           </div>
           
           <div>
             <Label htmlFor="phone">Telefono</Label>
-            <Input
-              id="phone"
-              value={newGuest.phone}
-              onChange={(e) => setNewGuest({...newGuest, phone: e.target.value})}
-              placeholder="+39 123 456 7890"
-            />
+            <Input id="phone" value={newGuest.phone} onChange={e => setNewGuest({
+            ...newGuest,
+            phone: e.target.value
+          })} placeholder="+39 123 456 7890" />
           </div>
           
           <div>
             <Label htmlFor="relationship">Relazione</Label>
-            <Select 
-              value={newGuest.relationship}
-              onValueChange={(value) => setNewGuest({...newGuest, relationship: value})}
-            >
+            <Select value={newGuest.relationship} onValueChange={value => setNewGuest({
+            ...newGuest,
+            relationship: value
+          })}>
               <SelectTrigger>
                 <SelectValue placeholder="Seleziona..." />
               </SelectTrigger>
@@ -157,35 +146,28 @@ const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
           </div>
           
           <div className="flex items-center space-x-2 mt-8">
-            <input
-              type="checkbox"
-              id="plusOne"
-              checked={newGuest.plusOne}
-              onChange={(e) => setNewGuest({...newGuest, plusOne: e.target.checked})}
-              className="h-4 w-4 rounded border-gray-300"
-            />
+            <input type="checkbox" id="plusOne" checked={newGuest.plusOne} onChange={e => setNewGuest({
+            ...newGuest,
+            plusOne: e.target.checked
+          })} className="h-4 w-4 rounded border-gray-300" />
             <Label htmlFor="plusOne">Permetti accompagnatore (+1)</Label>
           </div>
         </div>
         
         <div className="mt-4">
           <Label htmlFor="dietaryRestrictions">Restrizioni alimentari</Label>
-          <Input
-            id="dietaryRestrictions"
-            value={newGuest.dietaryRestrictions}
-            onChange={(e) => setNewGuest({...newGuest, dietaryRestrictions: e.target.value})}
-            placeholder="Vegetariano, allergie, ecc."
-          />
+          <Input id="dietaryRestrictions" value={newGuest.dietaryRestrictions} onChange={e => setNewGuest({
+          ...newGuest,
+          dietaryRestrictions: e.target.value
+        })} placeholder="Vegetariano, allergie, ecc." />
         </div>
         
         <div className="mt-4">
           <Label htmlFor="notes">Note</Label>
-          <Input
-            id="notes"
-            value={newGuest.notes}
-            onChange={(e) => setNewGuest({...newGuest, notes: e.target.value})}
-            placeholder="Note aggiuntive"
-          />
+          <Input id="notes" value={newGuest.notes} onChange={e => setNewGuest({
+          ...newGuest,
+          notes: e.target.value
+        })} placeholder="Note aggiuntive" />
         </div>
 
         {/* Membri del gruppo */}
@@ -195,76 +177,48 @@ const GuestFormCard = ({ onAddGuest }: GuestFormCardProps) => {
           </div>
           
           <div className="border rounded-md p-4">
-            {newGuest.groupMembers.length > 0 ? (
-              <div className="space-y-3 mb-4">
-                {newGuest.groupMembers.map(member => (
-                  <div key={member.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+            {newGuest.groupMembers.length > 0 ? <div className="space-y-3 mb-4">
+                {newGuest.groupMembers.map(member => <div key={member.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                     <div>
                       <p className="font-medium">{member.name}</p>
-                      {member.dietaryRestrictions && (
-                        <p className="text-sm text-gray-500">Dieta: {member.dietaryRestrictions}</p>
-                      )}
+                      {member.dietaryRestrictions && <p className="text-sm text-gray-500">Dieta: {member.dietaryRestrictions}</p>}
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleRemoveGroupMember(member.id)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => handleRemoveGroupMember(member.id)}>
                       <X className="h-4 w-4" />
                     </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm mb-4">Aggiungi membri del gruppo (famiglia, bambini, ecc.)</p>
-            )}
+                  </div>)}
+              </div> : <p className="text-gray-500 text-sm mb-4">Aggiungi membri del gruppo (famiglia, bambini, ecc.)</p>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="memberName">Nome</Label>
                 <div className="flex space-x-2">
-                  <Input
-                    id="memberName"
-                    value={tempGroupMember.name}
-                    onChange={(e) => setTempGroupMember({...tempGroupMember, name: e.target.value})}
-                    placeholder="Nome membro"
-                  />
+                  <Input id="memberName" value={tempGroupMember.name} onChange={e => setTempGroupMember({
+                  ...tempGroupMember,
+                  name: e.target.value
+                })} placeholder="Nome membro" />
                 </div>
               </div>
               <div>
                 <Label htmlFor="memberDiet">Restrizioni alimentari</Label>
-                <Input
-                  id="memberDiet"
-                  value={tempGroupMember.dietaryRestrictions}
-                  onChange={(e) => setTempGroupMember(
-                    {...tempGroupMember, dietaryRestrictions: e.target.value}
-                  )}
-                  placeholder="Vegetariano, allergie, ecc."
-                />
+                <Input id="memberDiet" value={tempGroupMember.dietaryRestrictions} onChange={e => setTempGroupMember({
+                ...tempGroupMember,
+                dietaryRestrictions: e.target.value
+              })} placeholder="Vegetariano, allergie, ecc." />
               </div>
             </div>
             
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mt-4"
-              onClick={handleAddGroupMember}
-            >
+            <Button variant="outline" size="sm" className="mt-4" onClick={handleAddGroupMember}>
               <UserPlus className="h-4 w-4 mr-2" /> 
               Aggiungi membro
             </Button>
           </div>
         </div>
         
-        <Button 
-          className="mt-6 bg-wedding-navy hover:bg-wedding-navy/80"
-          onClick={handleAddGuest}
-        >
+        <Button onClick={handleAddGuest} className="mt-6 bg-red-500 hover:bg-red-400 text-zinc-950">
           <PlusCircle className="h-4 w-4 mr-2" /> Aggiungi ospite
         </Button>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
-
 export default GuestFormCard;
