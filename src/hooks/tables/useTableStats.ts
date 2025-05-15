@@ -12,6 +12,7 @@ export const useTableStats = (tables: Table[]) => {
   const assignedGuestIds = new Set<string>();
   tables.forEach(table => {
     table.guests.forEach(guest => {
+      // Store only the main guest ID, not individual members
       assignedGuestIds.add(guest.guestId);
     });
   });

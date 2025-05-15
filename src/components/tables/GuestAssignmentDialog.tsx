@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow
 } from "@/components/ui/table";
-import { Users } from "lucide-react";
+import { Users, UserRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import GroupMembersAssignDialog from "./GroupMembersAssignDialog";
@@ -88,7 +88,15 @@ const GuestAssignmentDialog = ({
                         {guest.groupMembers.length > 0 && (
                           <div className="flex items-center">
                             <Users className="h-4 w-4 mr-1" /> 
-                            {guest.groupMembers.length}
+                            <span>
+                              {guest.name} + {guest.groupMembers.length} 
+                              {guest.groupMembers.some(m => m.isChild) ? ' (include bambini)' : ''}
+                            </span>
+                          </div>
+                        )}
+                        {guest.groupMembers.length === 0 && (
+                          <div className="flex items-center text-gray-500">
+                            <UserRound className="h-4 w-4 mr-1" /> Singolo
                           </div>
                         )}
                       </TableCell>
@@ -98,13 +106,11 @@ const GuestAssignmentDialog = ({
                             size="sm"
                             onClick={() => {
                               onAddGuestToTable(table.id, guest);
-                              toast({
-                                title: "Ospite aggiunto",
-                                description: `${guest.name} è stato aggiunto a ${table.name}`
-                              });
                             }}
                           >
-                            Aggiungi
+                            {guest.groupMembers.length > 0 ? 
+                              `Aggiungi gruppo (${guest.groupMembers.length + 1})` : 
+                              'Aggiungi'}
                           </Button>
                           
                           {guest.groupMembers.length > 0 && (
