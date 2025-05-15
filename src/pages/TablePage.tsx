@@ -46,7 +46,7 @@ const TablePage = () => {
             <TableList 
               tables={tables}
               guests={guests}
-              assignedGuestIds={assignedGuestIds}
+              assignedGuestIds={assignedGuestIds as Set<string>}
               onUpdateTable={updateTable}
               onRemoveTable={removeTable}
               onAddGuestToTable={addGuestToTable}

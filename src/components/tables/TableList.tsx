@@ -170,7 +170,7 @@ const TableList = ({
                 <Input 
                   id="tableCapacity" 
                   type="number"
-                  min={table.guests?.length || 1} 
+                  min={editingTable.guests?.length || 1} 
                   value={editingTable.capacity}
                   onChange={(e) => setEditingTable({
                     ...editingTable, 
@@ -247,13 +247,13 @@ const TableList = ({
                               
                               {guest.groupMembers.length > 0 && (
                                 <Dialog>
-                                  <Dialog.Trigger asChild>
-                                    <Button variant="outline" size="sm">Gruppo</Button>
-                                  </Dialog.Trigger>
-                                  <Dialog.Content>
-                                    <Dialog.Header>
-                                      <Dialog.Title>Aggiungi membri del gruppo</Dialog.Title>
-                                    </Dialog.Header>
+                                  <Button variant="outline" size="sm" onClick={() => {}}>
+                                    Gruppo
+                                  </Button>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Aggiungi membri del gruppo</DialogTitle>
+                                    </DialogHeader>
                                     <div className="space-y-4">
                                       <p>Seleziona i membri del gruppo di {guest.name} da aggiungere al tavolo:</p>
                                       <div className="space-y-2">
@@ -279,7 +279,7 @@ const TableList = ({
                                         ))}
                                       </div>
                                     </div>
-                                  </Dialog.Content>
+                                  </DialogContent>
                                 </Dialog>
                               )}
                             </div>
