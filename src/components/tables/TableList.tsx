@@ -11,7 +11,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
+  DialogTrigger
 } from "@/components/ui/dialog";
 import {
   Table as UITable,
@@ -49,6 +50,7 @@ const TableList = ({
   const [editingTable, setEditingTable] = useState<Table | null>(null);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [searchGuest, setSearchGuest] = useState("");
+  const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
 
   // Handle table edit
   const handleEditTable = (table: Table) => {
@@ -75,6 +77,11 @@ const TableList = ({
     !assignedGuestIds.has(guest.id) &&
     guest.rsvp === "confirmed" // Only show confirmed guests
   );
+
+  // Handle showing members for a specific guest
+  const handleShowMembers = (guest: Guest) => {
+    setSelectedGuest(guest);
+  };
 
   if (tables.length === 0) {
     return <p className="text-gray-500">Nessun tavolo trovato. Aggiungi un tavolo per iniziare.</p>;
@@ -247,9 +254,11 @@ const TableList = ({
                               
                               {guest.groupMembers.length > 0 && (
                                 <Dialog>
-                                  <Button variant="outline" size="sm" onClick={() => {}}>
-                                    Gruppo
-                                  </Button>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm">
+                                      Gruppo
+                                    </Button>
+                                  </DialogTrigger>
                                   <DialogContent>
                                     <DialogHeader>
                                       <DialogTitle>Aggiungi membri del gruppo</DialogTitle>
@@ -260,7 +269,7 @@ const TableList = ({
                                         {guest.groupMembers.map((member) => (
                                           <div key={member.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
                                             <div className="flex items-center">
-                                              {member.name}
+                                              <p className="font-medium">{member.name}</p>
                                               {member.isChild && <Baby className="h-4 w-4 ml-2 text-blue-500" />}
                                             </div>
                                             <Button 

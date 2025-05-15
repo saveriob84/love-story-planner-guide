@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { CheckIcon, CalendarIcon, UserIcon, Settings, Bell, Menu, LogOut } from "lucide-react";
+import { CheckIcon, CalendarIcon, UserIcon, Settings, Bell, Menu, LogOut, Utensils } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -49,6 +49,11 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       name: "Ospiti", 
       path: "/guests", 
       icon: <UserIcon className="h-5 w-5" /> 
+    },
+    { 
+      name: "Tavoli", 
+      path: "/tables", 
+      icon: <Utensils className="h-5 w-5" /> 
     },
     { 
       name: "Calendario", 
