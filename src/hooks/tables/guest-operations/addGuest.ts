@@ -19,7 +19,7 @@ export const useAddGuest = ({ tables, setTables }: AddGuestProps) => {
       toast({
         title: "Ospite già assegnato",
         description: `${guest.name} è già stato assegnato a un tavolo.`,
-        variant: "default",
+        variant: "destructive",
       });
       return;
     }
@@ -58,15 +58,13 @@ export const useAddGuest = ({ tables, setTables }: AddGuestProps) => {
         // Create new guests array
         const newGuests = [...table.guests];
         
-        // Add the main guest if not already in the table
-        if (!isGuestAssigned(tables, guest.id)) {
-          newGuests.push({
-            id: `table-guest-${guest.id}-${Date.now()}`,
-            guestId: guest.id,
-            name: guest.name,
-            isChild: false
-          });
-        }
+        // Add the main guest
+        newGuests.push({
+          id: `table-guest-${guest.id}-${Date.now()}`,
+          guestId: guest.id,
+          name: guest.name,
+          isChild: false
+        });
         
         // Add unassigned group members
         unassignedMembers.forEach(member => {

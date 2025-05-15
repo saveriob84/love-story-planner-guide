@@ -23,6 +23,7 @@ import { Users, UserRound } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import GroupMembersAssignDialog from "./GroupMembersAssignDialog";
+import { isGuestAssigned, isGroupMemberAssigned } from "@/hooks/tables/guest-operations/utils";
 
 interface GuestAssignmentDialogProps {
   table: Table | null;
@@ -50,6 +51,11 @@ const GuestAssignmentDialog = ({
 
   // Filter guests based on search, already assigned status, and RSVP confirmation
   const filteredGuests = guests.filter(guest => {
+    // Check if the guest is already assigned to any table
+    if (assignedGuestIds.has(guest.id)) {
+      return false; // Skip this guest entirely if they're already assigned
+    }
+    
     // Filter by search term
     const matchesSearch = 
       guest.name.toLowerCase().includes(searchGuest.toLowerCase()) || 
@@ -57,12 +63,6 @@ const GuestAssignmentDialog = ({
     
     // Check if guest is confirmed
     const isConfirmed = guest.rsvp === "confirmed";
-    
-    // Check if guest is already assigned (remove from list completely if main guest is assigned)
-    const isGuestAssigned = assignedGuestIds.has(guest.id);
-    if (isGuestAssigned) {
-      return false; // If the main guest is assigned, don't show in the list at all
-    }
     
     // Show the guest if they match the search and are confirmed
     return matchesSearch && isConfirmed;
