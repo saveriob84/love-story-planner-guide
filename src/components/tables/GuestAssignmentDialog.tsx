@@ -1,0 +1,135 @@
+
+import { Table } from "@/types/table";
+import { Guest } from "@/types/guest";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import {
+  Table as UITable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import { Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import GroupMembersAssignDialog from "./GroupMembersAssignDialog";
+
+interface GuestAssignmentDialogProps {
+  table: Table | null;
+  onClose: () => void;
+  guests: Guest[];
+  assignedGuestIds: Set<string>;
+  onAddGuestToTable: (tableId: string, guest: Guest) => void;
+  onAddGroupMemberToTable: (tableId: string, guestId: string, member: { id: string; name: string; isChild: boolean }) => void;
+}
+
+const GuestAssignmentDialog = ({
+  table,
+  onClose,
+  guests,
+  assignedGuestIds,
+  onAddGuestToTable,
+  onAddGroupMemberToTable
+}: GuestAssignmentDialogProps) => {
+  const { toast } = useToast();
+  const [searchGuest, setSearchGuest] = useState("");
+  
+  if (!table) return null;
+
+  // Filter guests based on search and already assigned status
+  const filteredGuests = guests.filter(guest => 
+    (guest.name.toLowerCase().includes(searchGuest.toLowerCase()) || 
+      guest.groupMembers.some(m => m.name.toLowerCase().includes(searchGuest.toLowerCase()))) &&
+    !assignedGuestIds.has(guest.id) &&
+    guest.rsvp === "confirmed" // Only show confirmed guests
+  );
+
+  return (
+    <Dialog open={!!table} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Assegna Ospiti a {table.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="guestSearch">Cerca Ospiti</Label>
+            <Input 
+              id="guestSearch" 
+              placeholder="Cerca per nome..."
+              value={searchGuest}
+              onChange={(e) => setSearchGuest(e.target.value)}
+            />
+          </div>
+          
+          <div className="h-[400px] overflow-y-auto border rounded-md">
+            {filteredGuests.length > 0 ? (
+              <UITable>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Gruppo</TableHead>
+                    <TableHead>Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredGuests.map((guest) => (
+                    <TableRow key={guest.id}>
+                      <TableCell>{guest.name}</TableCell>
+                      <TableCell>
+                        {guest.groupMembers.length > 0 && (
+                          <div className="flex items-center">
+                            <Users className="h-4 w-4 mr-1" /> 
+                            {guest.groupMembers.length}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            size="sm"
+                            onClick={() => {
+                              onAddGuestToTable(table.id, guest);
+                              toast({
+                                title: "Ospite aggiunto",
+                                description: `${guest.name} è stato aggiunto a ${table.name}`
+                              });
+                            }}
+                          >
+                            Aggiungi
+                          </Button>
+                          
+                          {guest.groupMembers.length > 0 && (
+                            <GroupMembersAssignDialog 
+                              guest={guest} 
+                              table={table}
+                              onAddGroupMember={onAddGroupMemberToTable}
+                            />
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </UITable>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500">Nessun ospite disponibile da assegnare</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default GuestAssignmentDialog;
