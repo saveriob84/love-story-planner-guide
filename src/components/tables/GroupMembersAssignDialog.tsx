@@ -29,10 +29,22 @@ const GroupMembersAssignDialog = ({
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   
-  // Filter out already assigned members
-  const unassignedMembers = guest.groupMembers.filter(member => !assignedGroupMemberIds.has(member.id));
+  // Prepara l'array dei membri con il capogruppo incluso
+  const allMembers = [
+    // Includi il capogruppo come primo elemento
+    {
+      id: guest.id,
+      name: guest.name,
+      isChild: false
+    },
+    // Poi includi tutti i membri del gruppo
+    ...guest.groupMembers
+  ];
   
-  // If all members are assigned, don't show the dialog button
+  // Filtra membri già assegnati
+  const unassignedMembers = allMembers.filter(member => !assignedGroupMemberIds.has(member.id));
+  
+  // Non mostrare il dialogo se non ci sono membri non assegnati
   if (unassignedMembers.length === 0) {
     return null;
   }
@@ -51,8 +63,8 @@ const GroupMembersAssignDialog = ({
         <div className="space-y-4">
           <p>Seleziona i membri del gruppo di {guest.name} da aggiungere al tavolo:</p>
           <div className="space-y-2">
-            {guest.groupMembers.map((member) => {
-              // Check if this member is already assigned anywhere
+            {allMembers.map((member) => {
+              // Verifica se questo membro è già assegnato da qualche parte
               const isAssigned = assignedGroupMemberIds.has(member.id);
               
               return (
@@ -60,6 +72,7 @@ const GroupMembersAssignDialog = ({
                   <div className="flex items-center">
                     <p className="font-medium">{member.name}</p>
                     {member.isChild && <Baby className="h-4 w-4 ml-2 text-blue-500" />}
+                    {member.id === guest.id && <span className="ml-2 text-xs text-gray-500">(capogruppo)</span>}
                   </div>
                   <Button 
                     size="sm"

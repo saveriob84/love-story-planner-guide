@@ -15,8 +15,14 @@ export const useTableStats = (tables: Table[]) => {
 
   tables.forEach(table => {
     table.guests.forEach(guest => {
-      // Add all guestIds to the assignedGuestIds set, regardless of whether they're main guests or group members
+      // Add all guestIds to the assignedGuestIds set
       assignedGuestIds.add(guest.guestId);
+      
+      // Track the guest's main ID to prevent duplicate assignments
+      if (guest.id === `table-guest-${guest.guestId}`) {
+        // This is a main guest - mark their ID as assigned
+        assignedGroupMemberIds.set(guest.guestId, guest.guestId);
+      }
       
       // For group members, track their memberId as well
       if (guest.id.includes('-')) {
