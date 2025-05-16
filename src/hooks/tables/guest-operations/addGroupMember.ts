@@ -45,7 +45,7 @@ export const useAddGroupMember = ({ tables, setTables }: AddGroupMemberProps) =>
       return;
     }
     
-    // Determine the correct ID format based on whether this is a main guest or a group member
+    // Determine the correct ID format
     let guestInstanceId: string;
     
     if (member.id === guestId) {

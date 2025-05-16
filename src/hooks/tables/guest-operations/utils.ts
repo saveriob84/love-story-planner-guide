@@ -27,8 +27,11 @@ export const isGroupMemberAssigned = (tables: Table[], memberId: string): boolea
       }
       
       // 2. Group member format: "table-guest-guestId-memberId"  
-      if (guest.id.includes('-') && guest.id.endsWith(`-${memberId}`)) {
-        return true;
+      if (guest.id.endsWith(`-${memberId}`)) {
+        const parts = guest.id.split('-');
+        if (parts.length === 4 && parts[3] === memberId) {
+          return true;
+        }
       }
       
       // 3. When the member is registered with their ID as guestId
@@ -36,14 +39,10 @@ export const isGroupMemberAssigned = (tables: Table[], memberId: string): boolea
         return true;
       }
       
-      // 4. Special case: When we are searching for a member that was added as part of a group
-      // Extract memberId from format "table-guest-guestId-memberId"
-      const parts = guest.id.split('-');
-      if (parts.length >= 4) {
-        const extractedMemberId = parts[3];
-        if (extractedMemberId === memberId) {
-          return true;
-        }
+      // 4. Extract memberId using our utility function
+      const extractedId = extractMemberIdFromGuestId(guest.id);
+      if (extractedId === memberId) {
+        return true;
       }
     }
   }

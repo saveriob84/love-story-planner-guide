@@ -29,15 +29,15 @@ const GroupMembersAssignDialog = ({
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   
-  // Prepara l'array dei membri con il capogruppo incluso
+  // Prepare the members array with the group leader included
   const allMembers = [
-    // Includi il capogruppo come primo elemento
+    // Include the group leader as first element
     {
       id: guest.id,
       name: guest.name,
       isChild: false
     },
-    // Poi includi tutti i membri del gruppo
+    // Then include all group members
     ...guest.groupMembers
   ];
   
@@ -85,8 +85,8 @@ const GroupMembersAssignDialog = ({
                           title: "Membro aggiunto",
                           description: `${member.name} è stato aggiunto a ${table.name}`
                         });
-                        // Non chiudiamo il dialogo dopo l'aggiunta di un membro
-                        // così l'utente può aggiungere più membri consecutivamente
+                        // We don't close the dialog after adding a member
+                        // so the user can add multiple members consecutively
                       }
                     }}
                   >

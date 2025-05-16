@@ -19,11 +19,8 @@ export const useTableStats = (tables: Table[]) => {
       // Add all guestIds to the assignedGuestIds set
       assignedGuestIds.add(guest.guestId);
       
-      // Case 1: Main guest (capogruppo) - format "table-guest-guestId"
-      if (guest.id === `table-guest-${guest.guestId}`) {
-        // Mark the guest's own ID as assigned
-        assignedGroupMemberIds.set(guest.guestId, guest.guestId);
-      }
+      // Case 1: Main guest (capogruppo)
+      assignedGroupMemberIds.set(guest.guestId, guest.guestId);
       
       // Case 2: Group member format "table-guest-guestId-memberId"
       if (guest.id.includes('-')) {
@@ -38,7 +35,7 @@ export const useTableStats = (tables: Table[]) => {
         }
       }
       
-      // Case 3: Directly assigned member (when added individually) - format "table-guest-memberId"
+      // Case 3: Directly assigned member (when added individually)
       if (guest.id.startsWith('table-guest-') && !guest.id.includes('-', 12)) {
         const directMemberId = guest.id.substring(12); // Remove "table-guest-"
         assignedGroupMemberIds.set(directMemberId, directMemberId);
