@@ -45,14 +45,16 @@ export const useAddGroupMember = ({ tables, setTables }: AddGroupMemberProps) =>
       return;
     }
     
-    // Determine the correct ID format
+    // Create ID with consistent format
+    // Use "table-guest-guestId" if it's the main guest
+    // Use "table-guest-guestId-memberId" for group members
     let guestInstanceId: string;
     
     if (member.id === guestId) {
-      // This is the main guest (capogruppo)
+      // Main guest (capogruppo)
       guestInstanceId = `table-guest-${guestId}`;
     } else {
-      // This is a group member - ALWAYS use the consistent format "table-guest-guestId-memberId"
+      // Group member - always use consistent format
       guestInstanceId = `table-guest-${guestId}-${member.id}`;
     }
     

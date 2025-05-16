@@ -48,17 +48,17 @@ const GuestAssignmentDialog = ({
   
   if (!table) return null;
 
-  // Mostriamo tutti gli ospiti che non sono già assegnati
+  // Filter guests based on search and confirmed status
   const filteredGuests = guests.filter(guest => {
-    // Filtra per termine di ricerca
+    // Filter by search term
     const matchesSearch = 
       guest.name.toLowerCase().includes(searchGuest.toLowerCase()) || 
       guest.groupMembers.some(m => m.name.toLowerCase().includes(searchGuest.toLowerCase()));
     
-    // Verifica se l'ospite è confermato
+    // Check if guest is confirmed
     const isConfirmed = guest.rsvp === "confirmed";
     
-    // Mostra l'ospite se corrisponde alla ricerca, è confermato ed è visualizzabile
+    // Show guest if it matches search and is confirmed
     return matchesSearch && isConfirmed;
   });
 
@@ -94,34 +94,33 @@ const GuestAssignmentDialog = ({
                 </TableHeader>
                 <TableBody>
                   {filteredGuests.map((guest) => {
-                    // Verifica se l'ospite principale è già stato assegnato
+                    // Check if main guest is already assigned
                     const isMainGuestAssigned = assignedGuestIds.has(guest.id);
                     
-                    // Verifica se il capogruppo è assegnato (usando la mappa dei membri assegnati)
+                    // Check if group leader is assigned using the member map
                     const isLeaderAssigned = assignedGroupMemberIds.has(guest.id);
                     
-                    // Conta quanti membri del gruppo sono già assegnati (escluso il capogruppo)
+                    // Count assigned group members (excluding the leader)
                     const assignedMembersCount = guest.groupMembers.filter(member => 
                       assignedGroupMemberIds.has(member.id)
                     ).length;
                     
-                    // Calcola il numero totale di membri già assegnati (incluso il capogruppo se presente)
+                    // Calculate total assigned members (including leader if assigned)
                     const totalAssignedMembers = (isLeaderAssigned ? 1 : 0) + assignedMembersCount;
                     
-                    // Calcola il numero totale di membri nel gruppo (incluso il capogruppo)
+                    // Total group size including the leader
                     const totalGroupSize = 1 + guest.groupMembers.length;
                     
-                    // Calcola quanti membri del gruppo non sono ancora assegnati
+                    // Calculate unassigned members
                     const unassignedMembers = totalGroupSize - totalAssignedMembers;
                     
-                    // Controlla se tutto il gruppo è già assegnato
+                    // Check if entire group is already assigned
                     const isEntireGroupAssigned = totalAssignedMembers === totalGroupSize;
                     
-                    // Determina se questo ospite è disponibile per l'assegnazione
-                    // (né lui né i suoi membri di gruppo sono già assegnati)
+                    // Determine if this guest is available for assignment
                     const isGuestAvailable = !isMainGuestAssigned && !isEntireGroupAssigned;
                     
-                    // Controlla se ci sono ancora membri non assegnati che possono essere aggiunti individualmente
+                    // Check if there are unassigned members that can be added individually
                     const hasUnassignedMembers = unassignedMembers > 0;
                     
                     return (
@@ -151,7 +150,7 @@ const GuestAssignmentDialog = ({
                               onClick={() => {
                                 if (isGuestAvailable) {
                                   onAddGuestToTable(table.id, guest);
-                                  // Chiude il dialogo dopo aver aggiunto un ospite
+                                  // Close dialog after adding a guest
                                   onClose();
                                 }
                               }}

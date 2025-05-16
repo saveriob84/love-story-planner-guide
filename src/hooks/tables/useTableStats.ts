@@ -1,6 +1,5 @@
 
 import { Table } from "@/types/table";
-import { extractMemberIdFromGuestId } from "./guest-operations/utils";
 
 export const useTableStats = (tables: Table[]) => {
   // Calculate stats
@@ -16,35 +15,26 @@ export const useTableStats = (tables: Table[]) => {
 
   tables.forEach(table => {
     table.guests.forEach(guest => {
-      // Add all guestIds to the assignedGuestIds set
+      // Add all guest IDs to the assignedGuestIds set
       assignedGuestIds.add(guest.guestId);
       
-      // Case 1: Main guest (capogruppo)
-      assignedGroupMemberIds.set(guest.guestId, guest.guestId);
-      
-      // Case 2: Group member format "table-guest-guestId-memberId"
-      if (guest.id.includes('-')) {
-        const parts = guest.id.split('-');
-        if (parts.length === 4) {
-          // Format is "table-guest-guestId-memberId"
-          const guestId = parts[2];
-          const memberId = parts[3];
-          
-          // Mark this member as assigned
-          assignedGroupMemberIds.set(memberId, guestId);
-        }
+      // Always add the guest's ID to track main guests
+      if (guest.guestId) {
+        assignedGroupMemberIds.set(guest.guestId, guest.guestId);
       }
       
-      // Case 3: Directly assigned member (when added individually)
-      if (guest.id.startsWith('table-guest-') && !guest.id.includes('-', 12)) {
-        const directMemberId = guest.id.substring(12); // Remove "table-guest-"
-        assignedGroupMemberIds.set(directMemberId, directMemberId);
+      // Handle group members with format "table-guest-guestId-memberId"
+      const parts = guest.id.split('-');
+      if (parts.length === 4) {
+        const guestId = parts[2];
+        const memberId = parts[3];
+        assignedGroupMemberIds.set(memberId, guestId);
       }
       
-      // Case 4: Extract member ID using our utility function as a fallback
-      const extractedMemberId = extractMemberIdFromGuestId(guest.id);
-      if (extractedMemberId) {
-        assignedGroupMemberIds.set(extractedMemberId, guest.guestId);
+      // Handle direct assignment format "table-guest-memberId"
+      if (parts.length === 3) {
+        const memberId = parts[2];
+        assignedGroupMemberIds.set(memberId, memberId);
       }
     });
   });

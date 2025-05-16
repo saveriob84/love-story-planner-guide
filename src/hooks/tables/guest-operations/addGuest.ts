@@ -37,7 +37,9 @@ export const useAddGuest = ({ tables, setTables }: AddGuestProps) => {
     }
     
     // Count how many unassigned members we have
-    const unassignedMembers = guest.groupMembers.filter(member => !isGroupMemberAssigned(tables, member.id));
+    const unassignedMembers = guest.groupMembers.filter(member => 
+      !isGroupMemberAssigned(tables, member.id)
+    );
     
     // Calculate how many new guests we need to add
     const totalNewGuests = 1 + unassignedMembers.length;
