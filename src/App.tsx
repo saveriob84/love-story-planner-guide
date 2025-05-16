@@ -10,7 +10,6 @@ import Dashboard from "./pages/Dashboard";
 import ChecklistPage from "./pages/ChecklistPage";
 import Budget from "./pages/Budget";
 import GuestsPage from "./pages/GuestsPage";
-import TablePage from "./pages/TablePage";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -29,7 +28,6 @@ const App = () => (
             <Route path="/checklist" element={<ChecklistPage />} />
             <Route path="/budget" element={<Budget />} />
             <Route path="/guests" element={<GuestsPage />} />
-            <Route path="/tables" element={<TablePage />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/calendar" element={<NotFound />} /> {/* Temporary Calendar route */}
             <Route path="/settings" element={<NotFound />} /> {/* Temporary Settings route */}

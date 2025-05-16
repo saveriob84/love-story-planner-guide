@@ -1,4 +1,3 @@
-
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,11 +48,6 @@ const MainLayout = ({ children }: MainLayoutProps) => {
       name: "Ospiti", 
       path: "/guests", 
       icon: <UserIcon className="h-5 w-5" /> 
-    },
-    { 
-      name: "Tavoli", 
-      path: "/tables", 
-      icon: <Utensils className="h-5 w-5" /> 
     },
     { 
       name: "Calendario", 
