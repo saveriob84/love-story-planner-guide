@@ -4,9 +4,11 @@ import { Guest } from "@/types/guest";
 import { Table } from "@/types/table";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { tableDataService } from "./tableDataService";
-import { assignmentService } from "./assignmentService";
-import { localStorageService } from "./localStorageService";
+import { tableDataService } from "./services/tableDataService";
+import { assignmentService } from "./services/assignmentService";
+import { localStorageService } from "./services/localStorageService";
+import { tableService } from "./services/tableService";
+import { formatTablesWithGuests } from "./utils/tableFormatter";
 import { UseTableArrangementReturn } from "./types";
 
 export const useTableArrangement = (guests: Guest[]): UseTableArrangementReturn => {
@@ -41,49 +43,7 @@ export const useTableArrangement = (guests: Guest[]): UseTableArrangementReturn 
         const assignmentsData = await tableDataService.fetchAssignments();
 
         // Format tables with their guests
-        const formattedTables = tablesData.map((table: any) => {
-          // Find all assignments for this table
-          const tableAssignments = assignmentsData?.filter((assignment: any) => 
-            assignment.table_id === table.id
-          ) || [];
-          
-          // Map assignments to TableGuest objects
-          const tableGuests = tableAssignments.map((assignment: any) => {
-            // If it's a main guest
-            if (assignment.guest_id && assignment.guests) {
-              return {
-                id: assignment.guests.id,
-                name: assignment.guests.name,
-                dietaryRestrictions: assignment.guests.dietary_restrictions
-              };
-            }
-            // If it's a group member
-            else if (assignment.group_member_id && assignment.group_members) {
-              return {
-                id: assignment.group_members.id,
-                name: assignment.group_members.name,
-                dietaryRestrictions: assignment.group_members.dietary_restrictions,
-                isGroupMember: true,
-                parentGuestId: assignment.group_members.guest_id
-              };
-            }
-            // Fallback (shouldn't happen with proper constraints)
-            return {
-              id: assignment.id,
-              name: 'Unknown Guest',
-            };
-          });
-
-          // Return the formatted table
-          return {
-            id: table.id,
-            name: table.name,
-            capacity: table.capacity,
-            guests: tableGuests,
-            isSpecial: table.is_special || false
-          };
-        });
-
+        const formattedTables = formatTablesWithGuests(tablesData, assignmentsData);
         setTables(formattedTables);
       } catch (error) {
         console.error('Error loading tables:', error);
@@ -114,12 +74,12 @@ export const useTableArrangement = (guests: Guest[]): UseTableArrangementReturn 
     if (!user?.id) return;
     
     try {
-      const data = await tableDataService.createDefaultTables(user.id);
+      const data = await tableService.createDefaultTables(user.id);
       
       // If we know user names, create and assign them to the "Sposi" table
       if (data && user.name && data[0].id) {
         const sposiTableId = data[0].id;
-        await tableDataService.addCoupleToSposiTable(user, sposiTableId);
+        await tableService.addCoupleToSposiTable(user, sposiTableId);
       }
       
       // Format and set the tables
@@ -395,11 +355,7 @@ export const useTableArrangement = (guests: Guest[]): UseTableArrangementReturn 
   };
 
   // Calculate table statistics
-  const tableStats = {
-    totalTables: tables.length,
-    assignedGuests: tables.reduce((sum, table) => sum + table.guests.length, 0),
-    availableSeats: tables.reduce((sum, table) => sum + table.capacity, 0),
-  };
+  const tableStats = tableService.calculateTableStats(tables);
 
   return {
     tables,
