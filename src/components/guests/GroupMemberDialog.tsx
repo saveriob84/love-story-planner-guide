@@ -32,7 +32,7 @@ const GroupMemberDialog = ({ guest, onClose, onUpdateGuest }: GroupMemberDialogP
     if (guest && editGroupMember.name.trim()) {
       const updatedGuest = { ...guest };
       updatedGuest.groupMembers.push({
-        id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: crypto.randomUUID(), // Use proper UUID format for compatibility with database
         name: editGroupMember.name,
         dietaryRestrictions: editGroupMember.dietaryRestrictions,
         isChild: editGroupMember.isChild

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 import { Guest } from "@/types/guest";
@@ -58,7 +59,7 @@ export const useGuestMutations = (
       // Add group members if provided
       if (guestData.groupMembers && guestData.groupMembers.length > 0) {
         const groupMembersData = guestData.groupMembers.map((member) => ({
-          id: crypto.randomUUID(),
+          id: crypto.randomUUID(), // Use proper UUID format instead of string-based ID
           guest_id: guestId,
           name: member.name,
           dietary_restrictions: member.dietaryRestrictions,
@@ -134,10 +135,10 @@ export const useGuestMutations = (
         }
 
         const currentIds = currentMembers ? currentMembers.map(m => m.id) : [];
-        const updatedIds = updatedData.groupMembers.map(m => m.id);
+        const updatedIds = updatedData.groupMembers.filter(m => m.id && m.id.includes('-') === false).map(m => m.id);
         
         // Find members to delete (in current but not in updated)
-        const idsToDelete = currentIds.filter(id => !updatedIds.includes(id));
+        const idsToDelete = currentIds.filter(currentId => !updatedIds.includes(currentId));
         
         // Delete removed members
         if (idsToDelete.length > 0) {
@@ -154,7 +155,11 @@ export const useGuestMutations = (
 
         // Update or insert members
         for (const member of updatedData.groupMembers) {
-          if (member.id && currentIds.includes(member.id)) {
+          // Check if this is a valid UUID or needs a new one
+          const isExistingMember = member.id && member.id.includes('-') === false;
+          const memberId = isExistingMember ? member.id : crypto.randomUUID();
+          
+          if (isExistingMember && currentIds.includes(memberId)) {
             // Update existing member
             const { error: updateError } = await supabase
               .from('group_members')
@@ -163,7 +168,7 @@ export const useGuestMutations = (
                 dietary_restrictions: member.dietaryRestrictions,
                 is_child: member.isChild
               })
-              .eq('id', member.id);
+              .eq('id', memberId);
 
             if (updateError) {
               console.error("Error updating group member:", updateError);
@@ -174,7 +179,7 @@ export const useGuestMutations = (
             const { error: insertError } = await supabase
               .from('group_members')
               .insert({
-                id: member.id || crypto.randomUUID(),
+                id: memberId,
                 guest_id: id,
                 name: member.name,
                 dietary_restrictions: member.dietaryRestrictions,

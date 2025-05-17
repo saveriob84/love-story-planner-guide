@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PlusCircle, UserPlus, X, Baby } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+
 interface GuestFormCardProps {
   onAddGuest: (guestData: {
     name: string;
@@ -20,6 +22,7 @@ interface GuestFormCardProps {
     groupMembers: GroupMember[];
   }) => void;
 }
+
 const GuestFormCard = ({
   onAddGuest
 }: GuestFormCardProps) => {
@@ -48,7 +51,7 @@ const GuestFormCard = ({
       setNewGuest({
         ...newGuest,
         groupMembers: [...newGuest.groupMembers, {
-          id: `member-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: crypto.randomUUID(), // Use proper UUID format for compatibility with database
           name: tempGroupMember.name,
           dietaryRestrictions: tempGroupMember.dietaryRestrictions,
           isChild: tempGroupMember.isChild
@@ -244,4 +247,5 @@ const GuestFormCard = ({
       </CardContent>
     </Card>;
 };
+
 export default GuestFormCard;
