@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { GuestRow, GroupMemberRow } from "@/types/supabase-types";

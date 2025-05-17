@@ -1,5 +1,5 @@
 
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/AuthContext";
 import { useGuestQueries } from "./useGuestQueries";
 import { useGuestMutations } from "./useGuestMutations";
 import { useGuestStats } from "./useGuestStats";
