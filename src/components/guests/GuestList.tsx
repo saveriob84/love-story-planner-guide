@@ -2,7 +2,8 @@
 import { Guest } from "@/types/guest";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, UserPlus } from "lucide-react";
+import { Mail, UserPlus, Table } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface GuestListProps { 
   guests: Guest[];
@@ -18,6 +19,15 @@ const GuestList = ({ guests, onUpdate, onRemove, onEditMembers }: GuestListProps
   
   return (
     <div className="overflow-x-auto">
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/tables">
+            <Table className="mr-2 h-4 w-4" />
+            Gestisci Tavoli
+          </Link>
+        </Button>
+      </div>
+      
       <table className="w-full border-collapse">
         <thead>
           <tr className="bg-gray-50 text-left">

@@ -1,0 +1,95 @@
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { PlusCircle, Download, FileText } from "lucide-react";
+import { downloadTableArrangement } from "@/utils/tableExporter";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+interface TableActionBarProps {
+  onAddTable: () => void;
+  tables: Array<{
+    id: string;
+    name: string;
+    capacity: number;
+    guests: any[];
+  }>;
+}
+
+export const TableActionBar = ({ onAddTable, tables }: TableActionBarProps) => {
+  const [open, setOpen] = useState(false);
+  const [tableName, setTableName] = useState("");
+  const [capacity, setCapacity] = useState("8");
+
+  const handleAddCustomTable = () => {
+    if (tableName) {
+      const newTable = {
+        id: `table${tables.length + 1}`,
+        name: tableName,
+        capacity: parseInt(capacity) || 8,
+        guests: []
+      };
+      setTableName("");
+      setCapacity("8");
+      setOpen(false);
+      // Call the parent's onAddTable with the new table
+      // For now we'll just use the default implementation
+      onAddTable();
+    }
+  };
+  
+  return (
+    <div className="flex flex-wrap gap-4 mb-6">
+      <Button
+        onClick={onAddTable}
+        className="bg-wedding-gold text-white hover:bg-wedding-gold/90"
+      >
+        <PlusCircle className="mr-2 h-4 w-4" />
+        Aggiungi Tavolo
+      </Button>
+      
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button variant="outline">Tavolo Personalizzato</Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Crea Tavolo Personalizzato</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Nome del tavolo</Label>
+              <Input
+                id="name"
+                value={tableName}
+                onChange={(e) => setTableName(e.target.value)}
+                placeholder="Es. Tavolo Sposi"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="capacity">Numero di posti</Label>
+              <Input
+                id="capacity"
+                type="number"
+                min="1"
+                max="20"
+                value={capacity}
+                onChange={(e) => setCapacity(e.target.value)}
+              />
+            </div>
+            <Button onClick={handleAddCustomTable}>Aggiungi</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      <Button
+        variant="outline"
+        onClick={() => downloadTableArrangement(tables)}
+      >
+        <FileText className="mr-2 h-4 w-4" />
+        Esporta Disposizione
+      </Button>
+    </div>
+  );
+};
