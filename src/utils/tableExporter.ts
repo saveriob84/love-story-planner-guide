@@ -53,12 +53,12 @@ export const downloadTableArrangement = (tables: Table[]) => {
       cellPadding: 5,
     },
     headStyles: {
-      fillColor: [212, 175, 55], // wedding-gold color
-      textColor: [255, 255, 255],
+      fillColor: [212, 175, 55] as [number, number, number], // wedding-gold color
+      textColor: [255, 255, 255] as [number, number, number],
       fontStyle: "bold",
     },
     alternateRowStyles: {
-      fillColor: [247, 205, 213, 0.1], // wedding-blush with transparency
+      fillColor: [247, 205, 213, 0.1] as [number, number, number, number], // wedding-blush with transparency
     },
   });
   
@@ -96,8 +96,8 @@ export const downloadTableArrangement = (tables: Table[]) => {
           cellPadding: 4,
         },
         headStyles: {
-          fillColor: [247, 205, 213], // wedding-blush color
-          textColor: [0, 0, 0],
+          fillColor: [247, 205, 213] as [number, number, number], // wedding-blush color
+          textColor: [0, 0, 0] as [number, number, number],
           fontStyle: "bold",
         },
         margin: { left: 14 },
