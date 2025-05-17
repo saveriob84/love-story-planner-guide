@@ -25,9 +25,9 @@ export const generateGuestPDF = (
   doc.setFont("times", "normal");
   
   // Impostazioni colori
-  const primaryColor = [24, 48, 91]; // wedding-navy in RGB
-  const accentColor = [247, 205, 213]; // wedding-blush in RGB
-  const textColor = [50, 50, 50]; // grigio scuro
+  const primaryColor: [number, number, number] = [24, 48, 91]; // wedding-navy in RGB
+  const accentColor: [number, number, number] = [247, 205, 213]; // wedding-blush in RGB
+  const textColor: [number, number, number] = [50, 50, 50]; // grigio scuro
   
   // Titolo della pagina
   doc.setFontSize(24);
@@ -90,17 +90,17 @@ export const generateGuestPDF = (
       font: 'helvetica',
       fontSize: 10,
       cellPadding: 5,
-      lineColor: [220, 220, 220],
+      lineColor: [220, 220, 220] as [number, number, number],
     },
     headStyles: {
-      fillColor: [247, 205, 213], // wedding-blush in RGB without transparency
+      fillColor: [247, 205, 213] as [number, number, number], // wedding-blush in RGB without transparency
       textColor: primaryColor,
       fontSize: 11,
       fontStyle: 'bold',
       halign: 'left',
     },
     alternateRowStyles: {
-      fillColor: [250, 250, 250],
+      fillColor: [250, 250, 250] as [number, number, number],
     },
     columnStyles: {
       0: { fontStyle: 'bold' }, // Nome guest in grassetto
