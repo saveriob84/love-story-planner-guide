@@ -7,7 +7,7 @@ import { UserRound, Users, Edit, Trash2 } from "lucide-react";
 interface TableCardProps {
   table: Table;
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
-  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDrop: (e: React.DragEvent<HTMLDivElement>, tableId: string) => void;
   onEditTable: (table: Table) => void;
   onDeleteTable: (table: Table) => void;
   handleDragStart: (e: React.DragEvent<HTMLDivElement>, guestId: string) => void;
