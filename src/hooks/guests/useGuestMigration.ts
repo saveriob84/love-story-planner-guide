@@ -9,6 +9,23 @@ export const useGuestMigration = () => {
   // Function to migrate guests from localStorage to Supabase
   const migrateLocalStorageToSupabase = async (localGuests: Guest[], userId: string) => {
     try {
+      // Check if the provided userId is valid or get the current authenticated user
+      let validUserId = userId;
+      
+      // If the userId doesn't look like a UUID, get the authenticated user
+      if (userId.includes('-') && userId.split('-')[0] === 'user') {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.id) {
+          toast({
+            title: "Errore",
+            description: "Per migrare gli ospiti devi essere loggato.",
+            variant: "destructive",
+          });
+          return false;
+        }
+        validUserId = user.id;
+      }
+      
       toast({
         title: "Migrazione dati",
         description: "Stiamo migrando i tuoi ospiti al database...",
@@ -21,7 +38,7 @@ export const useGuestMigration = () => {
           .from('guests')
           .insert({
             id: guest.id,
-            profile_id: userId.toString(), // Ensure profile_id is stored as string
+            profile_id: validUserId,
             name: guest.name,
             email: guest.email,
             phone: guest.phone,

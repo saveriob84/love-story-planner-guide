@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Guest } from "@/types/guest";
 import { useToast } from "@/hooks/use-toast";
@@ -15,18 +16,27 @@ export const useGuestMutations = (
     if (!guestData.name || !guestData.relationship) return false;
     
     try {
-      // Generate a UUID for client-side reference
+      // Generate a UUID for the guest
       const guestId = crypto.randomUUID();
-      const userId = guests.length > 0 && guests[0].id.split('-')[0] 
-        ? guests[0].id.split('-')[0] 
-        : 'user-' + Date.now(); // Fallback
       
-      // Insert the guest into Supabase
+      // Get the current user's ID from the Auth context
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user?.id) {
+        toast({
+          title: "Errore",
+          description: "Per aggiungere ospiti devi essere loggato.",
+          variant: "destructive",
+        });
+        return false;
+      }
+      
+      // Insert the guest into Supabase using the authenticated user's ID
       const { error: guestError } = await supabase
         .from('guests')
         .insert({
           id: guestId,
-          profile_id: userId.toString(), // Ensure profile_id is stored as string
+          profile_id: user.id, // Use the actual Supabase auth user ID
           name: guestData.name,
           email: guestData.email,
           phone: guestData.phone,

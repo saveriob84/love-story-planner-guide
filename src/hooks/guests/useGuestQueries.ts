@@ -21,7 +21,10 @@ export const useGuestQueries = () => {
   const loadGuests = async () => {
     setIsLoading(true);
     try {
-      if (user?.id) {
+      // Check if user is authenticated
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      
+      if (authUser?.id) {
         // Try to fetch from Supabase first
         const { data: supabaseGuests, error } = await supabase
           .from('guests')
@@ -29,7 +32,7 @@ export const useGuestQueries = () => {
             *,
             group_members(*)
           `)
-          .eq('profile_id', user.id.toString()); // Ensure profile_id is treated as string
+          .eq('profile_id', authUser.id); // Use the actual Supabase auth user ID
             
         if (error) {
           console.error("Error fetching guests from Supabase:", error);
@@ -59,7 +62,7 @@ export const useGuestQueries = () => {
           setGuests(formattedGuests);
         } else {
           // Fallback to localStorage for data migration
-          const savedGuests = localStorage.getItem(`wedding_guests_${user.id}`);
+          const savedGuests = localStorage.getItem(`wedding_guests_${authUser.id}`);
           if (savedGuests) {
             const parsedGuests = JSON.parse(savedGuests);
             
@@ -81,6 +84,9 @@ export const useGuestQueries = () => {
             setGuests([]);
           }
         }
+      } else {
+        // No authenticated user
+        setGuests([]);
       }
     } catch (error) {
       console.error("Error loading guests:", error);
@@ -89,6 +95,7 @@ export const useGuestQueries = () => {
         description: "Impossibile caricare la lista degli ospiti.",
         variant: "destructive",
       });
+      setGuests([]);
     } finally {
       setIsLoading(false);
     }
