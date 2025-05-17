@@ -5,7 +5,7 @@ import { useGuests } from "@/hooks/useGuests";
 import { Guest, GroupMember } from "@/types/guest";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, PlusCircle, Download, Users, Table } from "lucide-react";
+import { Search, Users, Table } from "lucide-react";
 import { TableVisualization } from "@/components/tables/TableVisualization";
 import { GuestList } from "@/components/tables/GuestList";
 import { TableStatistics } from "@/components/tables/TableStatistics";
@@ -16,7 +16,7 @@ import { TableGuest, Table as TableType } from "@/types/table";
 
 const TableArrangementPage = () => {
   const { toast } = useToast();
-  const { guests, stats, updateGuest } = useGuests();
+  const { guests, stats } = useGuests();
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmedGuests, setConfirmedGuests] = useState<Guest[]>([]);
   const [filteredGuests, setFilteredGuests] = useState<Guest[]>([]);
@@ -52,6 +52,8 @@ const TableArrangementPage = () => {
 
   // Assign guest to table (works for both main guests and group members)
   const assignGuestToTable = (guestId: string, tableId: string) => {
+    console.log("Assigning guest", guestId, "to table", tableId);
+    
     // First check if it's a main guest or a group member
     let targetGuest: TableGuest | undefined;
     
@@ -75,12 +77,18 @@ const TableArrangementPage = () => {
             isGroupMember: true,
             parentGuestId: guest.id
           };
+          console.log("Found group member", groupMember.name);
           break;
         }
       }
     }
     
-    if (!targetGuest) return;
+    if (!targetGuest) {
+      console.log("Guest not found:", guestId);
+      return;
+    }
+    
+    console.log("Target guest", targetGuest);
     
     // Remove guest from any existing table
     const updatedTables = tables.map(table => ({

@@ -1,8 +1,8 @@
 
-import { useMemo } from "react";
 import { TableGuest, Table } from "@/types/table";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { UserRound, Users } from "lucide-react";
 
 interface TableVisualizationProps {
   tables: Table[];
@@ -57,12 +57,17 @@ export const TableVisualization = ({ tables, onAssignGuest }: TableVisualization
                     key={guest.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, guest.id)}
-                    className={`rounded-lg px-3 py-1.5 text-sm cursor-move transition-colors ${
+                    className={`rounded-lg px-3 py-1.5 text-sm cursor-move transition-colors flex items-center ${
                       guest.isGroupMember 
                         ? "bg-wedding-blush/20 hover:bg-wedding-blush/40" 
                         : "bg-wedding-blush/30 hover:bg-wedding-blush/50"
                     }`}
                   >
+                    {guest.isGroupMember ? (
+                      <UserRound className="h-3 w-3 mr-1 opacity-70" />
+                    ) : (
+                      <Users className="h-3 w-3 mr-1 opacity-70" />
+                    )}
                     {guest.name}
                   </div>
                 ))}

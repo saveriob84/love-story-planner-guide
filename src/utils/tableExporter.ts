@@ -7,21 +7,17 @@ export const downloadTableArrangement = (tables: Table[]) => {
   const doc = new jsPDF();
   
   // Add header/title
-  doc.setFont("serif", "bold");
   doc.setFontSize(20);
   doc.text("Disposizione dei Tavoli", 105, 20, { align: "center" });
   
-  doc.setFont("serif", "normal");
   doc.setFontSize(12);
   doc.text("Piano dei posti a sedere per il matrimonio", 105, 30, { align: "center" });
   doc.text(`Data: ${new Date().toLocaleDateString()}`, 105, 38, { align: "center" });
   
   // Add Summary
-  doc.setFont("serif", "bold");
   doc.setFontSize(14);
   doc.text("Riepilogo", 14, 50);
   
-  doc.setFont("serif", "normal");
   doc.setFontSize(11);
   
   const totalGuests = tables.reduce((sum, table) => sum + table.guests.length, 0);
@@ -58,7 +54,6 @@ export const downloadTableArrangement = (tables: Table[]) => {
   // Add details table for each table
   let currentY = (doc as any).lastAutoTable.finalY + 20;
   
-  doc.setFont("serif", "bold");
   doc.setFontSize(14);
   doc.text("Dettaglio Tavoli", 14, currentY);
   currentY += 10;
@@ -70,7 +65,6 @@ export const downloadTableArrangement = (tables: Table[]) => {
       currentY = 20;
     }
     
-    doc.setFont("serif", "bold");
     doc.setFontSize(12);
     doc.text(`${table.name} (${table.guests.length}/${table.capacity} ospiti)`, 14, currentY);
     currentY += 8;
@@ -99,7 +93,6 @@ export const downloadTableArrangement = (tables: Table[]) => {
       
       currentY = (doc as any).lastAutoTable.finalY + 15;
     } else {
-      doc.setFont("serif", "italic");
       doc.setFontSize(10);
       doc.text("Nessun ospite assegnato a questo tavolo", 14, currentY);
       currentY += 15;
