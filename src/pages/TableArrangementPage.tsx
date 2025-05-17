@@ -57,8 +57,8 @@ const TableArrangementPage = () => {
       guests: table.guests.filter(g => g.id !== guestId)
     }));
     
-    // Add guest to new table if tableId is provided
-    if (tableId) {
+    // Add guest to new table if tableId is provided and not "unassigned"
+    if (tableId && tableId !== "unassigned") {
       const targetTable = updatedTables.find(t => t.id === tableId);
       if (targetTable && targetTable.guests.length < targetTable.capacity) {
         targetTable.guests = [...targetTable.guests, guest];

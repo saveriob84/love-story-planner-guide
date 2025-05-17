@@ -81,7 +81,7 @@ export const GuestList = ({ guests, tables, onAssignGuest }: GuestListProps) => 
                     <SelectValue placeholder="Assegna" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Non assegnato</SelectItem>
+                    <SelectItem value="unassigned">Non assegnato</SelectItem>
                     {tables.map((table) => (
                       <SelectItem 
                         key={table.id} 
