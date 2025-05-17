@@ -12,15 +12,7 @@ import { TableStatistics } from "@/components/tables/TableStatistics";
 import { TableActionBar } from "@/components/tables/TableActionBar";
 import { downloadTableArrangement } from "@/utils/tableExporter";
 import { useToast } from "@/components/ui/use-toast";
-
-// Interfaccia per rappresentare sia ospiti che membri del gruppo nel sistema di assegnazione
-interface TableGuest {
-  id: string;
-  name: string;
-  dietaryRestrictions?: string;
-  isGroupMember?: boolean;
-  parentGuestId?: string;
-}
+import { TableGuest, Table as TableType } from "@/types/table";
 
 const TableArrangementPage = () => {
   const { toast } = useToast();
@@ -28,7 +20,7 @@ const TableArrangementPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmedGuests, setConfirmedGuests] = useState<Guest[]>([]);
   const [filteredGuests, setFilteredGuests] = useState<Guest[]>([]);
-  const [tables, setTables] = useState<Array<{id: string, name: string, capacity: number, guests: TableGuest[]}>>([ 
+  const [tables, setTables] = useState<TableType[]>([ 
     { id: "table1", name: "Tavolo 1", capacity: 8, guests: [] },
     { id: "table2", name: "Tavolo 2", capacity: 8, guests: [] },
     { id: "table3", name: "Tavolo 3", capacity: 8, guests: [] },

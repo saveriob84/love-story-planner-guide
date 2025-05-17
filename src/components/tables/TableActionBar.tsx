@@ -5,17 +5,13 @@ import { PlusCircle, Download, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Table } from "@/types/table";
 
 interface TableActionBarProps {
   onAddTable: () => void;
   onAddCustomTable: (name: string, capacity: number) => void;
   onExportTables: () => void;
-  tables: Array<{
-    id: string;
-    name: string;
-    capacity: number;
-    guests: any[];
-  }>;
+  tables: Table[];
 }
 
 export const TableActionBar = ({ onAddTable, onAddCustomTable, onExportTables, tables }: TableActionBarProps) => {

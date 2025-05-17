@@ -1,24 +1,11 @@
 
 import { useMemo } from "react";
-import { Guest, GroupMember } from "@/types/guest";
+import { TableGuest, Table } from "@/types/table";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-interface TableGuest {
-  id: string;
-  name: string;
-  dietaryRestrictions?: string;
-  isGroupMember?: boolean;
-  parentGuestId?: string;
-}
-
 interface TableVisualizationProps {
-  tables: Array<{
-    id: string;
-    name: string;
-    capacity: number;
-    guests: TableGuest[];
-  }>;
+  tables: Table[];
   onAssignGuest: (guestId: string, tableId: string) => void;
 }
 

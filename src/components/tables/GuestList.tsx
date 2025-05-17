@@ -6,13 +6,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Users } from "lucide-react";
 
+interface TableGuest {
+  id: string;
+  name: string;
+  dietaryRestrictions?: string;
+  isGroupMember?: boolean;
+  parentGuestId?: string;
+}
+
 interface GuestListProps {
   guests: Guest[];
   tables: Array<{
     id: string;
     name: string;
     capacity: number;
-    guests: Guest[];
+    guests: TableGuest[];
   }>;
   onAssignGuest: (guestId: string, tableId: string) => void;
 }
@@ -89,7 +97,7 @@ export const GuestList = ({ guests, tables, onAssignGuest }: GuestListProps) => 
                   </div>
                   
                   <Select 
-                    value={assignedTable} 
+                    value={assignedTable || "unassigned"} 
                     onValueChange={(value) => handleAssignment(guest.id, value)}
                   >
                     <SelectTrigger className="w-[110px] h-8 text-xs">
@@ -118,6 +126,8 @@ export const GuestList = ({ guests, tables, onAssignGuest }: GuestListProps) => 
                     <div 
                       key={member.id}
                       className="border border-dashed rounded-lg p-2 bg-gray-50 hover:shadow-sm transition-shadow"
+                      draggable
+                      onDragStart={(e) => e.dataTransfer.setData("guestId", member.id)}
                     >
                       <div className="flex justify-between gap-2">
                         <div>
@@ -133,7 +143,7 @@ export const GuestList = ({ guests, tables, onAssignGuest }: GuestListProps) => 
                         </div>
                         
                         <Select 
-                          value={getGuestTable(member.id)}
+                          value={getGuestTable(member.id) || "unassigned"}
                           onValueChange={(value) => handleAssignment(member.id, value)}
                         >
                           <SelectTrigger className="w-[110px] h-7 text-xs">

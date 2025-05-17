@@ -1,14 +1,7 @@
 
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { Guest } from "@/types/guest";
-
-interface Table {
-  id: string;
-  name: string;
-  capacity: number;
-  guests: Guest[];
-}
+import { Table, TableGuest } from "@/types/table"; 
 
 export const downloadTableArrangement = (tables: Table[]) => {
   const doc = new jsPDF();
@@ -70,7 +63,7 @@ export const downloadTableArrangement = (tables: Table[]) => {
   doc.text("Dettaglio Tavoli", 14, currentY);
   currentY += 10;
   
-  tables.forEach((table, index) => {
+  tables.forEach((table) => {
     // Check if we need to add a new page
     if (currentY > 250) {
       doc.addPage();
@@ -85,10 +78,10 @@ export const downloadTableArrangement = (tables: Table[]) => {
     if (table.guests.length > 0) {
       autoTable(doc, {
         startY: currentY,
-        head: [["Nome Ospite", "Gruppo", "Dieta"]],
+        head: [["Nome Ospite", "Tipo", "Dieta"]],
         body: table.guests.map(guest => [
           guest.name,
-          guest.groupMembers.length > 0 ? `+${guest.groupMembers.length}` : "-",
+          guest.isGroupMember ? "Membro gruppo" : "Ospite principale",
           guest.dietaryRestrictions || "-"
         ]),
         styles: {
