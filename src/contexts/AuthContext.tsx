@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User, AuthState, LoginCredentials, RegisterCredentials } from "@/types/auth";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
@@ -30,28 +31,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkLoggedInUser = async () => {
       try {
-        // Check localStorage for user data (to be replaced with Supabase auth session)
-        const userData = localStorage.getItem("weddingPlannerUser");
+        // Get current session from Supabase
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (userData) {
-          try {
-            const user = JSON.parse(userData);
-            setAuthState({
-              user,
-              isAuthenticated: true,
-              loading: false,
-              error: null,
-            });
-          } catch (error) {
-            console.error("Failed to parse user data:", error);
-            // Invalid JSON in localStorage, clear it
-            localStorage.removeItem("weddingPlannerUser");
-            setAuthState({
-              ...initialState,
-              loading: false,
-              error: "Session data corrupted",
-            });
-          }
+        if (session?.user) {
+          setAuthState({
+            user: {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata.name,
+              partnerName: session.user.user_metadata.partnerName,
+              weddingDate: session.user.user_metadata.weddingDate 
+                ? new Date(session.user.user_metadata.weddingDate) 
+                : undefined,
+            },
+            isAuthenticated: true,
+            loading: false,
+            error: null,
+          });
         } else {
           setAuthState({
             ...initialState,
@@ -68,47 +65,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setAuthState({
+            user: {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata.name,
+              partnerName: session.user.user_metadata.partnerName,
+              weddingDate: session.user.user_metadata.weddingDate 
+                ? new Date(session.user.user_metadata.weddingDate) 
+                : undefined,
+            },
+            isAuthenticated: true,
+            loading: false,
+            error: null,
+          });
+        } else {
+          setAuthState({
+            ...initialState,
+            loading: false,
+          });
+        }
+      }
+    );
+    
     checkLoggedInUser();
+    
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
   
-  // Login function (to be replaced with Supabase auth)
+  // Login function using Supabase auth
   const login = async (credentials: LoginCredentials) => {
     try {
-      // In a real app, this would be an API call
-      // Mock login for demo purposes
-      // Check local storage for matching registered user
-      let users = [];
-      try {
-        const usersJson = localStorage.getItem('weddingPlannerUsers');
-        users = usersJson ? JSON.parse(usersJson) : [];
-      } catch (error) {
-        console.error("Failed to parse users data:", error);
-        users = [];
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
       
-      const user = users.find((u: any) => 
-        u.email === credentials.email && u.password === credentials.password
-      );
+      if (error) throw error;
       
-      if (user) {
-        const { password, ...userWithoutPassword } = user;
-        
-        // Store the logged-in user
-        localStorage.setItem("weddingPlannerUser", JSON.stringify(userWithoutPassword));
-        
-        setAuthState({
-          user: userWithoutPassword,
-          isAuthenticated: true,
-          loading: false,
-          error: null,
-        });
-        
+      if (data.user) {
         toast({
           title: "Login effettuato",
           description: "Benvenuto nel tuo wedding planner personale!",
         });
-      } else {
-        throw new Error("Email o password non validi");
       }
     } catch (error: any) {
       console.error("Login error:", error);
@@ -127,58 +133,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  // Register function (to be replaced with Supabase auth)
+  // Register function using Supabase auth
   const register = async (credentials: RegisterCredentials) => {
     try {
-      // In a real app, this would be an API call
-      // Here we're storing in localStorage for demo purposes
-      
-      // Get existing users or create empty array
-      let users = [];
-      try {
-        const usersJson = localStorage.getItem('weddingPlannerUsers');
-        users = usersJson ? JSON.parse(usersJson) : [];
-      } catch (error) {
-        console.error("Failed to parse users data:", error);
-        users = [];
-      }
-      
-      // Check if user already exists
-      const existingUser = users.find((u: any) => u.email === credentials.email);
-      if (existingUser) {
-        throw new Error("Un utente con questa email esiste già");
-      }
-      
-      // Create new user
-      const newUser = {
-        id: `user-${Date.now()}`,
+      const { data, error } = await supabase.auth.signUp({
         email: credentials.email,
-        password: credentials.password, // NEVER do this in production!
-        name: credentials.name || "",
-        partnerName: credentials.partnerName || "",
-        weddingDate: credentials.weddingDate || null,
-        createdAt: new Date().toISOString()
-      };
-      
-      // Add to users array and save
-      users.push(newUser);
-      localStorage.setItem('weddingPlannerUsers', JSON.stringify(users));
-      
-      // Login the user (without password)
-      const { password, ...userWithoutPassword } = newUser;
-      localStorage.setItem("weddingPlannerUser", JSON.stringify(userWithoutPassword));
-      
-      setAuthState({
-        user: userWithoutPassword,
-        isAuthenticated: true,
-        loading: false,
-        error: null,
+        password: credentials.password,
+        options: {
+          data: {
+            name: credentials.name,
+            partnerName: credentials.partnerName,
+            weddingDate: credentials.weddingDate?.toISOString(),
+          },
+        },
       });
       
-      toast({
-        title: "Registrazione completata",
-        description: "Il tuo account è stato creato con successo!",
-      });
+      if (error) throw error;
+      
+      if (data.user) {
+        toast({
+          title: "Registrazione completata",
+          description: "Il tuo account è stato creato con successo!",
+        });
+      }
     } catch (error: any) {
       console.error("Registration error:", error);
       setAuthState({
@@ -196,59 +173,65 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  // Logout function (to be replaced with Supabase auth)
-  const logout = () => {
-    localStorage.removeItem("weddingPlannerUser");
+  // Logout function using Supabase auth
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      console.error("Logout error:", error);
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante il logout.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setAuthState({
       user: null,
       isAuthenticated: false,
       loading: false,
       error: null,
     });
+    
     toast({
       title: "Logout effettuato",
       description: "Hai effettuato il logout con successo.",
     });
   };
   
-  // Update user data (to be replaced with Supabase functions)
-  const updateUser = (userData: Partial<User>) => {
+  // Update user data using Supabase auth
+  const updateUser = async (userData: Partial<User>) => {
     if (!authState.user) return;
     
-    const updatedUser = {
-      ...authState.user,
-      ...userData,
-    };
-    
-    // Update in state
-    setAuthState({
-      ...authState,
-      user: updatedUser,
-    });
-    
     try {
-      // Update in localStorage
-      localStorage.setItem("weddingPlannerUser", JSON.stringify(updatedUser));
+      const { data, error } = await supabase.auth.updateUser({
+        data: {
+          name: userData.name,
+          partnerName: userData.partnerName,
+          weddingDate: userData.weddingDate?.toISOString(),
+        },
+      });
       
-      // Update in users array
-      const usersJson = localStorage.getItem('weddingPlannerUsers');
-      if (usersJson) {
-        const users = JSON.parse(usersJson);
-        const updatedUsers = users.map((u: any) => {
-          if (u.id === updatedUser.id) {
-            return { ...u, ...userData, password: u.password };
-          }
-          return u;
+      if (error) throw error;
+      
+      if (data.user) {
+        const updatedUser = {
+          ...authState.user,
+          ...userData,
+        };
+        
+        setAuthState({
+          ...authState,
+          user: updatedUser,
         });
         
-        localStorage.setItem('weddingPlannerUsers', JSON.stringify(updatedUsers));
+        toast({
+          title: "Profilo aggiornato",
+          description: "Le tue informazioni sono state aggiornate con successo.",
+        });
       }
-      
-      toast({
-        title: "Profilo aggiornato",
-        description: "Le tue informazioni sono state aggiornate con successo.",
-      });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating user:", error);
       toast({
         title: "Errore",
