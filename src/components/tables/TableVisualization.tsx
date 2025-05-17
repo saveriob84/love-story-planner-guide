@@ -35,6 +35,10 @@ export const TableVisualization = ({
 
   // Handle dialog for deleting table
   const openDeleteDialog = (table: Table) => {
+    // Prevent deleting the special "Sposi" table
+    if (table.isSpecial || table.name === "Tavolo Sposi") {
+      return;
+    }
     setCurrentTable(table);
     setDeleteDialogOpen(true);
   };
@@ -73,9 +77,19 @@ export const TableVisualization = ({
     return <EmptyTableDisplay />;
   }
 
+  // Sort tables to ensure special tables (like "Sposi") appear first
+  const sortedTables = [...tables].sort((a, b) => {
+    // Special tables come first
+    if (a.isSpecial && !b.isSpecial) return -1;
+    if (!a.isSpecial && b.isSpecial) return 1;
+    
+    // Then sort by name
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {tables.map((table) => (
+      {sortedTables.map((table) => (
         <TableCard
           key={table.id}
           table={table}

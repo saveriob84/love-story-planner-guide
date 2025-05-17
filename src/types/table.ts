@@ -12,4 +12,5 @@ export interface Table {
   name: string;
   capacity: number;
   guests: TableGuest[];
+  isSpecial?: boolean;
 }

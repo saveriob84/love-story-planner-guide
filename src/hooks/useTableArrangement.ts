@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { TableGuest, Table } from "@/types/table";
@@ -94,7 +95,8 @@ export const useTableArrangement = (guests: Guest[]) => {
             id: table.id,
             name: table.name,
             capacity: table.capacity,
-            guests: tableGuests
+            guests: tableGuests,
+            isSpecial: table.is_special || false
           };
         });
 
@@ -122,26 +124,91 @@ export const useTableArrangement = (guests: Guest[]) => {
     if (!user?.id) return;
     
     try {
+      // Create the Sposi table first
+      const sposiTable = {
+        name: 'Tavolo Sposi',
+        capacity: 2,
+        profile_id: user.id,
+        is_special: true
+      };
+
       // Default tables to create
       const defaultTables = [
-        { name: 'Tavolo 1', capacity: 8 },
-        { name: 'Tavolo 2', capacity: 8 },
-        { name: 'Tavolo 3', capacity: 8 }
+        sposiTable,
+        { name: 'Tavolo 1', capacity: 8, profile_id: user.id },
+        { name: 'Tavolo 2', capacity: 8, profile_id: user.id },
+        { name: 'Tavolo 3', capacity: 8, profile_id: user.id }
       ];
       
       // Insert the tables
       const { data, error } = await supabase
         .from('tables')
-        .insert(defaultTables.map(table => ({
-          name: table.name,
-          capacity: table.capacity,
-          profile_id: user.id
-        })))
+        .insert(defaultTables)
         .select();
       
       if (error) {
         console.error('Error creating default tables:', error);
         throw error;
+      }
+
+      // If we know user names, create and assign them to the "Sposi" table
+      if (data && user.name && data[0].id) {
+        const sposiTableId = data[0].id;
+        
+        // Create a guest entry for both partners if they don't exist yet
+        const coupleNames = [];
+        
+        if (user.name) {
+          coupleNames.push(user.name);
+          
+          // Insert the first partner as a guest
+          const { data: guestData, error: guestError } = await supabase
+            .from('guests')
+            .insert({
+              name: user.name,
+              profile_id: user.id,
+              relationship: 'Sposa/Sposo',
+              rsvp: 'confirmed'
+            })
+            .select('id')
+            .single();
+            
+          if (!guestError && guestData) {
+            // Assign the first partner to the Sposi table
+            await supabase
+              .from('table_assignments')
+              .insert({
+                table_id: sposiTableId,
+                guest_id: guestData.id
+              });
+          }
+        }
+        
+        if (user.partnerName) {
+          coupleNames.push(user.partnerName);
+          
+          // Insert the second partner as a guest
+          const { data: partnerData, error: partnerError } = await supabase
+            .from('guests')
+            .insert({
+              name: user.partnerName,
+              profile_id: user.id,
+              relationship: 'Sposa/Sposo',
+              rsvp: 'confirmed'
+            })
+            .select('id')
+            .single();
+            
+          if (!partnerError && partnerData) {
+            // Assign the second partner to the Sposi table
+            await supabase
+              .from('table_assignments')
+              .insert({
+                table_id: sposiTableId,
+                guest_id: partnerData.id
+              });
+          }
+        }
       }
       
       // Format and set the tables
@@ -149,7 +216,8 @@ export const useTableArrangement = (guests: Guest[]) => {
         id: table.id,
         name: table.name,
         capacity: table.capacity,
-        guests: []
+        guests: [],
+        isSpecial: table.is_special || false
       }));
       
       setTables(formattedTables);
@@ -449,14 +517,15 @@ export const useTableArrangement = (guests: Guest[]) => {
     if (!user?.id) return;
     
     try {
-      const newName = `Tavolo ${tables.length + 1}`;
+      const newName = `Tavolo ${tables.length}`;
       
       const { data, error } = await supabase
         .from('tables')
         .insert({
           name: newName,
           capacity: 8,
-          profile_id: user.id
+          profile_id: user.id,
+          is_special: false
         })
         .select()
         .single();
@@ -475,7 +544,8 @@ export const useTableArrangement = (guests: Guest[]) => {
         id: data.id,
         name: data.name,
         capacity: data.capacity,
-        guests: []
+        guests: [],
+        isSpecial: data.is_special
       };
       
       setTables([...tables, newTable]);
@@ -504,7 +574,8 @@ export const useTableArrangement = (guests: Guest[]) => {
         .insert({
           name,
           capacity,
-          profile_id: user.id
+          profile_id: user.id,
+          is_special: false
         })
         .select()
         .single();
@@ -523,7 +594,8 @@ export const useTableArrangement = (guests: Guest[]) => {
         id: data.id,
         name: data.name,
         capacity: data.capacity,
-        guests: []
+        guests: [],
+        isSpecial: data.is_special
       };
       
       setTables([...tables, newTable]);
