@@ -1,3 +1,4 @@
+
 import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layouts/MainLayout";
@@ -8,6 +9,7 @@ import GuestList from "@/components/guests/GuestList";
 import GuestFormCard from "@/components/guests/GuestFormCard";
 import GuestStats from "@/components/guests/GuestStats";
 import GroupMemberDialog from "@/components/guests/GroupMemberDialog";
+import EditGuestDialog from "@/components/guests/EditGuestDialog";
 import { useGuests } from "@/hooks/useGuests";
 import { Guest } from "@/types/guest";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,7 @@ const GuestsPage = () => {
   } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
+  const [editingGuestData, setEditingGuestData] = useState<Guest | null>(null);
   const [showPrintDialog, setShowPrintDialog] = useState(false);
   const {
     guests,
@@ -120,19 +123,43 @@ const GuestsPage = () => {
             </TabsList>
             
             <TabsContent value="all">
-              <GuestList guests={filteredGuests()} onUpdate={updateGuest} onRemove={removeGuest} onEditMembers={setEditingGuest} />
+              <GuestList 
+                guests={filteredGuests()} 
+                onUpdate={updateGuest} 
+                onRemove={removeGuest} 
+                onEditMembers={setEditingGuest}
+                onEditGuest={setEditingGuestData} 
+              />
             </TabsContent>
             
             <TabsContent value="confirmed">
-              <GuestList guests={filteredGuests("confirmed")} onUpdate={updateGuest} onRemove={removeGuest} onEditMembers={setEditingGuest} />
+              <GuestList 
+                guests={filteredGuests("confirmed")} 
+                onUpdate={updateGuest} 
+                onRemove={removeGuest} 
+                onEditMembers={setEditingGuest}
+                onEditGuest={setEditingGuestData} 
+              />
             </TabsContent>
             
             <TabsContent value="pending">
-              <GuestList guests={filteredGuests("pending")} onUpdate={updateGuest} onRemove={removeGuest} onEditMembers={setEditingGuest} />
+              <GuestList 
+                guests={filteredGuests("pending")} 
+                onUpdate={updateGuest} 
+                onRemove={removeGuest} 
+                onEditMembers={setEditingGuest}
+                onEditGuest={setEditingGuestData} 
+              />
             </TabsContent>
             
             <TabsContent value="declined">
-              <GuestList guests={filteredGuests("declined")} onUpdate={updateGuest} onRemove={removeGuest} onEditMembers={setEditingGuest} />
+              <GuestList 
+                guests={filteredGuests("declined")} 
+                onUpdate={updateGuest} 
+                onRemove={removeGuest} 
+                onEditMembers={setEditingGuest}
+                onEditGuest={setEditingGuestData} 
+              />
             </TabsContent>
           </Tabs>
         </div>
@@ -140,6 +167,9 @@ const GuestsPage = () => {
 
       {/* Dialog per modificare i membri del gruppo */}
       <GroupMemberDialog guest={editingGuest} onClose={() => setEditingGuest(null)} onUpdateGuest={updateGuest} />
+      
+      {/* Dialog per modificare l'ospite */}
+      <EditGuestDialog guest={editingGuestData} onClose={() => setEditingGuestData(null)} onUpdate={updateGuest} />
     </MainLayout>;
 };
 export default GuestsPage;

@@ -2,7 +2,7 @@
 import { Guest } from "@/types/guest";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, UserPlus, Table } from "lucide-react";
+import { Mail, UserPlus, Table, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface GuestListProps { 
@@ -10,9 +10,10 @@ interface GuestListProps {
   onUpdate: (id: string, updates: Partial<Guest>) => void;
   onRemove: (id: string) => void;
   onEditMembers: (guest: Guest) => void;
+  onEditGuest: (guest: Guest) => void;
 }
 
-const GuestList = ({ guests, onUpdate, onRemove, onEditMembers }: GuestListProps) => {
+const GuestList = ({ guests, onUpdate, onRemove, onEditMembers, onEditGuest }: GuestListProps) => {
   if (guests.length === 0) {
     return <p className="text-gray-500">Nessun ospite trovato.</p>;
   }
@@ -88,6 +89,15 @@ const GuestList = ({ guests, onUpdate, onRemove, onEditMembers }: GuestListProps
               </td>
               <td className="px-4 py-3">
                 <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEditGuest(guest)}
+                    className="flex items-center"
+                  >
+                    <Pencil className="h-4 w-4 mr-1" />
+                    Modifica
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
