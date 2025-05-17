@@ -58,7 +58,7 @@ export const downloadTableArrangement = (tables: Table[]) => {
       fontStyle: "bold",
     },
     alternateRowStyles: {
-      fillColor: [247, 205, 213, 0.1] as [number, number, number, number], // wedding-blush with transparency
+      fillColor: [247, 205, 213] as [number, number, number], // wedding-blush without transparency
     },
   });
   
