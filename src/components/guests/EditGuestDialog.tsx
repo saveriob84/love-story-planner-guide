@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,12 +16,12 @@ interface EditGuestDialogProps {
 const EditGuestDialog = ({ guest, onClose, onUpdate }: EditGuestDialogProps) => {
   const [editedGuest, setEditedGuest] = useState<Partial<Guest>>({});
 
-  // Initialize form when guest changes
-  useState(() => {
+  // Initialize form when guest changes - fixed to use useEffect instead of useState
+  useEffect(() => {
     if (guest) {
       setEditedGuest({ ...guest });
     }
-  });
+  }, [guest]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

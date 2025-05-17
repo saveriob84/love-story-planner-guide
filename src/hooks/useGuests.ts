@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export const useGuests = () => {
   const { user } = useAuth();
@@ -10,7 +10,7 @@ export const useGuests = () => {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Load guests from localStorage
+  // Load guests from localStorage (to be replaced with Supabase in the next phase)
   useEffect(() => {
     const loadGuests = () => {
       setIsLoading(true);
@@ -51,7 +51,7 @@ export const useGuests = () => {
     loadGuests();
   }, [user?.id, toast]);
   
-  // Save guests to localStorage whenever the list changes
+  // Save guests to localStorage whenever the list changes (to be replaced with Supabase)
   useEffect(() => {
     try {
       if (user?.id) {

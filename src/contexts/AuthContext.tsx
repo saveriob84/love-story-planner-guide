@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const checkLoggedInUser = async () => {
       try {
-        // Check localStorage for user data
+        // Check localStorage for user data (to be replaced with Supabase auth session)
         const userData = localStorage.getItem("weddingPlannerUser");
         
         if (userData) {
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkLoggedInUser();
   }, []);
   
-  // Login function (simple mock implementation)
+  // Login function (to be replaced with Supabase auth)
   const login = async (credentials: LoginCredentials) => {
     try {
       // In a real app, this would be an API call
@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  // Register function
+  // Register function (to be replaced with Supabase auth)
   const register = async (credentials: RegisterCredentials) => {
     try {
       // In a real app, this would be an API call
@@ -196,7 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  // Logout function
+  // Logout function (to be replaced with Supabase auth)
   const logout = () => {
     localStorage.removeItem("weddingPlannerUser");
     setAuthState({
@@ -211,7 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
   
-  // Update user data
+  // Update user data (to be replaced with Supabase functions)
   const updateUser = (userData: Partial<User>) => {
     if (!authState.user) return;
     
