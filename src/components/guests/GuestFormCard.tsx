@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PlusCircle, UserPlus, X, Baby } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
-
 interface GuestFormCardProps {
   onAddGuest: (guestData: {
     name: string;
@@ -223,14 +221,10 @@ const GuestFormCard = ({
             </div>
 
             <div className="flex items-center space-x-2 mt-4">
-              <Checkbox 
-                id="childMenu" 
-                checked={tempGroupMember.isChild} 
-                onCheckedChange={(checked) => setTempGroupMember({
-                  ...tempGroupMember,
-                  isChild: checked === true ? true : false
-                })} 
-              />
+              <Checkbox id="childMenu" checked={tempGroupMember.isChild} onCheckedChange={checked => setTempGroupMember({
+              ...tempGroupMember,
+              isChild: checked === true ? true : false
+            })} />
               <Label htmlFor="childMenu" className="flex items-center">
                 <Baby className="h-4 w-4 mr-1 text-blue-500" /> 
                 Bambino / Menù bambino
@@ -244,7 +238,7 @@ const GuestFormCard = ({
           </div>
         </div>
         
-        <Button onClick={handleAddGuest} className="mt-6 bg-red-500 hover:bg-red-400 text-zinc-950">
+        <Button onClick={handleAddGuest} className="mt-6 text-zinc-950 bg-[#ee4444]/[0.84]">
           <PlusCircle className="h-4 w-4 mr-2" /> Aggiungi ospite
         </Button>
       </CardContent>
