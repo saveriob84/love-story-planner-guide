@@ -1,28 +1,27 @@
 
-import { Guest } from "@/types/guest";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Guest } from "@/types/guest";
 
 export const useGuestMigration = () => {
   const { toast } = useToast();
-  
-  // Migrate data from localStorage to Supabase
+
+  // Function to migrate guests from localStorage to Supabase
   const migrateLocalStorageToSupabase = async (localGuests: Guest[], userId: string) => {
     try {
-      if (!userId) return;
-      
       toast({
         title: "Migrazione dati",
-        description: "Sto migrando i tuoi dati al nuovo database...",
+        description: "Stiamo migrando i tuoi ospiti al database...",
       });
-      
+
+      // Process each guest
       for (const guest of localGuests) {
-        // Insert main guest
-        const { data: insertedGuest, error: guestError } = await supabase
+        // Insert the guest
+        const { error: guestError } = await supabase
           .from('guests')
           .insert({
             id: guest.id,
-            profile_id: userId,
+            profile_id: userId.toString(), // Ensure profile_id is stored as string
             name: guest.name,
             email: guest.email,
             phone: guest.phone,
@@ -31,46 +30,47 @@ export const useGuestMigration = () => {
             plus_one: guest.plusOne,
             dietary_restrictions: guest.dietaryRestrictions,
             notes: guest.notes
-          })
-          .select()
-          .single();
-          
+          });
+
         if (guestError) {
           console.error("Error migrating guest:", guestError);
           continue;
         }
-        
-        // Insert group members if any
-        if (guest.groupMembers.length > 0) {
+
+        // Process group members if any
+        if (guest.groupMembers && guest.groupMembers.length > 0) {
           const groupMembersData = guest.groupMembers.map(member => ({
+            id: member.id,
             guest_id: guest.id,
             name: member.name,
             dietary_restrictions: member.dietaryRestrictions,
             is_child: member.isChild
           }));
-          
+
+          // Insert group members
           const { error: groupError } = await supabase
             .from('group_members')
             .insert(groupMembersData);
-            
+
           if (groupError) {
             console.error("Error migrating group members:", groupError);
           }
         }
       }
-      
+
+      // Clear localStorage after successful migration
+      localStorage.removeItem(`wedding_guests_${userId}`);
+
       toast({
         title: "Migrazione completata",
-        description: "I tuoi dati sono stati migrati con successo!",
+        description: "I tuoi ospiti sono stati migrati con successo.",
       });
-      
-      // Clear localStorage data after successful migration
-      localStorage.removeItem(`wedding_guests_${userId}`);
+
       return true;
     } catch (error) {
       console.error("Error during migration:", error);
       toast({
-        title: "Errore di migrazione",
+        title: "Errore",
         description: "Si è verificato un errore durante la migrazione dei dati.",
         variant: "destructive",
       });

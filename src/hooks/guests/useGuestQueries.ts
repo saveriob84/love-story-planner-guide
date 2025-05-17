@@ -29,7 +29,7 @@ export const useGuestQueries = () => {
             *,
             group_members(*)
           `)
-          .eq('profile_id', user.id);
+          .eq('profile_id', user.id.toString()); // Ensure profile_id is treated as string
             
         if (error) {
           console.error("Error fetching guests from Supabase:", error);

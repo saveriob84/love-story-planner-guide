@@ -17,23 +17,16 @@ export const useGuestMutations = (
     try {
       // Generate a UUID for client-side reference
       const guestId = crypto.randomUUID();
-      const userId = guests.length > 0 ? guests[0].id.split('-')[0] : undefined;
-      
-      if (!userId) {
-        toast({
-          title: "Errore",
-          description: "Impossibile determinare l'utente corrente.",
-          variant: "destructive",
-        });
-        return false;
-      }
+      const userId = guests.length > 0 && guests[0].id.split('-')[0] 
+        ? guests[0].id.split('-')[0] 
+        : 'user-' + Date.now(); // Fallback
       
       // Insert the guest into Supabase
       const { error: guestError } = await supabase
         .from('guests')
         .insert({
           id: guestId,
-          profile_id: userId,
+          profile_id: userId.toString(), // Ensure profile_id is stored as string
           name: guestData.name,
           email: guestData.email,
           phone: guestData.phone,
