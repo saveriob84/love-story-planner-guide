@@ -1,15 +1,23 @@
 
 import { useMemo } from "react";
-import { Guest } from "@/types/guest";
+import { Guest, GroupMember } from "@/types/guest";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+
+interface TableGuest {
+  id: string;
+  name: string;
+  dietaryRestrictions?: string;
+  isGroupMember?: boolean;
+  parentGuestId?: string;
+}
 
 interface TableVisualizationProps {
   tables: Array<{
     id: string;
     name: string;
     capacity: number;
-    guests: Guest[];
+    guests: TableGuest[];
   }>;
   onAssignGuest: (guestId: string, tableId: string) => void;
 }
@@ -62,7 +70,11 @@ export const TableVisualization = ({ tables, onAssignGuest }: TableVisualization
                     key={guest.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, guest.id)}
-                    className="bg-wedding-blush/30 rounded-lg px-3 py-1.5 text-sm cursor-move hover:bg-wedding-blush/50 transition-colors"
+                    className={`rounded-lg px-3 py-1.5 text-sm cursor-move transition-colors ${
+                      guest.isGroupMember 
+                        ? "bg-wedding-blush/20 hover:bg-wedding-blush/40" 
+                        : "bg-wedding-blush/30 hover:bg-wedding-blush/50"
+                    }`}
                   >
                     {guest.name}
                   </div>

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/layouts/MainLayout";
 import { useGuests } from "@/hooks/useGuests";
-import { Guest } from "@/types/guest";
+import { Guest, GroupMember } from "@/types/guest";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, PlusCircle, Download, Users, Table } from "lucide-react";
@@ -13,13 +13,22 @@ import { TableActionBar } from "@/components/tables/TableActionBar";
 import { downloadTableArrangement } from "@/utils/tableExporter";
 import { useToast } from "@/components/ui/use-toast";
 
+// Interfaccia per rappresentare sia ospiti che membri del gruppo nel sistema di assegnazione
+interface TableGuest {
+  id: string;
+  name: string;
+  dietaryRestrictions?: string;
+  isGroupMember?: boolean;
+  parentGuestId?: string;
+}
+
 const TableArrangementPage = () => {
   const { toast } = useToast();
   const { guests, stats, updateGuest } = useGuests();
   const [searchTerm, setSearchTerm] = useState("");
   const [confirmedGuests, setConfirmedGuests] = useState<Guest[]>([]);
   const [filteredGuests, setFilteredGuests] = useState<Guest[]>([]);
-  const [tables, setTables] = useState<Array<{id: string, name: string, capacity: number, guests: Guest[]}>>([
+  const [tables, setTables] = useState<Array<{id: string, name: string, capacity: number, guests: TableGuest[]}>>([ 
     { id: "table1", name: "Tavolo 1", capacity: 8, guests: [] },
     { id: "table2", name: "Tavolo 2", capacity: 8, guests: [] },
     { id: "table3", name: "Tavolo 3", capacity: 8, guests: [] },
@@ -40,16 +49,46 @@ const TableArrangementPage = () => {
     } else {
       setFilteredGuests(
         confirmedGuests.filter((guest) =>
-          guest.name.toLowerCase().includes(value.toLowerCase())
+          guest.name.toLowerCase().includes(value.toLowerCase()) ||
+          guest.groupMembers.some(member => 
+            member.name.toLowerCase().includes(value.toLowerCase())
+          )
         )
       );
     }
   };
 
-  // Assign guest to table
+  // Assign guest to table (works for both main guests and group members)
   const assignGuestToTable = (guestId: string, tableId: string) => {
-    const guest = guests.find(g => g.id === guestId);
-    if (!guest) return;
+    // First check if it's a main guest or a group member
+    let targetGuest: TableGuest | undefined;
+    
+    // Find among main guests
+    const mainGuest = guests.find(g => g.id === guestId);
+    if (mainGuest) {
+      targetGuest = {
+        id: mainGuest.id,
+        name: mainGuest.name,
+        dietaryRestrictions: mainGuest.dietaryRestrictions
+      };
+    } else {
+      // If not a main guest, look among group members
+      for (const guest of guests) {
+        const groupMember = guest.groupMembers.find(m => m.id === guestId);
+        if (groupMember) {
+          targetGuest = {
+            id: groupMember.id,
+            name: groupMember.name,
+            dietaryRestrictions: groupMember.dietaryRestrictions,
+            isGroupMember: true,
+            parentGuestId: guest.id
+          };
+          break;
+        }
+      }
+    }
+    
+    if (!targetGuest) return;
     
     // Remove guest from any existing table
     const updatedTables = tables.map(table => ({
@@ -61,16 +100,16 @@ const TableArrangementPage = () => {
     if (tableId && tableId !== "unassigned") {
       const targetTable = updatedTables.find(t => t.id === tableId);
       if (targetTable && targetTable.guests.length < targetTable.capacity) {
-        targetTable.guests = [...targetTable.guests, guest];
+        targetTable.guests = [...targetTable.guests, targetGuest];
         toast({
           title: "Ospite assegnato",
-          description: `${guest.name} è stato assegnato a ${targetTable.name}`,
+          description: `${targetGuest.name} è stato assegnato a ${targetTable.name}`,
         });
       }
     } else {
       toast({
         title: "Ospite rimosso",
-        description: `${guest.name} è stato rimosso dal tavolo`,
+        description: `${targetGuest.name} è stato rimosso dal tavolo`,
       });
     }
     
