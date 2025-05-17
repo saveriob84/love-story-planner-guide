@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +5,7 @@ import { DropResult } from "@hello-pangea/dnd";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Button } from "@/components/ui/button";
 import { useWeddingTasks, WeddingTask } from "@/hooks/useWeddingTasks";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import CategoryFilter from "@/components/checklist/CategoryFilter";
 import TaskList from "@/components/checklist/TaskList";

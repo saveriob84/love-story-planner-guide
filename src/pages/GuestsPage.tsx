@@ -1,6 +1,5 @@
-
 import { useState, useRef } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/AuthContext";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Input } from "@/components/ui/input";
 import { Search, FileText, Download } from "lucide-react";

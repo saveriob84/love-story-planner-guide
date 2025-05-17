@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { TableGuest, Table } from "@/types/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/AuthContext";
 
 export const useTableArrangement = (guests: Guest[]) => {
   const { toast } = useToast();

@@ -1,7 +1,6 @@
-
 import { useState, FormEvent } from 'react';
 import MainLayout from "@/components/layouts/MainLayout";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

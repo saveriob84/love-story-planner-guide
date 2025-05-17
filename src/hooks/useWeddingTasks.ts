@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth/AuthContext";
 import { WeddingTask } from './wedding-tasks/types';
 import { useTaskManager } from './wedding-tasks/task-manager';
 import { useTimelineManager } from './wedding-tasks/timeline-manager';
