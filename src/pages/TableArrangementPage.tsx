@@ -28,6 +28,18 @@ const TableArrangementPage = () => {
     tableStats
   } = useTableArrangement(guests);
 
+  // Calculate total guests including group members
+  const calculateTotalGuests = () => {
+    let total = 0;
+    for (const guest of confirmedGuests) {
+      // Count the main guest
+      total += 1;
+      // Count group members
+      total += guest.groupMembers.length;
+    }
+    return total;
+  };
+
   // Filter only confirmed guests
   useEffect(() => {
     const onlyConfirmed = guests.filter(g => g.rsvp === "confirmed");
@@ -89,7 +101,7 @@ const TableArrangementPage = () => {
             />
             
             <TableStatistics
-              totalGuests={stats.confirmedGuests}
+              totalGuests={calculateTotalGuests()}
               totalTables={tableStats.totalTables}
               assignedGuests={tableStats.assignedGuests}
               availableSeats={tableStats.availableSeats}

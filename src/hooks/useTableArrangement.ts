@@ -161,6 +161,7 @@ export const useTableArrangement = (guests: Guest[]) => {
   // Calculate table statistics
   const tableStats = {
     totalTables: tables.length,
+    // Count the total number of guests assigned to tables (including group members)
     assignedGuests: tables.reduce((sum, table) => sum + table.guests.length, 0),
     availableSeats: tables.reduce((sum, table) => sum + table.capacity, 0),
   };
