@@ -2,14 +2,70 @@
 import { TableGuest, Table } from "@/types/table";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { UserRound, Users } from "lucide-react";
+import { UserRound, Users, Edit, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useState } from "react";
 
 interface TableVisualizationProps {
   tables: Table[];
   onAssignGuest: (guestId: string, tableId: string) => void;
+  onEditTable?: (tableId: string, name: string, capacity: number) => void;
+  onDeleteTable?: (tableId: string) => void;
 }
 
-export const TableVisualization = ({ tables, onAssignGuest }: TableVisualizationProps) => {
+export const TableVisualization = ({ 
+  tables, 
+  onAssignGuest,
+  onEditTable,
+  onDeleteTable
+}: TableVisualizationProps) => {
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [currentTable, setCurrentTable] = useState<Table | null>(null);
+  const [tableName, setTableName] = useState("");
+  const [tableCapacity, setTableCapacity] = useState("");
+
+  // Handle dialog for editing table
+  const openEditDialog = (table: Table) => {
+    setCurrentTable(table);
+    setTableName(table.name);
+    setTableCapacity(table.capacity.toString());
+    setEditDialogOpen(true);
+  };
+
+  // Handle dialog for deleting table
+  const openDeleteDialog = (table: Table) => {
+    setCurrentTable(table);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle save table edits
+  const handleSaveEdit = () => {
+    if (currentTable && onEditTable) {
+      onEditTable(currentTable.id, tableName, parseInt(tableCapacity) || currentTable.capacity);
+    }
+    setEditDialogOpen(false);
+  };
+
   // Handle drag events
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, guestId: string) => {
     e.dataTransfer.setData("guestId", guestId);
@@ -45,8 +101,32 @@ export const TableVisualization = ({ tables, onAssignGuest }: TableVisualization
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, table.id)}
         >
-          <div className="absolute top-0 left-0 right-0 bg-wedding-gold/20 px-4 py-2 text-center">
+          <div className="absolute top-0 left-0 right-0 bg-wedding-gold/20 px-4 py-2 text-center flex justify-between items-center">
+            <div className="w-8">
+              {onDeleteTable && (
+                <button 
+                  onClick={() => openDeleteDialog(table)}
+                  className="text-gray-600 hover:text-red-600 transition-colors"
+                  aria-label="Elimina tavolo"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            
             <h3 className="font-serif text-lg font-medium">{table.name}</h3>
+            
+            <div className="w-8 text-right">
+              {onEditTable && (
+                <button 
+                  onClick={() => openEditDialog(table)}
+                  className="text-gray-600 hover:text-wedding-gold transition-colors"
+                  aria-label="Modifica tavolo"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="mt-12 p-4">
@@ -57,7 +137,7 @@ export const TableVisualization = ({ tables, onAssignGuest }: TableVisualization
                     key={guest.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, guest.id)}
-                    className={`rounded-lg px-3 py-1.5 text-sm cursor-move transition-colors flex items-center ${
+                    className={`rounded-lg px-3 py-1.5 text-sm cursor-move transition-colors ${
                       guest.isGroupMember 
                         ? "bg-wedding-blush/20 hover:bg-wedding-blush/40" 
                         : "bg-wedding-blush/30 hover:bg-wedding-blush/50"
@@ -89,6 +169,66 @@ export const TableVisualization = ({ tables, onAssignGuest }: TableVisualization
           </div>
         </Card>
       ))}
+
+      {/* Edit Table Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifica tavolo</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-name">Nome del tavolo</Label>
+              <Input
+                id="edit-name"
+                value={tableName}
+                onChange={(e) => setTableName(e.target.value)}
+                placeholder="Es. Tavolo Sposi"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-capacity">Numero di posti</Label>
+              <Input
+                id="edit-capacity"
+                type="number"
+                min="1"
+                max="20"
+                value={tableCapacity}
+                onChange={(e) => setTableCapacity(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Annulla</Button>
+            <Button onClick={handleSaveEdit}>Salva modifiche</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Table Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Sei sicuro di voler eliminare questo tavolo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Questa azione rimuoverà "{currentTable?.name}" e tutti gli ospiti assegnati verranno rimossi dal tavolo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annulla</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (currentTable && onDeleteTable) {
+                  onDeleteTable(currentTable.id);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Elimina
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

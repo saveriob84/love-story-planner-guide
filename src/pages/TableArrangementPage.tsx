@@ -11,7 +11,7 @@ import { GuestList } from "@/components/tables/GuestList";
 import { TableStatistics } from "@/components/tables/TableStatistics";
 import { TableActionBar } from "@/components/tables/TableActionBar";
 import { downloadTableArrangement } from "@/utils/tableExporter";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { TableGuest, Table as TableType } from "@/types/table";
 
 const TableArrangementPage = () => {
@@ -148,6 +148,54 @@ const TableArrangementPage = () => {
     });
   };
 
+  // Edit existing table
+  const editTable = (tableId: string, name: string, capacity: number) => {
+    const updatedTables = tables.map(table => {
+      if (table.id === tableId) {
+        // If new capacity is less than current guests, don't allow the change
+        if (capacity < table.guests.length) {
+          toast({
+            title: "Errore",
+            description: `Non puoi ridurre la capacità a ${capacity} perché ci sono già ${table.guests.length} ospiti assegnati.`,
+            variant: "destructive",
+          });
+          return table;
+        }
+        
+        return {
+          ...table,
+          name,
+          capacity
+        };
+      }
+      return table;
+    });
+    
+    setTables(updatedTables);
+    toast({
+      title: "Tavolo modificato",
+      description: `Il tavolo è stato aggiornato con successo`,
+    });
+  };
+
+  // Delete table
+  const deleteTable = (tableId: string) => {
+    const tableToDelete = tables.find(t => t.id === tableId);
+    if (!tableToDelete) return;
+    
+    const hasGuests = tableToDelete.guests.length > 0;
+    
+    const updatedTables = tables.filter(table => table.id !== tableId);
+    setTables(updatedTables);
+    
+    toast({
+      title: "Tavolo eliminato",
+      description: hasGuests 
+        ? `${tableToDelete.name} è stato eliminato e ${tableToDelete.guests.length} ospiti sono stati rimossi dal tavolo` 
+        : `${tableToDelete.name} è stato eliminato con successo`,
+    });
+  };
+
   // Export table arrangement
   const handleExportTables = () => {
     downloadTableArrangement(tables);
@@ -172,6 +220,8 @@ const TableArrangementPage = () => {
               <TableVisualization 
                 tables={tables} 
                 onAssignGuest={assignGuestToTable} 
+                onEditTable={editTable}
+                onDeleteTable={deleteTable}
               />
             </div>
             
