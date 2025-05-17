@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layouts/MainLayout";
 import { useGuests } from "@/hooks/useGuests";
 import { Guest } from "@/types/guest";
@@ -10,25 +10,36 @@ import { TableVisualization } from "@/components/tables/TableVisualization";
 import { GuestList } from "@/components/tables/GuestList";
 import { TableStatistics } from "@/components/tables/TableStatistics";
 import { TableActionBar } from "@/components/tables/TableActionBar";
+import { downloadTableArrangement } from "@/utils/tableExporter";
+import { useToast } from "@/components/ui/use-toast";
 
 const TableArrangementPage = () => {
+  const { toast } = useToast();
   const { guests, stats, updateGuest } = useGuests();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredGuests, setFilteredGuests] = useState<Guest[]>(guests);
+  const [confirmedGuests, setConfirmedGuests] = useState<Guest[]>([]);
+  const [filteredGuests, setFilteredGuests] = useState<Guest[]>([]);
   const [tables, setTables] = useState<Array<{id: string, name: string, capacity: number, guests: Guest[]}>>([
     { id: "table1", name: "Tavolo 1", capacity: 8, guests: [] },
     { id: "table2", name: "Tavolo 2", capacity: 8, guests: [] },
     { id: "table3", name: "Tavolo 3", capacity: 8, guests: [] },
   ]);
 
+  // Filter only confirmed guests
+  useEffect(() => {
+    const onlyConfirmed = guests.filter(g => g.rsvp === "confirmed");
+    setConfirmedGuests(onlyConfirmed);
+    setFilteredGuests(onlyConfirmed);
+  }, [guests]);
+
   // Filter guests based on search term
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     if (value.trim() === "") {
-      setFilteredGuests(guests);
+      setFilteredGuests(confirmedGuests);
     } else {
       setFilteredGuests(
-        guests.filter((guest) =>
+        confirmedGuests.filter((guest) =>
           guest.name.toLowerCase().includes(value.toLowerCase())
         )
       );
@@ -51,7 +62,16 @@ const TableArrangementPage = () => {
       const targetTable = updatedTables.find(t => t.id === tableId);
       if (targetTable && targetTable.guests.length < targetTable.capacity) {
         targetTable.guests = [...targetTable.guests, guest];
+        toast({
+          title: "Ospite assegnato",
+          description: `${guest.name} è stato assegnato a ${targetTable.name}`,
+        });
       }
+    } else {
+      toast({
+        title: "Ospite rimosso",
+        description: `${guest.name} è stato rimosso dal tavolo`,
+      });
     }
     
     setTables(updatedTables);
@@ -59,13 +79,39 @@ const TableArrangementPage = () => {
 
   // Add new table
   const addTable = () => {
+    const newId = `table${tables.length + 1}`;
     const newTable = {
-      id: `table${tables.length + 1}`,
+      id: newId,
       name: `Tavolo ${tables.length + 1}`,
       capacity: 8,
       guests: []
     };
     setTables([...tables, newTable]);
+    toast({
+      title: "Tavolo aggiunto",
+      description: `${newTable.name} è stato aggiunto con successo`,
+    });
+  };
+
+  // Add custom table with name and capacity
+  const addCustomTable = (name: string, capacity: number) => {
+    const newId = `table${tables.length + 1}`;
+    const newTable = {
+      id: newId,
+      name,
+      capacity,
+      guests: []
+    };
+    setTables([...tables, newTable]);
+    toast({
+      title: "Tavolo personalizzato aggiunto",
+      description: `${name} è stato aggiunto con successo`,
+    });
+  };
+
+  // Export table arrangement
+  const handleExportTables = () => {
+    downloadTableArrangement(tables);
   };
 
   return (
@@ -90,7 +136,12 @@ const TableArrangementPage = () => {
               />
             </div>
             
-            <TableActionBar onAddTable={addTable} tables={tables} />
+            <TableActionBar 
+              onAddTable={addTable} 
+              tables={tables} 
+              onAddCustomTable={addCustomTable}
+              onExportTables={handleExportTables}
+            />
             
             <TableStatistics
               totalGuests={stats.confirmedGuests}
@@ -109,20 +160,33 @@ const TableArrangementPage = () => {
               </h2>
               
               <div className="relative mb-4">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
                 <Input
                   placeholder="Cerca ospiti..."
                   value={searchTerm}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-8"
+                  className="pl-10"
                 />
               </div>
               
-              <GuestList 
-                guests={filteredGuests.filter(g => g.rsvp === "confirmed")} 
-                tables={tables}
-                onAssignGuest={assignGuestToTable} 
-              />
+              {filteredGuests.length === 0 ? (
+                <div className="text-center p-6 border-2 border-dashed rounded-lg">
+                  {searchTerm ? (
+                    <p className="text-gray-500">Nessun ospite corrisponde alla ricerca</p>
+                  ) : (
+                    <>
+                      <p className="text-gray-500">Nessun ospite confermato</p>
+                      <p className="text-sm text-gray-400 mt-2">Vai alla pagina "Ospiti" per confermare gli invitati</p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <GuestList 
+                  guests={filteredGuests} 
+                  tables={tables}
+                  onAssignGuest={assignGuestToTable} 
+                />
+              )}
             </div>
           </div>
         </div>

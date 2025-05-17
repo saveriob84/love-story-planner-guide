@@ -2,13 +2,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Download, FileText } from "lucide-react";
-import { downloadTableArrangement } from "@/utils/tableExporter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface TableActionBarProps {
   onAddTable: () => void;
+  onAddCustomTable: (name: string, capacity: number) => void;
+  onExportTables: () => void;
   tables: Array<{
     id: string;
     name: string;
@@ -17,25 +18,17 @@ interface TableActionBarProps {
   }>;
 }
 
-export const TableActionBar = ({ onAddTable, tables }: TableActionBarProps) => {
+export const TableActionBar = ({ onAddTable, onAddCustomTable, onExportTables, tables }: TableActionBarProps) => {
   const [open, setOpen] = useState(false);
   const [tableName, setTableName] = useState("");
   const [capacity, setCapacity] = useState("8");
 
   const handleAddCustomTable = () => {
     if (tableName) {
-      const newTable = {
-        id: `table${tables.length + 1}`,
-        name: tableName,
-        capacity: parseInt(capacity) || 8,
-        guests: []
-      };
+      onAddCustomTable(tableName, parseInt(capacity) || 8);
       setTableName("");
       setCapacity("8");
       setOpen(false);
-      // Call the parent's onAddTable with the new table
-      // For now we'll just use the default implementation
-      onAddTable();
     }
   };
   
@@ -85,7 +78,7 @@ export const TableActionBar = ({ onAddTable, tables }: TableActionBarProps) => {
       
       <Button
         variant="outline"
-        onClick={() => downloadTableArrangement(tables)}
+        onClick={onExportTables}
       >
         <FileText className="mr-2 h-4 w-4" />
         Esporta Disposizione

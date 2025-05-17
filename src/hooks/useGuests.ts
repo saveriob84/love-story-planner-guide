@@ -2,10 +2,11 @@
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 export const useGuests = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [guests, setGuests] = useState<Guest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -37,7 +38,7 @@ export const useGuests = () => {
         }
       } catch (error) {
         console.error("Error loading guests:", error);
-        useToast().toast({
+        toast({
           title: "Errore",
           description: "Impossibile caricare la lista degli ospiti.",
           variant: "destructive",
@@ -48,7 +49,7 @@ export const useGuests = () => {
     };
 
     loadGuests();
-  }, [user?.id]);
+  }, [user?.id, toast]);
   
   // Save guests to localStorage whenever the list changes
   useEffect(() => {
@@ -58,13 +59,13 @@ export const useGuests = () => {
       }
     } catch (error) {
       console.error("Error saving guests:", error);
-      useToast().toast({
+      toast({
         title: "Errore",
         description: "Impossibile salvare la lista degli ospiti.",
         variant: "destructive",
       });
     }
-  }, [guests, user?.id]);
+  }, [guests, user?.id, toast]);
 
   // Add new guest
   const addGuest = (guestData: Omit<Guest, "id" | "rsvp">) => {
@@ -91,9 +92,9 @@ export const useGuests = () => {
 
   // Remove guest
   const removeGuest = (id: string) => {
-    if (confirm("Sei sicuro di voler rimuovere questo ospite?")) {
+    if (window.confirm("Sei sicuro di voler rimuovere questo ospite?")) {
       setGuests(guests.filter(guest => guest.id !== id));
-      useToast().toast({
+      toast({
         title: "Ospite rimosso",
         description: "L'ospite è stato rimosso dalla lista.",
       });
