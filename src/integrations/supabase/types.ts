@@ -181,6 +181,7 @@ export type Database = {
           capacity: number
           created_at: string
           id: string
+          is_special: boolean | null
           name: string
           profile_id: string
           updated_at: string
@@ -189,6 +190,7 @@ export type Database = {
           capacity: number
           created_at?: string
           id?: string
+          is_special?: boolean | null
           name: string
           profile_id: string
           updated_at?: string
@@ -197,6 +199,7 @@ export type Database = {
           capacity?: number
           created_at?: string
           id?: string
+          is_special?: boolean | null
           name?: string
           profile_id?: string
           updated_at?: string

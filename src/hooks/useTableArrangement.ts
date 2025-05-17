@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { TableGuest, Table } from "@/types/table";
@@ -285,7 +284,8 @@ export const useTableArrangement = (guests: Guest[]) => {
           .insert({
             name: table.name,
             capacity: table.capacity,
-            profile_id: user.id
+            profile_id: user.id,
+            is_special: table.isSpecial || false
           })
           .select()
           .single();
@@ -337,7 +337,8 @@ export const useTableArrangement = (guests: Guest[]) => {
           id: table.id,
           name: table.name,
           capacity: table.capacity,
-          guests: []
+          guests: [],
+          isSpecial: table.is_special || false
         })));
       }
     } catch (error) {
