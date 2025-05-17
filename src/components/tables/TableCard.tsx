@@ -21,6 +21,9 @@ export const TableCard = ({
   onDeleteTable,
   handleDragStart
 }: TableCardProps) => {
+  // Calculate total number of guests including group members
+  const totalGuests = table.guests.length;
+  
   return (
     <Card 
       key={table.id}
@@ -75,7 +78,7 @@ export const TableCard = ({
               </div>
             ))}
             
-            {Array.from({ length: table.capacity - table.guests.length }).map((_, index) => (
+            {Array.from({ length: table.capacity - totalGuests }).map((_, index) => (
               <div key={index} className="bg-gray-100 rounded-lg px-3 py-1.5 text-sm text-gray-400 italic">
                 Posto libero
               </div>
@@ -84,9 +87,9 @@ export const TableCard = ({
         </div>
         
         <div className="mt-3 flex justify-between items-center text-sm text-gray-500">
-          <span>{table.guests.length} / {table.capacity} ospiti</span>
-          <Badge variant="outline" className={table.guests.length === table.capacity ? "bg-green-50 text-green-700" : ""}>
-            {table.guests.length === table.capacity ? "Completo" : `${table.capacity - table.guests.length} posti liberi`}
+          <span>{totalGuests} / {table.capacity} ospiti</span>
+          <Badge variant="outline" className={totalGuests === table.capacity ? "bg-green-50 text-green-700" : ""}>
+            {totalGuests === table.capacity ? "Completo" : `${table.capacity - totalGuests} posti liberi`}
           </Badge>
         </div>
       </div>
