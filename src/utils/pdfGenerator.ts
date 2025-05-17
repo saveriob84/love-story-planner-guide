@@ -93,7 +93,7 @@ export const generateGuestPDF = (
       lineColor: [220, 220, 220],
     },
     headStyles: {
-      fillColor: [247, 205, 213, 0.3], // wedding-blush in RGB con trasparenza
+      fillColor: [247, 205, 213], // wedding-blush in RGB without transparency
       textColor: primaryColor,
       fontSize: 11,
       fontStyle: 'bold',
