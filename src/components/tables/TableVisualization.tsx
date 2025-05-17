@@ -71,19 +71,20 @@ export const TableVisualization = ({
     if (currentTable && onDeleteTable) {
       onDeleteTable(currentTable.id);
     }
+    setDeleteDialogOpen(false);
   };
 
   if (tables.length === 0) {
     return <EmptyTableDisplay />;
   }
 
-  // Sort tables to ensure special tables (like "Sposi") appear first
+  // Sort tables to ensure the "Tavolo Sposi" appears first, followed by other tables
   const sortedTables = [...tables].sort((a, b) => {
-    // Special tables come first
+    // Special tables like "Sposi" come first
     if (a.isSpecial && !b.isSpecial) return -1;
     if (!a.isSpecial && b.isSpecial) return 1;
     
-    // Then sort by name
+    // Then sort alphabetically by name
     return a.name.localeCompare(b.name);
   });
 

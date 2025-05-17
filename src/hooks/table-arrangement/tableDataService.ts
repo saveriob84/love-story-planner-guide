@@ -43,7 +43,7 @@ export const tableDataService = {
   
   // Create default tables
   createDefaultTables: async (userId: string) => {
-    // Create the Sposi table first
+    // Create the Sposi table first (making sure it's marked as special)
     const sposiTable = {
       name: 'Tavolo Sposi',
       capacity: 2,
@@ -92,6 +92,57 @@ export const tableDataService = {
     }
     
     return data;
+  },
+  
+  // Check if Sposi table exists
+  checkSposiTableExists: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('tables')
+      .select('*')
+      .eq('profile_id', userId)
+      .eq('name', 'Tavolo Sposi')
+      .eq('is_special', true)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+      console.error("Error checking for Sposi table:", error);
+      throw error;
+    }
+    
+    return !!data;
+  },
+  
+  // Create Sposi table if it doesn't exist
+  createSposiTableIfNotExists: async (userId: string) => {
+    try {
+      const sposiTableExists = await tableDataService.checkSposiTableExists(userId);
+      
+      if (!sposiTableExists) {
+        const sposiTable = {
+          name: 'Tavolo Sposi',
+          capacity: 2,
+          profile_id: userId,
+          is_special: true
+        };
+        
+        const { data, error } = await supabase
+          .from('tables')
+          .insert(sposiTable)
+          .select()
+          .single();
+          
+        if (error) {
+          console.error("Error creating Sposi table:", error);
+          throw error;
+        }
+        
+        return data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error in createSposiTableIfNotExists:", error);
+      throw error;
+    }
   },
   
   // Edit existing table

@@ -25,6 +25,9 @@ export const useTableArrangement = (guests: Guest[]): UseTableArrangementReturn 
 
       setIsLoading(true);
       try {
+        // First, check if Sposi table exists and create it if not
+        await tableDataService.createSposiTableIfNotExists(user.id);
+        
         // Fetch tables
         const tablesData = await tableDataService.fetchTables(user.id);
 

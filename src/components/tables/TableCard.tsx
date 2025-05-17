@@ -43,7 +43,7 @@ export const TableCard = ({
           <button 
             onClick={() => onDeleteTable(table)}
             className={`hover:text-red-600 transition-colors ${
-              isSpecialTable ? "text-gray-700" : "text-gray-600"
+              isSpecialTable ? "text-gray-700 opacity-50 cursor-not-allowed" : "text-gray-600"
             }`}
             aria-label="Elimina tavolo"
             disabled={isSpecialTable}
@@ -86,7 +86,7 @@ export const TableCard = ({
                 key={guest.id}
                 draggable
                 onDragStart={(e) => handleDragStart(e, guest.id)}
-                className={`rounded-lg px-3 py-1.5 text-sm cursor-move transition-colors ${
+                className={`rounded-lg px-3 py-1.5 text-sm cursor-move transition-colors flex items-center ${
                   guest.isGroupMember 
                     ? "bg-wedding-blush/20 hover:bg-wedding-blush/40" 
                     : isSpecialTable
@@ -95,9 +95,9 @@ export const TableCard = ({
                 }`}
               >
                 {guest.isGroupMember ? (
-                  <UserRound className="h-3 w-3 mr-1 opacity-70" />
+                  <UserRound className="h-3 w-3 mr-1 opacity-70 inline" />
                 ) : (
-                  <Users className="h-3 w-3 mr-1 opacity-70" />
+                  <Users className="h-3 w-3 mr-1 opacity-70 inline" />
                 )}
                 {guest.name}
               </div>
