@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { useAuth } from "@/contexts/AuthContext";
@@ -47,7 +48,7 @@ export const useGuests = () => {
                 id: member.id,
                 name: member.name,
                 dietaryRestrictions: member.dietary_restrictions || '',
-                isChild: member.is_child || false  // Fix: Changed from isChild to is_child
+                isChild: member.is_child || false
               }))
             }));
             
@@ -136,8 +137,8 @@ export const useGuests = () => {
           const groupMembersData = guest.groupMembers.map(member => ({
             guest_id: guest.id,
             name: member.name,
-            dietary_restrictions: member.dietary_restrictions,
-            is_child: member.isChild  // Fix: Make sure we're using the correct field name for database insertion
+            dietary_restrictions: member.dietaryRestrictions, // Fix: Changed from dietary_restrictions to dietaryRestrictions
+            is_child: member.isChild
           }));
           
           const { error: groupError } = await supabase
@@ -453,3 +454,4 @@ export const useGuests = () => {
     }
   };
 };
+
