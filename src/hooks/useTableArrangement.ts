@@ -1,167 +1,655 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { TableGuest, Table } from "@/types/table";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useTableArrangement = (guests: Guest[]) => {
   const { toast } = useToast();
-  const [tables, setTables] = useState<Table[]>([ 
-    { id: "table1", name: "Tavolo 1", capacity: 8, guests: [] },
-    { id: "table2", name: "Tavolo 2", capacity: 8, guests: [] },
-    { id: "table3", name: "Tavolo 3", capacity: 8, guests: [] },
-  ]);
+  const { user } = useAuth();
+  const [tables, setTables] = useState<Table[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Assign guest to table (works for both main guests and group members)
-  const assignGuestToTable = (guestId: string, tableId: string) => {
-    console.log("Assigning guest", guestId, "to table", tableId);
-    
-    // First check if it's a main guest or a group member
-    let targetGuest: TableGuest | undefined;
-    
-    // Find among main guests
-    const mainGuest = guests.find(g => g.id === guestId);
-    if (mainGuest) {
-      targetGuest = {
-        id: mainGuest.id,
-        name: mainGuest.name,
-        dietaryRestrictions: mainGuest.dietaryRestrictions
-      };
-    } else {
-      // If not a main guest, look among group members
-      for (const guest of guests) {
-        const groupMember = guest.groupMembers.find(m => m.id === guestId);
-        if (groupMember) {
-          targetGuest = {
-            id: groupMember.id,
-            name: groupMember.name,
-            dietaryRestrictions: groupMember.dietaryRestrictions,
-            isGroupMember: true,
-            parentGuestId: guest.id
+  // Load tables and assignments from Supabase
+  useEffect(() => {
+    const fetchTables = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        // Fetch tables
+        const { data: tablesData, error: tablesError } = await supabase
+          .from('tables')
+          .select('*')
+          .eq('profile_id', user.id);
+
+        if (tablesError) {
+          console.error('Error fetching tables:', tablesError);
+          throw tablesError;
+        }
+
+        if (!tablesData || tablesData.length === 0) {
+          // If no tables exist, create default ones
+          await createDefaultTables();
+          return;
+        }
+
+        // Fetch all assignments
+        const { data: assignmentsData, error: assignmentsError } = await supabase
+          .from('table_assignments')
+          .select(`
+            id,
+            table_id,
+            guest_id,
+            group_member_id,
+            guests:guest_id(id, name, dietary_restrictions),
+            group_members:group_member_id(id, name, dietary_restrictions, is_child, guest_id)
+          `);
+
+        if (assignmentsError) {
+          console.error('Error fetching table assignments:', assignmentsError);
+          throw assignmentsError;
+        }
+
+        // Format tables with their guests
+        const formattedTables = tablesData.map((table: any) => {
+          // Find all assignments for this table
+          const tableAssignments = assignmentsData?.filter((assignment: any) => 
+            assignment.table_id === table.id
+          ) || [];
+          
+          // Map assignments to TableGuest objects
+          const tableGuests: TableGuest[] = tableAssignments.map((assignment: any) => {
+            // If it's a main guest
+            if (assignment.guest_id && assignment.guests) {
+              return {
+                id: assignment.guests.id,
+                name: assignment.guests.name,
+                dietaryRestrictions: assignment.guests.dietary_restrictions
+              };
+            }
+            // If it's a group member
+            else if (assignment.group_member_id && assignment.group_members) {
+              return {
+                id: assignment.group_members.id,
+                name: assignment.group_members.name,
+                dietaryRestrictions: assignment.group_members.dietary_restrictions,
+                isGroupMember: true,
+                parentGuestId: assignment.group_members.guest_id
+              };
+            }
+            // Fallback (shouldn't happen with proper constraints)
+            return {
+              id: assignment.id,
+              name: 'Unknown Guest',
+            };
+          });
+
+          // Return the formatted table
+          return {
+            id: table.id,
+            name: table.name,
+            capacity: table.capacity,
+            guests: tableGuests
           };
-          console.log("Found group member", groupMember.name);
-          break;
+        });
+
+        setTables(formattedTables);
+      } catch (error) {
+        console.error('Error loading tables:', error);
+        toast({
+          title: 'Errore',
+          description: 'Impossibile caricare i tavoli.',
+          variant: 'destructive',
+        });
+        
+        // If we couldn't load from Supabase, try localStorage as fallback
+        loadFromLocalStorage();
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTables();
+  }, [user?.id, toast]);
+
+  // Create default tables if none exist
+  const createDefaultTables = async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Default tables to create
+      const defaultTables = [
+        { name: 'Tavolo 1', capacity: 8 },
+        { name: 'Tavolo 2', capacity: 8 },
+        { name: 'Tavolo 3', capacity: 8 }
+      ];
+      
+      // Insert the tables
+      const { data, error } = await supabase
+        .from('tables')
+        .insert(defaultTables.map(table => ({
+          name: table.name,
+          capacity: table.capacity,
+          profile_id: user.id
+        })))
+        .select();
+      
+      if (error) {
+        console.error('Error creating default tables:', error);
+        throw error;
+      }
+      
+      // Format and set the tables
+      const formattedTables = (data || []).map((table: any) => ({
+        id: table.id,
+        name: table.name,
+        capacity: table.capacity,
+        guests: []
+      }));
+      
+      setTables(formattedTables);
+    } catch (error) {
+      console.error('Error creating default tables:', error);
+      toast({
+        title: 'Errore',
+        description: 'Impossibile creare i tavoli predefiniti.',
+        variant: 'destructive',
+      });
+      
+      // Fallback to localStorage
+      loadFromLocalStorage();
+    }
+  };
+
+  // Fallback: Load from localStorage if Supabase fails
+  const loadFromLocalStorage = () => {
+    try {
+      // If we still have localStorage data, use it
+      if (user?.id) {
+        const savedTables = localStorage.getItem(`wedding_tables_${user.id}`);
+        if (savedTables) {
+          const parsedTables = JSON.parse(savedTables);
+          setTables(Array.isArray(parsedTables) ? parsedTables : []);
+          
+          // If we have tables, migrate them to Supabase
+          if (parsedTables && parsedTables.length > 0) {
+            migrateLocalStorageToSupabase(parsedTables);
+          }
+        } else {
+          // Default tables if nothing in localStorage
+          setTables([
+            { id: "table1", name: "Tavolo 1", capacity: 8, guests: [] },
+            { id: "table2", name: "Tavolo 2", capacity: 8, guests: [] },
+            { id: "table3", name: "Tavolo 3", capacity: 8, guests: [] },
+          ]);
         }
       }
+    } catch (error) {
+      console.error('Error loading from localStorage:', error);
+      // Set default tables if everything else fails
+      setTables([
+        { id: "table1", name: "Tavolo 1", capacity: 8, guests: [] },
+        { id: "table2", name: "Tavolo 2", capacity: 8, guests: [] },
+        { id: "table3", name: "Tavolo 3", capacity: 8, guests: [] },
+      ]);
     }
+  };
+
+  // Migrate tables from localStorage to Supabase
+  const migrateLocalStorageToSupabase = async (localTables: Table[]) => {
+    if (!user?.id || localTables.length === 0) return;
     
-    if (!targetGuest) {
-      console.log("Guest not found:", guestId);
-      return;
-    }
-    
-    console.log("Target guest", targetGuest);
-    
-    // Remove guest from any existing table
-    const updatedTables = tables.map(table => ({
-      ...table,
-      guests: table.guests.filter(g => g.id !== guestId)
-    }));
-    
-    // Add guest to new table if tableId is provided and not "unassigned"
-    if (tableId && tableId !== "unassigned") {
-      const targetTable = updatedTables.find(t => t.id === tableId);
-      if (targetTable && targetTable.guests.length < targetTable.capacity) {
-        targetTable.guests = [...targetTable.guests, targetGuest];
-        toast({
-          title: "Ospite assegnato",
-          description: `${targetGuest.name} è stato assegnato a ${targetTable.name}`,
-        });
-      }
-    } else {
+    try {
       toast({
-        title: "Ospite rimosso",
-        description: `${targetGuest.name} è stato rimosso dal tavolo`,
+        title: "Migrazione dati",
+        description: "Sto migrando i tavoli al nuovo database...",
+      });
+      
+      // First insert all tables
+      for (const table of localTables) {
+        const { data: insertedTable, error } = await supabase
+          .from('tables')
+          .insert({
+            name: table.name,
+            capacity: table.capacity,
+            profile_id: user.id
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error migrating table:', error);
+          continue;
+        }
+        
+        // If the table has guests, insert assignments
+        if (table.guests && table.guests.length > 0) {
+          for (const guest of table.guests) {
+            // Determine if it's a main guest or group member
+            if (guest.isGroupMember) {
+              await supabase
+                .from('table_assignments')
+                .insert({
+                  table_id: insertedTable.id,
+                  group_member_id: guest.id
+                });
+            } else {
+              await supabase
+                .from('table_assignments')
+                .insert({
+                  table_id: insertedTable.id,
+                  guest_id: guest.id
+                });
+            }
+          }
+        }
+      }
+      
+      toast({
+        title: "Migrazione completata",
+        description: "I tuoi tavoli sono stati migrati con successo!",
+      });
+      
+      // Clear localStorage after successful migration
+      localStorage.removeItem(`wedding_tables_${user.id}`);
+      
+      // Reload tables from Supabase
+      const { data: updatedTables, error } = await supabase
+        .from('tables')
+        .select('*')
+        .eq('profile_id', user.id);
+      
+      if (!error && updatedTables) {
+        setTables(updatedTables.map((table: any) => ({
+          id: table.id,
+          name: table.name,
+          capacity: table.capacity,
+          guests: []
+        })));
+      }
+    } catch (error) {
+      console.error('Error during table migration:', error);
+      toast({
+        title: "Errore di migrazione",
+        description: "Si è verificato un errore durante la migrazione dei tavoli.",
+        variant: "destructive",
       });
     }
+  };
+
+  // Assign guest to table
+  const assignGuestToTable = async (guestId: string, tableId: string) => {
+    if (!user?.id) return;
     
-    setTables(updatedTables);
+    try {
+      console.log("Assigning guest", guestId, "to table", tableId);
+      
+      // First, remove any existing assignment for this guest
+      await removeExistingAssignment(guestId);
+      
+      // If tableId is "unassigned", we're done
+      if (tableId === "unassigned") {
+        // Update local state
+        const updatedTables = tables.map(table => ({
+          ...table,
+          guests: table.guests.filter(g => g.id !== guestId)
+        }));
+        setTables(updatedTables);
+        
+        toast({
+          title: "Ospite rimosso",
+          description: "L'ospite è stato rimosso dal tavolo",
+        });
+        return;
+      }
+      
+      // Find the target table
+      const targetTable = tables.find(t => t.id === tableId);
+      if (!targetTable) {
+        console.log("Table not found:", tableId);
+        return;
+      }
+      
+      // Check if table is full
+      if (targetTable.guests.length >= targetTable.capacity) {
+        toast({
+          title: "Tavolo pieno",
+          description: `${targetTable.name} ha raggiunto la sua capacità massima`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Determine if it's a main guest or a group member
+      const isGroupMember = checkIfGroupMember(guestId);
+      
+      // Insert the assignment in Supabase
+      const { error } = await supabase
+        .from('table_assignments')
+        .insert({
+          table_id: tableId,
+          guest_id: isGroupMember ? null : guestId,
+          group_member_id: isGroupMember ? guestId : null
+        });
+      
+      if (error) {
+        console.error("Error assigning guest to table:", error);
+        toast({
+          title: "Errore",
+          description: "Impossibile assegnare l'ospite al tavolo",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Find guest details
+      let guestInfo: TableGuest | undefined;
+      
+      if (isGroupMember) {
+        // Look for the group member
+        for (const guest of guests) {
+          const member = guest.groupMembers.find(m => m.id === guestId);
+          if (member) {
+            guestInfo = {
+              id: member.id,
+              name: member.name,
+              dietaryRestrictions: member.dietaryRestrictions,
+              isGroupMember: true,
+              parentGuestId: guest.id
+            };
+            break;
+          }
+        }
+      } else {
+        // Look for main guest
+        const mainGuest = guests.find(g => g.id === guestId);
+        if (mainGuest) {
+          guestInfo = {
+            id: mainGuest.id,
+            name: mainGuest.name,
+            dietaryRestrictions: mainGuest.dietaryRestrictions
+          };
+        }
+      }
+      
+      if (!guestInfo) {
+        console.log("Guest not found:", guestId);
+        return;
+      }
+      
+      // Update local state
+      const updatedTables = tables.map(table => {
+        if (table.id === tableId) {
+          return {
+            ...table,
+            guests: [...table.guests.filter(g => g.id !== guestId), guestInfo!]
+          };
+        }
+        return {
+          ...table,
+          guests: table.guests.filter(g => g.id !== guestId)
+        };
+      });
+      
+      setTables(updatedTables);
+      
+      toast({
+        title: "Ospite assegnato",
+        description: `${guestInfo.name} è stato assegnato a ${targetTable.name}`,
+      });
+    } catch (error) {
+      console.error("Error in assignGuestToTable:", error);
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante l'assegnazione dell'ospite",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Helper to remove existing assignment
+  const removeExistingAssignment = async (guestId: string) => {
+    try {
+      const isGroupMember = checkIfGroupMember(guestId);
+      
+      if (isGroupMember) {
+        await supabase
+          .from('table_assignments')
+          .delete()
+          .eq('group_member_id', guestId);
+      } else {
+        await supabase
+          .from('table_assignments')
+          .delete()
+          .eq('guest_id', guestId);
+      }
+    } catch (error) {
+      console.error("Error removing existing assignment:", error);
+      throw error;
+    }
+  };
+
+  // Check if a guest ID belongs to a group member
+  const checkIfGroupMember = (guestId: string): boolean => {
+    for (const guest of guests) {
+      if (guest.groupMembers.some(m => m.id === guestId)) {
+        return true;
+      }
+    }
+    return false;
   };
 
   // Add new table
-  const addTable = () => {
-    const newId = `table${tables.length + 1}`;
-    const newTable = {
-      id: newId,
-      name: `Tavolo ${tables.length + 1}`,
-      capacity: 8,
-      guests: []
-    };
-    setTables([...tables, newTable]);
-    toast({
-      title: "Tavolo aggiunto",
-      description: `${newTable.name} è stato aggiunto con successo`,
-    });
+  const addTable = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const newName = `Tavolo ${tables.length + 1}`;
+      
+      const { data, error } = await supabase
+        .from('tables')
+        .insert({
+          name: newName,
+          capacity: 8,
+          profile_id: user.id
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error adding table:", error);
+        toast({
+          title: "Errore",
+          description: "Impossibile aggiungere il tavolo",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const newTable: Table = {
+        id: data.id,
+        name: data.name,
+        capacity: data.capacity,
+        guests: []
+      };
+      
+      setTables([...tables, newTable]);
+      
+      toast({
+        title: "Tavolo aggiunto",
+        description: `${newName} è stato aggiunto con successo`,
+      });
+    } catch (error) {
+      console.error("Error in addTable:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile aggiungere il tavolo",
+        variant: "destructive",
+      });
+    }
   };
 
   // Add custom table with name and capacity
-  const addCustomTable = (name: string, capacity: number) => {
-    const newId = `table${tables.length + 1}`;
-    const newTable = {
-      id: newId,
-      name,
-      capacity,
-      guests: []
-    };
-    setTables([...tables, newTable]);
-    toast({
-      title: "Tavolo personalizzato aggiunto",
-      description: `${name} è stato aggiunto con successo`,
-    });
+  const addCustomTable = async (name: string, capacity: number) => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('tables')
+        .insert({
+          name,
+          capacity,
+          profile_id: user.id
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error("Error adding custom table:", error);
+        toast({
+          title: "Errore",
+          description: "Impossibile aggiungere il tavolo personalizzato",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const newTable: Table = {
+        id: data.id,
+        name: data.name,
+        capacity: data.capacity,
+        guests: []
+      };
+      
+      setTables([...tables, newTable]);
+      
+      toast({
+        title: "Tavolo personalizzato aggiunto",
+        description: `${name} è stato aggiunto con successo`,
+      });
+    } catch (error) {
+      console.error("Error in addCustomTable:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile aggiungere il tavolo personalizzato",
+        variant: "destructive",
+      });
+    }
   };
 
   // Edit existing table
-  const editTable = (tableId: string, name: string, capacity: number) => {
-    const updatedTables = tables.map(table => {
-      if (table.id === tableId) {
-        // If new capacity is less than current guests, don't allow the change
-        if (capacity < table.guests.length) {
-          toast({
-            title: "Errore",
-            description: `Non puoi ridurre la capacità a ${capacity} perché ci sono già ${table.guests.length} ospiti assegnati.`,
-            variant: "destructive",
-          });
-          return table;
-        }
-        
-        return {
-          ...table,
-          name,
-          capacity
-        };
-      }
-      return table;
-    });
+  const editTable = async (tableId: string, name: string, capacity: number) => {
+    if (!user?.id) return;
     
-    setTables(updatedTables);
-    toast({
-      title: "Tavolo modificato",
-      description: `Il tavolo è stato aggiornato con successo`,
-    });
+    try {
+      // Find the table to check current guest count
+      const table = tables.find(t => t.id === tableId);
+      if (!table) return;
+      
+      // If new capacity is less than current guests, don't allow the change
+      if (capacity < table.guests.length) {
+        toast({
+          title: "Errore",
+          description: `Non puoi ridurre la capacità a ${capacity} perché ci sono già ${table.guests.length} ospiti assegnati.`,
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update in Supabase
+      const { error } = await supabase
+        .from('tables')
+        .update({ name, capacity })
+        .eq('id', tableId)
+        .eq('profile_id', user.id);
+      
+      if (error) {
+        console.error("Error updating table:", error);
+        toast({
+          title: "Errore",
+          description: "Impossibile modificare il tavolo",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update local state
+      const updatedTables = tables.map(table => 
+        table.id === tableId ? { ...table, name, capacity } : table
+      );
+      
+      setTables(updatedTables);
+      
+      toast({
+        title: "Tavolo modificato",
+        description: `Il tavolo è stato aggiornato con successo`,
+      });
+    } catch (error) {
+      console.error("Error in editTable:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile modificare il tavolo",
+        variant: "destructive",
+      });
+    }
   };
 
   // Delete table
-  const deleteTable = (tableId: string) => {
-    const tableToDelete = tables.find(t => t.id === tableId);
-    if (!tableToDelete) return;
+  const deleteTable = async (tableId: string) => {
+    if (!user?.id) return;
     
-    const hasGuests = tableToDelete.guests.length > 0;
-    
-    const updatedTables = tables.filter(table => table.id !== tableId);
-    setTables(updatedTables);
-    
-    toast({
-      title: "Tavolo eliminato",
-      description: hasGuests 
-        ? `${tableToDelete.name} è stato eliminato e ${tableToDelete.guests.length} ospiti sono stati rimossi dal tavolo` 
-        : `${tableToDelete.name} è stato eliminato con successo`,
-    });
+    try {
+      const tableToDelete = tables.find(t => t.id === tableId);
+      if (!tableToDelete) return;
+      
+      const hasGuests = tableToDelete.guests.length > 0;
+      
+      // Delete from Supabase (assignments will cascade delete)
+      const { error } = await supabase
+        .from('tables')
+        .delete()
+        .eq('id', tableId)
+        .eq('profile_id', user.id);
+      
+      if (error) {
+        console.error("Error deleting table:", error);
+        toast({
+          title: "Errore",
+          description: "Impossibile eliminare il tavolo",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Update local state
+      const updatedTables = tables.filter(table => table.id !== tableId);
+      setTables(updatedTables);
+      
+      toast({
+        title: "Tavolo eliminato",
+        description: hasGuests 
+          ? `${tableToDelete.name} è stato eliminato e ${tableToDelete.guests.length} ospiti sono stati rimossi dal tavolo` 
+          : `${tableToDelete.name} è stato eliminato con successo`,
+      });
+    } catch (error) {
+      console.error("Error in deleteTable:", error);
+      toast({
+        title: "Errore",
+        description: "Impossibile eliminare il tavolo",
+        variant: "destructive",
+      });
+    }
   };
 
   // Calculate table statistics
   const tableStats = {
     totalTables: tables.length,
-    // Count the total number of guests assigned to tables (including group members)
     assignedGuests: tables.reduce((sum, table) => sum + table.guests.length, 0),
     availableSeats: tables.reduce((sum, table) => sum + table.capacity, 0),
   };
@@ -173,6 +661,7 @@ export const useTableArrangement = (guests: Guest[]) => {
     addCustomTable,
     editTable,
     deleteTable,
-    tableStats
+    tableStats,
+    isLoading
   };
 };
