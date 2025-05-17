@@ -47,7 +47,7 @@ export const useGuests = () => {
                 id: member.id,
                 name: member.name,
                 dietaryRestrictions: member.dietary_restrictions || '',
-                isChild: member.isChild || false
+                isChild: member.is_child || false  // Fix: Changed from isChild to is_child
               }))
             }));
             
@@ -136,8 +136,8 @@ export const useGuests = () => {
           const groupMembersData = guest.groupMembers.map(member => ({
             guest_id: guest.id,
             name: member.name,
-            dietary_restrictions: member.dietaryRestrictions,
-            is_child: member.isChild
+            dietary_restrictions: member.dietary_restrictions,
+            is_child: member.isChild  // Fix: Make sure we're using the correct field name for database insertion
           }));
           
           const { error: groupError } = await supabase
