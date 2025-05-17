@@ -1,9 +1,9 @@
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, FileText, Download } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GuestList from "@/components/guests/GuestList";
 import GuestFormCard from "@/components/guests/GuestFormCard";
@@ -11,11 +11,17 @@ import GuestStats from "@/components/guests/GuestStats";
 import GroupMemberDialog from "@/components/guests/GroupMemberDialog";
 import { useGuests } from "@/hooks/useGuests";
 import { Guest } from "@/types/guest";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { generateGuestPDF } from "@/utils/pdfGenerator";
+import GuestListPrint from "@/components/guests/GuestListPrint";
 
 const GuestsPage = () => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
+  const [showPrintDialog, setShowPrintDialog] = useState(false);
   
   const { 
     guests, 
@@ -62,6 +68,10 @@ const GuestsPage = () => {
     );
   }
 
+  const handleDownloadPDF = () => {
+    generateGuestPDF(guests, stats);
+  };
+
   return (
     <MainLayout>
       <div className="py-6 px-4 sm:px-6">
@@ -91,14 +101,42 @@ const GuestsPage = () => {
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-serif text-xl font-bold text-wedding-navy">I tuoi ospiti</h2>
             
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                placeholder="Cerca ospiti..." 
-                className="pl-10 w-full max-w-xs"
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Cerca ospiti..." 
+                  className="pl-10 w-full max-w-xs"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+              </div>
+              
+              <Dialog open={showPrintDialog} onOpenChange={setShowPrintDialog}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowPrintDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="h-4 w-4" />
+                  Anteprima Lista
+                </Button>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle className="text-center">Lista Invitati - Anteprima</DialogTitle>
+                  </DialogHeader>
+                  <GuestListPrint guests={guests} stats={stats} />
+                </DialogContent>
+              </Dialog>
+              
+              <Button 
+                onClick={handleDownloadPDF} 
+                variant="default"
+                className="flex items-center gap-2 bg-wedding-navy hover:bg-wedding-navy/80"
+              >
+                <Download className="h-4 w-4" />
+                Scarica PDF
+              </Button>
             </div>
           </div>
           
