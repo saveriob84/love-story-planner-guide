@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -181,6 +180,7 @@ const ChecklistPage = () => {
   const handleAddTimeline = () => {
     if (!newTimelineName.trim()) return;
     
+    // Call addTimeline with the trimmed timeline name
     addTimeline(newTimelineName.trim());
     
     toast({
@@ -189,6 +189,7 @@ const ChecklistPage = () => {
       duration: 3000,
     });
     
+    // Reset the form and close the dialog
     setNewTimelineName("");
     setIsAddTimelineOpen(false);
   };
@@ -198,7 +199,7 @@ const ChecklistPage = () => {
       if (success) {
         toast({
           title: "Timeline rimossa",
-          description: `"${timeline}" è stata rimossa dalle tue timeline`,
+          description: `"${timeline}" è stata rimossa dalle tue timeline",
           duration: 3000,
         });
         setIsEditTimelineOpen(false);

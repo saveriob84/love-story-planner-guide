@@ -1,4 +1,3 @@
-
 import { getMonthsFromTimeline } from './utils';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,7 +46,7 @@ export function useTimelineManager(userId: string | undefined) {
   };
   
   const addTimeline = async (timelines: string[], timelineName: string): Promise<string[]> => {
-    if (!userId) return timelines;
+    if (!userId) return [...timelines, timelineName];
     
     if (timelines.includes(timelineName)) return timelines;
     
@@ -63,23 +62,13 @@ export function useTimelineManager(userId: string | undefined) {
         
       if (error) {
         console.error('Error adding timeline:', error);
-        return timelines;
+        return [...timelines, timelineName]; // Add locally even if DB fails
       }
       
-      // Get updated timelines
-      const { data: updatedTimelines, error: selectError } = await supabase
-        .from('timelines')
-        .select('*')
-        .eq('profile_id', userId)
-        .order('display_order', { ascending: true });
-        
-      if (selectError) {
-        console.error('Error fetching updated timelines:', selectError);
-        return [...timelines, timelineName];
-      }
+      console.log('Timeline added successfully:', timelineName);
       
-      // Map database timelines to string array
-      return updatedTimelines.map(timeline => timeline.name);
+      // Return updated timelines immediately including the new one
+      return [...timelines, timelineName];
     } catch (error) {
       console.error('Error in addTimeline:', error);
       return [...timelines, timelineName];

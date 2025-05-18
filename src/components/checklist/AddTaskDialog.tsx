@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { 
@@ -38,6 +38,13 @@ const AddTaskDialog = ({
   categories,
   onAddTask
 }: AddTaskDialogProps) => {
+  // Set default timeline when dialog opens and timelines are available
+  useEffect(() => {
+    if (open && timelines.length > 0 && !newTask.timeline) {
+      setNewTask(current => ({ ...current, timeline: timelines[0] }));
+    }
+  }, [open, timelines, newTask.timeline, setNewTask]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -77,11 +84,11 @@ const AddTaskDialog = ({
               <Label htmlFor="timeline">Timeline</Label>
               <select
                 id="timeline"
-                value={newTask.timeline}
+                value={newTask.timeline || ""}
                 onChange={(e) => setNewTask({ ...newTask, timeline: e.target.value })}
                 className="w-full rounded-md border border-gray-300 p-2"
               >
-                <option value="">Seleziona periodo</option>
+                <option value="" disabled>Seleziona periodo</option>
                 {timelines.map(t => (
                   <option key={t} value={t}>{t}</option>
                 ))}
@@ -145,7 +152,7 @@ const AddTaskDialog = ({
           <Button 
             onClick={onAddTask}
             className="bg-wedding-blush text-wedding-navy hover:bg-wedding-blush/90"
-            disabled={!newTask.title}
+            disabled={!newTask.title || !newTask.timeline}
           >
             Aggiungi
           </Button>

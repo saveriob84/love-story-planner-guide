@@ -100,39 +100,45 @@ export const EditTimelineDialog = ({
         </DialogHeader>
         
         <div className="space-y-4 py-4 max-h-[50vh] overflow-y-auto">
-          {timelines.map((timeline, index) => (
-            <div key={timeline} className="flex justify-between items-center border-b pb-2">
-              <span>{timeline}</span>
-              <div className="flex gap-1 items-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="px-2"
-                  onClick={() => onMoveTimeline(timeline, 'up')}
-                  disabled={index === 0}
-                >
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="px-2"
-                  onClick={() => onMoveTimeline(timeline, 'down')}
-                  disabled={index === timelines.length - 1}
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => onRemoveTimeline(timeline)}
-                >
-                  Rimuovi
-                </Button>
+          {timelines.length > 0 ? (
+            timelines.map((timeline, index) => (
+              <div key={timeline} className="flex justify-between items-center border-b pb-2">
+                <span>{timeline}</span>
+                <div className="flex gap-1 items-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="px-2"
+                    onClick={() => onMoveTimeline(timeline, 'up')}
+                    disabled={index === 0}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="px-2"
+                    onClick={() => onMoveTimeline(timeline, 'down')}
+                    disabled={index === timelines.length - 1}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    onClick={() => onRemoveTimeline(timeline)}
+                  >
+                    Rimuovi
+                  </Button>
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-4 text-gray-500">
+              Nessuna timeline disponibile
             </div>
-          ))}
+          )}
         </div>
         
         <DialogFooter>

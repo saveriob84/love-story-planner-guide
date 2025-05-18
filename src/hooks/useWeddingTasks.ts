@@ -67,6 +67,12 @@ export const useWeddingTasks = () => {
   };
 
   const addTimelineItem = async (timelineName: string) => {
+    if (!timelineName.trim()) return;
+    
+    // First update UI immediately for better UX
+    setTimelines(current => [...current, timelineName]);
+    
+    // Then update database
     const updatedTimelines = await timelineManager.addTimeline(timelines, timelineName);
     setTimelines(updatedTimelines);
   };
