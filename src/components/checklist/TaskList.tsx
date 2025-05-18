@@ -15,6 +15,7 @@ interface TaskListProps {
   onDragEnd: (result: DropResult) => void;
   onToggleComplete: (task: WeddingTask, completed: boolean) => void;
   onTaskClick: (task: WeddingTask) => void;
+  onMoveTimeline?: (timeline: string, direction: 'up' | 'down') => void;
 }
 
 const TaskList = ({
@@ -25,7 +26,8 @@ const TaskList = ({
   onTabChange,
   onDragEnd,
   onToggleComplete,
-  onTaskClick
+  onTaskClick,
+  onMoveTimeline
 }: TaskListProps) => {
   // Ensure tasksByTimeline has a defined value for each timeline
   const hasTasksInTimelines = timelines.some(timeline => 
@@ -41,21 +43,20 @@ const TaskList = ({
       
       <DragDropContext onDragEnd={onDragEnd}>
         <TabsContent value="da-fare" className="mt-6">
-          {hasTasksInTimelines ? (
-            timelines.map(timeline => {
-              // Skip rendering if the timeline doesn't exist in tasksByTimeline or has no tasks
-              if (!Array.isArray(tasksByTimeline[timeline]) || tasksByTimeline[timeline].length === 0) {
-                return null;
-              }
-              
+          {hasTasksInTimelines || timelines.length > 0 ? (
+            timelines.map((timeline, index) => {
+              // Always render the timeline section in the "da-fare" tab to allow moving timelines
               return (
                 <TimelineSection
                   key={timeline}
                   timeline={timeline}
-                  tasks={tasksByTimeline[timeline]}
+                  tasks={tasksByTimeline[timeline] || []}
                   isCompleted={false}
                   onToggleComplete={onToggleComplete}
                   onTaskClick={onTaskClick}
+                  onMoveTimeline={onMoveTimeline}
+                  timelineIndex={index}
+                  totalTimelines={timelines.length}
                 />
               );
             })
@@ -69,7 +70,7 @@ const TaskList = ({
       
         <TabsContent value="completate" className="mt-6">
           {hasTasksInTimelines ? (
-            timelines.map(timeline => {
+            timelines.map((timeline, index) => {
               // Skip rendering if the timeline doesn't exist in tasksByTimeline or has no tasks
               if (!Array.isArray(tasksByTimeline[timeline]) || tasksByTimeline[timeline].length === 0) {
                 return null;

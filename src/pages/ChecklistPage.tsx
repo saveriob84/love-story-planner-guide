@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -193,23 +194,23 @@ const ChecklistPage = () => {
   };
   
   const handleRemoveTimeline = (timeline: string) => {
-    const success = removeTimeline(timeline);
-    
-    if (success) {
-      toast({
-        title: "Timeline rimossa",
-        description: `"${timeline}" è stata rimossa dalle tue timeline`,
-        duration: 3000,
-      });
-      setIsEditTimelineOpen(false);
-    } else {
-      toast({
-        title: "Impossibile rimuovere la timeline",
-        description: "Ci sono ancora attività associate a questa timeline",
-        variant: "destructive",
-        duration: 3000,
-      });
-    }
+    removeTimeline(timeline).then(success => {
+      if (success) {
+        toast({
+          title: "Timeline rimossa",
+          description: `"${timeline}" è stata rimossa dalle tue timeline`,
+          duration: 3000,
+        });
+        setIsEditTimelineOpen(false);
+      } else {
+        toast({
+          title: "Impossibile rimuovere la timeline",
+          description: "Ci sono ancora attività associate a questa timeline",
+          variant: "destructive",
+          duration: 3000,
+        });
+      }
+    });
   };
   
   const handleMoveTimeline = (timeline: string, direction: 'up' | 'down') => {
@@ -275,6 +276,7 @@ const ChecklistPage = () => {
           onDragEnd={handleDragEnd}
           onToggleComplete={handleToggleComplete}
           onTaskClick={handleTaskClick}
+          onMoveTimeline={handleMoveTimeline}
         />
       </div>
       

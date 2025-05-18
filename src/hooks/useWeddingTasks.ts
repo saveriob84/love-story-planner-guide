@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { WeddingTask } from './wedding-tasks/types';
@@ -15,9 +16,9 @@ export const useWeddingTasks = () => {
   const taskManager = useTaskManager(user?.id);
   const timelineManager = useTimelineManager(user?.id);
 
-  // Load tasks and timelines from localStorage
+  // Load tasks and timelines from Supabase
   useEffect(() => {
-    const loadTasks = () => {
+    const loadTasks = async () => {
       try {
         setLoading(true);
         
@@ -27,11 +28,11 @@ export const useWeddingTasks = () => {
           : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // default to 1 year from now
         
         // Load timelines
-        const storedTimelines = timelineManager.getStoredTimelines();
+        const storedTimelines = await timelineManager.getStoredTimelines();
         setTimelines(storedTimelines);
         
         // Load tasks
-        const storedTasks = taskManager.getStoredTasks(weddingDate);
+        const storedTasks = await taskManager.getStoredTasks(weddingDate);
         setTasks(storedTasks);
       } catch (error) {
         console.error("Error loading tasks:", error);
@@ -45,36 +46,36 @@ export const useWeddingTasks = () => {
     }
   }, [user]);
 
-  const updateTask = (taskId: string, updates: Partial<WeddingTask>) => {
-    const updatedTasks = taskManager.updateTask(tasks, taskId, updates);
+  const updateTask = async (taskId: string, updates: Partial<WeddingTask>) => {
+    const updatedTasks = await taskManager.updateTask(tasks, taskId, updates);
     setTasks(updatedTasks);
   };
 
-  const addTask = (task: Omit<WeddingTask, 'id'>) => {
-    const updatedTasks = taskManager.addTask(tasks, task);
+  const addTask = async (task: Omit<WeddingTask, 'id'>) => {
+    const updatedTasks = await taskManager.addTask(tasks, task);
     setTasks(updatedTasks);
   };
 
-  const deleteTask = (taskId: string) => {
-    const updatedTasks = taskManager.deleteTask(tasks, taskId);
+  const deleteTask = async (taskId: string) => {
+    const updatedTasks = await taskManager.deleteTask(tasks, taskId);
     setTasks(updatedTasks);
   };
 
-  const reorderTasks = (taskId: string, newTimeline: string) => {
-    const updatedTasks = taskManager.reorderTasks(tasks, taskId, newTimeline);
+  const reorderTasks = async (taskId: string, newTimeline: string) => {
+    const updatedTasks = await taskManager.reorderTasks(tasks, taskId, newTimeline);
     setTasks(updatedTasks);
   };
 
-  const addTimelineItem = (timelineName: string) => {
-    const updatedTimelines = timelineManager.addTimeline(timelines, timelineName);
+  const addTimelineItem = async (timelineName: string) => {
+    const updatedTimelines = await timelineManager.addTimeline(timelines, timelineName);
     setTimelines(updatedTimelines);
   };
 
-  const removeTimeline = (timelineName: string) => {
+  const removeTimeline = async (timelineName: string) => {
     // Check if the timeline has tasks
     const hasTasksInTimeline = tasks.some(task => task.timeline === timelineName);
     
-    const result = timelineManager.removeTimeline(timelines, timelineName, hasTasksInTimeline);
+    const result = await timelineManager.removeTimeline(timelines, timelineName, hasTasksInTimeline);
     if (result.success) {
       setTimelines(result.updatedTimelines);
     }
@@ -82,8 +83,8 @@ export const useWeddingTasks = () => {
     return result.success;
   };
   
-  const moveTimeline = (timelineName: string, direction: 'up' | 'down') => {
-    const updatedTimelines = timelineManager.moveTimeline(timelines, timelineName, direction);
+  const moveTimeline = async (timelineName: string, direction: 'up' | 'down') => {
+    const updatedTimelines = await timelineManager.moveTimeline(timelines, timelineName, direction);
     setTimelines(updatedTimelines);
   };
 
