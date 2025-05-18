@@ -222,6 +222,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          notes: string | null
           priority: string | null
           profile_id: string
           timeline_id: string
@@ -235,6 +236,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          notes?: string | null
           priority?: string | null
           profile_id: string
           timeline_id: string
@@ -248,6 +250,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          notes?: string | null
           priority?: string | null
           profile_id?: string
           timeline_id?: string
