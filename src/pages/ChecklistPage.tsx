@@ -1,7 +1,7 @@
 
 import React from "react";
 import MainLayout from "@/components/layouts/MainLayout";
-import { useChecklistState } from "@/hooks/useChecklistState";
+import { useChecklistState } from "@/hooks/checklist";
 import CategoryFilter from "@/components/checklist/CategoryFilter";
 import TaskList from "@/components/checklist/TaskList";
 import ChecklistHeader from "@/components/checklist/ChecklistHeader";
