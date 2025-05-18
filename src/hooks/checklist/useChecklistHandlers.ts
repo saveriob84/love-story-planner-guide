@@ -1,15 +1,14 @@
-
 import { toast } from "@/hooks/use-toast";
 import { DropResult } from "@hello-pangea/dnd";
 import { WeddingTask } from "../wedding-tasks/types";
 
 type TaskOperations = {
-  updateTask: (taskId: string, updates: Partial<WeddingTask>) => Promise<WeddingTask[]>;
-  addTask: (task: Omit<WeddingTask, 'id'>) => Promise<WeddingTask[]>;
-  reorderTasks: (taskId: string, newTimeline: string) => Promise<WeddingTask[]>;
-  addTimeline: (timelineName: string) => Promise<string[]>;
+  updateTask: (taskId: string, updates: Partial<WeddingTask>) => Promise<any>;
+  addTask: (task: Omit<WeddingTask, 'id'>) => Promise<any>;
+  reorderTasks: (taskId: string, newTimeline: string) => Promise<any>;
+  addTimeline: (timelineName: string) => Promise<any>;
   removeTimeline: (timelineName: string) => Promise<boolean>;
-  moveTimeline: (timelineName: string, direction: 'up' | 'down') => Promise<string[]>;
+  moveTimeline: (timelineName: string, direction: 'up' | 'down') => Promise<any>;
 };
 
 type DialogState = {
