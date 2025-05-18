@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 import { WeddingTask } from './wedding-tasks/types';
 import { useTaskManager } from './wedding-tasks/task-manager';
 import { useTimelineManager } from './wedding-tasks/timeline-manager';
+import { toast } from "@/hooks/use-toast";
 
 export type { WeddingTask } from './wedding-tasks/types';
 

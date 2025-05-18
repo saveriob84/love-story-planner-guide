@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +7,7 @@ import MainLayout from "@/components/layouts/MainLayout";
 import { Button } from "@/components/ui/button";
 import { useWeddingTasks, WeddingTask } from "@/hooks/useWeddingTasks";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import CategoryFilter from "@/components/checklist/CategoryFilter";
 import TaskList from "@/components/checklist/TaskList";
 import TaskDetailsDialog from "@/components/checklist/TaskDetailsDialog";
@@ -199,7 +200,7 @@ const ChecklistPage = () => {
       if (success) {
         toast({
           title: "Timeline rimossa",
-          description: `"${timeline}" è stata rimossa dalle tue timeline",
+          description: `"${timeline}" è stata rimossa dalle tue timeline`,
           duration: 3000,
         });
         setIsEditTimelineOpen(false);
