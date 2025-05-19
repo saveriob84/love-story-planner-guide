@@ -9,6 +9,66 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      budget_items: {
+        Row: {
+          actual_cost: number | null
+          category: string
+          created_at: string
+          description: string | null
+          estimated_cost: number
+          id: string
+          paid: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          category: string
+          created_at?: string
+          description?: string | null
+          estimated_cost: number
+          id?: string
+          paid?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_cost?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          estimated_cost?: number
+          id?: string
+          paid?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      budget_settings: {
+        Row: {
+          created_at: string
+          id: string
+          total_budget: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          total_budget?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          total_budget?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           created_at: string

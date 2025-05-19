@@ -1,5 +1,10 @@
 
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Budget item interface
 export interface BudgetItem {
@@ -22,6 +27,31 @@ export const BudgetItemsList = ({
   onUpdateItem, 
   onDeleteItem 
 }: BudgetItemsListProps) => {
+  const [editingItem, setEditingItem] = useState<BudgetItem | null>(null);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<BudgetItem | null>(null);
+  const [actualCost, setActualCost] = useState<string>("");
+  
+  const handleEditItem = (item: BudgetItem) => {
+    setEditingItem(item);
+    setActualCost(item.actualCost?.toString() || item.estimatedCost.toString());
+  };
+  
+  const handleSaveActualCost = () => {
+    if (editingItem) {
+      onUpdateItem(editingItem.id, {
+        actualCost: parseFloat(actualCost) || editingItem.estimatedCost
+      });
+      setEditingItem(null);
+    }
+  };
+  
+  const handleConfirmDelete = () => {
+    if (deleteConfirmItem) {
+      onDeleteItem(deleteConfirmItem.id);
+      setDeleteConfirmItem(null);
+    }
+  };
+
   return (
     <div>
       <h2 className="font-serif text-xl font-bold text-wedding-navy mb-4">Voci di spesa</h2>
@@ -58,14 +88,7 @@ export const BudgetItemsList = ({
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => {
-                          const actualCost = prompt('Inserisci il costo effettivo:', item.actualCost?.toString() || item.estimatedCost.toString());
-                          if (actualCost !== null) {
-                            onUpdateItem(item.id, {
-                              actualCost: parseFloat(actualCost) || item.estimatedCost
-                            });
-                          }
-                        }}
+                        onClick={() => handleEditItem(item)}
                       >
                         Aggiorna
                       </Button>
@@ -81,11 +104,7 @@ export const BudgetItemsList = ({
                       <Button 
                         variant="destructive" 
                         size="sm" 
-                        onClick={() => {
-                          if (confirm('Sei sicuro di voler eliminare questa voce?')) {
-                            onDeleteItem(item.id);
-                          }
-                        }}
+                        onClick={() => setDeleteConfirmItem(item)}
                       >
                         Elimina
                       </Button>
@@ -99,6 +118,50 @@ export const BudgetItemsList = ({
       ) : (
         <p className="text-gray-500">Non hai ancora aggiunto voci di spesa al tuo budget.</p>
       )}
+      
+      {/* Edit Item Dialog */}
+      <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aggiorna costo effettivo</DialogTitle>
+            <DialogDescription>
+              Inserisci il costo effettivo per {editingItem?.category}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Label htmlFor="actualCost">Costo effettivo (€)</Label>
+            <Input
+              id="actualCost"
+              type="number"
+              value={actualCost}
+              onChange={(e) => setActualCost(e.target.value)}
+            />
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingItem(null)}>Annulla</Button>
+            <Button onClick={handleSaveActualCost}>Salva</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!deleteConfirmItem} onOpenChange={(open) => !open && setDeleteConfirmItem(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Conferma eliminazione</DialogTitle>
+            <DialogDescription>
+              Sei sicuro di voler eliminare la voce "{deleteConfirmItem?.category}"? Questa azione non può essere annullata.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmItem(null)}>Annulla</Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>Elimina</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
