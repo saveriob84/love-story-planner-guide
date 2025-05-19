@@ -13,6 +13,7 @@ interface ChecklistDialogsProps {
   timelines: string[];
   categories: string[];
   onSaveTask: () => void;
+  onDeleteTask: () => void;
   
   isAddTaskOpen: boolean;
   setIsAddTaskOpen: (open: boolean) => void;
@@ -40,6 +41,7 @@ const ChecklistDialogs = ({
   timelines,
   categories,
   onSaveTask,
+  onDeleteTask,
   
   isAddTaskOpen,
   setIsAddTaskOpen,
@@ -68,6 +70,7 @@ const ChecklistDialogs = ({
         timelines={timelines}
         categories={categories}
         onSave={onSaveTask}
+        onDelete={onDeleteTask}
       />
       
       <AddTaskDialog 

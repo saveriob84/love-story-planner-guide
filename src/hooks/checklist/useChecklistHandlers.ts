@@ -1,3 +1,4 @@
+
 import { toast } from "@/hooks/use-toast";
 import { DropResult } from "@hello-pangea/dnd";
 import { WeddingTask } from "../wedding-tasks/types";
@@ -5,6 +6,7 @@ import { WeddingTask } from "../wedding-tasks/types";
 type TaskOperations = {
   updateTask: (taskId: string, updates: Partial<WeddingTask>) => Promise<any>;
   addTask: (task: Omit<WeddingTask, 'id'>) => Promise<any>;
+  deleteTask: (taskId: string) => Promise<any>;
   reorderTasks: (taskId: string, newTimeline: string) => Promise<any>;
   addTimeline: (timelineName: string) => Promise<any>;
   removeTimeline: (timelineName: string) => Promise<boolean>;
@@ -74,6 +76,18 @@ export const useChecklistHandlers = (
       });
     }
     dialogState.setTaskDetailsOpen(false);
+  };
+
+  const handleDeleteTask = () => {
+    if (dialogState.selectedTask) {
+      taskOperations.deleteTask(dialogState.selectedTask.id);
+      
+      toast({
+        title: "Attività eliminata",
+        description: "L'attività è stata eliminata con successo",
+        duration: 3000,
+      });
+    }
   };
   
   const handleAddTask = () => {
@@ -159,6 +173,7 @@ export const useChecklistHandlers = (
     handleTaskClick,
     handleToggleComplete,
     handleSaveTask,
+    handleDeleteTask,
     handleAddTask,
     handleAddTimeline,
     handleRemoveTimeline,

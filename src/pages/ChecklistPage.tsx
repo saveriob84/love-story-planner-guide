@@ -41,6 +41,7 @@ const ChecklistPage = () => {
     handleTaskClick,
     handleToggleComplete,
     handleSaveTask,
+    handleDeleteTask,
     handleAddTask,
     handleAddTimeline,
     handleRemoveTimeline,
@@ -86,6 +87,7 @@ const ChecklistPage = () => {
         timelines={timelines}
         categories={categories}
         onSaveTask={handleSaveTask}
+        onDeleteTask={handleDeleteTask}
         
         isAddTaskOpen={isAddTaskOpen}
         setIsAddTaskOpen={setIsAddTaskOpen}
