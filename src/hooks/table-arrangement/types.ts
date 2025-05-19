@@ -1,5 +1,6 @@
 
 import { TableGuest, Table } from "@/types/table";
+import { Toast } from "@/hooks/use-toast";
 
 export interface TableStats {
   totalTables: number;
@@ -17,3 +18,5 @@ export interface UseTableArrangementReturn {
   tableStats: TableStats;
   isLoading: boolean;
 }
+
+export type { Toast };

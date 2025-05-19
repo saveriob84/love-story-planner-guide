@@ -1,8 +1,8 @@
 
 import { Guest } from "@/types/guest";
 import { Table } from "@/types/table";
-import { useToast } from "@/hooks/use-toast";
 import { assignmentService } from "./assignmentService";
+import { Toast } from "@/hooks/use-toast";
 
 // Service for guest-to-table assignment operations
 export const guestAssignmentService = {
@@ -12,10 +12,9 @@ export const guestAssignmentService = {
     tableId: string, 
     tables: Table[], 
     guests: Guest[],
-    updateTables: (newTables: Table[]) => void
+    updateTables: (newTables: Table[]) => void,
+    toast: Toast | null
   ) => {
-    const { toast } = useToast();
-    
     try {
       console.log("Assigning guest", guestId, "to table", tableId);
       
@@ -32,10 +31,12 @@ export const guestAssignmentService = {
         }));
         updateTables(updatedTables);
         
-        toast({
-          title: "Ospite rimosso",
-          description: "L'ospite è stato rimosso dal tavolo",
-        });
+        if (toast) {
+          toast({
+            title: "Ospite rimosso",
+            description: "L'ospite è stato rimosso dal tavolo",
+          });
+        }
         return;
       }
       
@@ -48,11 +49,13 @@ export const guestAssignmentService = {
       
       // Check if table is full
       if (targetTable.guests.length >= targetTable.capacity) {
-        toast({
-          title: "Tavolo pieno",
-          description: `${targetTable.name} ha raggiunto la sua capacità massima`,
-          variant: "destructive",
-        });
+        if (toast) {
+          toast({
+            title: "Tavolo pieno",
+            description: `${targetTable.name} ha raggiunto la sua capacità massima`,
+            variant: "destructive",
+          });
+        }
         return;
       }
       
@@ -83,17 +86,21 @@ export const guestAssignmentService = {
       
       updateTables(updatedTables);
       
-      toast({
-        title: "Ospite assegnato",
-        description: `${guestInfo.name} è stato assegnato a ${targetTable.name}`,
-      });
+      if (toast) {
+        toast({
+          title: "Ospite assegnato",
+          description: `${guestInfo.name} è stato assegnato a ${targetTable.name}`,
+        });
+      }
     } catch (error) {
       console.error("Error in assignGuestToTable:", error);
-      toast({
-        title: "Errore",
-        description: "Si è verificato un errore durante l'assegnazione dell'ospite",
-        variant: "destructive",
-      });
+      if (toast) {
+        toast({
+          title: "Errore",
+          description: "Si è verificato un errore durante l'assegnazione dell'ospite",
+          variant: "destructive",
+        });
+      }
     }
   }
 };

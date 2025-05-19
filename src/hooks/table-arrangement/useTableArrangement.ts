@@ -89,11 +89,14 @@ export const useTableArrangement = (guests: Guest[]): UseTableArrangementReturn 
   const assignGuestToTable = async (guestId: string, tableId: string) => {
     if (!user?.id) return;
     try {
-      await guestAssignmentService.assignGuestToTable(guestId, tableId, tables, guests, setTables);
-      toast({
-        title: "Ospite assegnato",
-        description: "L'ospite è stato assegnato al tavolo con successo",
-      });
+      await guestAssignmentService.assignGuestToTable(
+        guestId, 
+        tableId, 
+        tables, 
+        guests, 
+        setTables,
+        toast
+      );
     } catch (error) {
       console.error("Error assigning guest to table:", error);
       toast({
@@ -257,3 +260,4 @@ export const useTableArrangement = (guests: Guest[]): UseTableArrangementReturn 
     isLoading
   };
 };
+
