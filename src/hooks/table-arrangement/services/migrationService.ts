@@ -1,10 +1,10 @@
 
 import { Table } from "@/types/table";
 import { localStorageService } from "./localStorageService";
-import { useToast } from "@/hooks/use-toast";
 import { formatTablesWithGuests } from "../utils/tableFormatter";
 import { tableDataService } from "./tableDataService";
 import { sposiTableService } from "./sposiTableService";
+import { Toast } from "../types";
 
 // Service for handling data migration and initial loading
 export const migrationService = {
@@ -12,9 +12,9 @@ export const migrationService = {
   loadTableData: async (
     userId: string | undefined, 
     updateTables: (tables: Table[]) => void,
-    createDefaultTables: () => Promise<void>
+    createDefaultTables: () => Promise<void>,
+    toast: Toast | null = null
   ) => {
-    const { toast } = useToast();
     if (!userId) return false;
 
     try {
@@ -40,21 +40,25 @@ export const migrationService = {
       return true;
     } catch (error) {
       console.error('Error loading tables:', error);
-      toast({
-        title: 'Errore',
-        description: 'Impossibile caricare i tavoli.',
-        variant: 'destructive',
-      });
+      if (toast) {
+        toast({
+          title: 'Errore',
+          description: 'Impossibile caricare i tavoli.',
+          variant: 'destructive',
+        });
+      }
       
       return false;
     }
   },
 
   // Fall back to localStorage data and potentially migrate it to Supabase
-  loadFromLocalStorageFallback: async (userId: string | undefined, updateTables: (tables: Table[]) => void) => {
+  loadFromLocalStorageFallback: async (
+    userId: string | undefined, 
+    updateTables: (tables: Table[]) => void,
+    toast: Toast | null = null
+  ) => {
     if (!userId) return;
-    
-    const { toast } = useToast();
     
     // Try localStorage as fallback
     const localTables = localStorageService.loadFromLocalStorage(userId);

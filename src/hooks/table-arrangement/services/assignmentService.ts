@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
-import { TableGuest } from "@/types/table";
+import { Table, TableGuest } from "@/types/table";
 
 // Service for guest assignment operations
 export const assignmentService = {
@@ -18,16 +18,25 @@ export const assignmentService = {
   // Remove existing assignment for a guest
   removeExistingAssignment: async (guestId: string, isGroupMember: boolean) => {
     try {
+      console.log("Removing existing assignment for guest:", guestId, "isGroupMember:", isGroupMember);
+      
+      let result;
       if (isGroupMember) {
-        await supabase
+        result = await supabase
           .from('table_assignments')
           .delete()
           .eq('group_member_id', guestId);
       } else {
-        await supabase
+        result = await supabase
           .from('table_assignments')
           .delete()
           .eq('guest_id', guestId);
+      }
+      
+      if (result.error) {
+        console.error("Error removing assignment:", result.error);
+      } else {
+        console.log("Successfully removed assignment:", result.data);
       }
     } catch (error) {
       console.error("Error removing existing assignment:", error);
@@ -37,18 +46,28 @@ export const assignmentService = {
   
   // Create a new assignment
   createAssignment: async (tableId: string, guestId: string, isGroupMember: boolean) => {
-    const { error } = await supabase
+    console.log("Creating assignment:", { tableId, guestId, isGroupMember });
+    
+    const assignmentData = {
+      table_id: tableId,
+      guest_id: isGroupMember ? null : guestId,
+      group_member_id: isGroupMember ? guestId : null
+    };
+    
+    console.log("Assignment data:", assignmentData);
+    
+    const { data, error } = await supabase
       .from('table_assignments')
-      .insert({
-        table_id: tableId,
-        guest_id: isGroupMember ? null : guestId,
-        group_member_id: isGroupMember ? guestId : null
-      });
+      .insert(assignmentData)
+      .select();
     
     if (error) {
       console.error("Error assigning guest to table:", error);
       throw error;
     }
+    
+    console.log("Assignment created successfully:", data);
+    return data;
   },
   
   // Find guest details

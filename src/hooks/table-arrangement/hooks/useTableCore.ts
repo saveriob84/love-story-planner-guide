@@ -31,12 +31,13 @@ export const useTableCore = () => {
         const success = await migrationService.loadTableData(
           user.id,
           setTables,
-          () => createDefaultTables()
+          () => createDefaultTables(),
+          toast
         );
         
         // If Supabase loading failed, try localStorage fallback
         if (!success) {
-          await migrationService.loadFromLocalStorageFallback(user.id, setTables);
+          await migrationService.loadFromLocalStorageFallback(user.id, setTables, toast);
         }
       } finally {
         setIsLoading(false);
