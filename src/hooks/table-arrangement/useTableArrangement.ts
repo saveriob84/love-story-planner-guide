@@ -4,7 +4,7 @@ import { Guest } from "@/types/guest";
 import { Table } from "@/types/table";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { tableDataService } from "./services/tableDataService";
+import { tableDataService, sposiTableService } from "./services/tableDataService";
 import { assignmentService } from "./services/assignmentService";
 import { localStorageService } from "./services/localStorageService";
 import { tableService } from "./services/tableService";
@@ -28,7 +28,7 @@ export const useTableArrangement = (guests: Guest[]): UseTableArrangementReturn 
       setIsLoading(true);
       try {
         // First, check if Sposi table exists and create it if not
-        await tableDataService.createSposiTableIfNotExists(user.id);
+        await sposiTableService.createSposiTableIfNotExists(user.id);
         
         // Fetch tables
         const tablesData = await tableDataService.fetchTables(user.id);

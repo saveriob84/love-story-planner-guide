@@ -1,37 +1,41 @@
 
-import { User } from "@/types/auth";
-import { Table } from "@/types/table";
 import { supabase } from "@/integrations/supabase/client";
-import { TableStats } from "../types";
+import { Table } from "@/types/table";
+import { User } from "@/types/auth";
 
-// Service for table-specific operations
+// Service for table manipulation operations
 export const tableService = {
-  // Create default tables if none exist
+  // Create default tables
   createDefaultTables: async (userId: string) => {
-    if (!userId) return [];
-    
-    try {
-      return await tableDataService.createDefaultTables(userId);
-    } catch (error) {
-      console.error('Error creating default tables:', error);
-      throw error;
-    }
+    return await tableDataService.createDefaultTables(userId);
   },
-
-  // Add Sposi couple to their table
+  
+  // Add couple to Sposi table
   addCoupleToSposiTable: async (user: User, sposiTableId: string) => {
     return await tableDataService.addCoupleToSposiTable(user, sposiTableId);
   },
   
   // Calculate table statistics
-  calculateTableStats: (tables: Table[]): TableStats => {
+  calculateTableStats: (tables: Table[]) => {
+    // Calculate total tables
+    const totalTables = tables.length;
+    
+    // Calculate assigned guests
+    let assignedGuests = 0;
+    let availableSeats = 0;
+    
+    for (const table of tables) {
+      assignedGuests += table.guests.length;
+      availableSeats += table.capacity - table.guests.length;
+    }
+    
     return {
-      totalTables: tables.length,
-      assignedGuests: tables.reduce((sum, table) => sum + table.guests.length, 0),
-      availableSeats: tables.reduce((sum, table) => sum + table.capacity, 0),
+      totalTables,
+      assignedGuests,
+      availableSeats
     };
   }
 };
 
-// Import at the end to avoid circular dependencies
+// Import the main service to avoid circular dependencies
 import { tableDataService } from "./tableDataService";
