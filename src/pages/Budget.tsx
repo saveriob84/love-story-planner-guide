@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import MainLayout from "@/components/layouts/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Euro } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/components/ui/use-toast";
 
 // Budget item interface
 interface BudgetItem {
@@ -17,19 +19,22 @@ interface BudgetItem {
   actualCost: number | null;
   paid: boolean;
 }
+
 const Budget = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>(() => {
     // Try to load from localStorage
     const savedItems = localStorage.getItem(`budget_items_${user?.id}`);
     return savedItems ? JSON.parse(savedItems) : [];
   });
+  
   const [totalBudget, setTotalBudget] = useState<number>(() => {
     const savedBudget = localStorage.getItem(`total_budget_${user?.id}`);
     return savedBudget ? parseInt(savedBudget) : 0;
   });
+  
   const [newItem, setNewItem] = useState({
     category: "",
     description: "",
@@ -40,6 +45,9 @@ const Budget = () => {
   const totalEstimated = budgetItems.reduce((sum, item) => sum + item.estimatedCost, 0);
   const totalActual = budgetItems.reduce((sum, item) => sum + (item.actualCost || 0), 0);
   const totalPaid = budgetItems.reduce((sum, item) => sum + (item.paid ? item.actualCost || item.estimatedCost : 0), 0);
+  
+  // Calculate remaining budget
+  const remainingBudget = totalBudget - totalPaid;
 
   // Save budget to localStorage
   const saveBudget = (items: BudgetItem[], budget: number) => {
@@ -70,6 +78,12 @@ const Budget = () => {
         description: "",
         estimatedCost: ""
       });
+      
+      // Show success toast
+      toast({
+        title: "Voce aggiunta",
+        description: `${item.category} aggiunto al budget.`,
+      });
     }
   };
 
@@ -90,12 +104,19 @@ const Budget = () => {
     saveBudget(updatedItems, totalBudget);
   };
 
-  // Update total budget
+  // Update total budget with immediate save
   const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value) || 0;
     setTotalBudget(value);
     saveBudget(budgetItems, value);
+    
+    // Show toast confirmation when budget is updated
+    toast({
+      title: "Budget aggiornato",
+      description: `Il budget totale è stato aggiornato a €${value.toLocaleString()}.`,
+    });
   };
+  
   return <MainLayout>
       <div className="py-6 px-4 sm:px-6">
         <div className="mb-8">
@@ -117,7 +138,14 @@ const Budget = () => {
             <CardContent>
               <div className="flex items-center">
                 <Euro className="h-5 w-5 text-wedding-navy mr-2" />
-                <Input type="number" value={totalBudget || ''} onChange={handleBudgetChange} className="text-2xl font-bold text-wedding-navy" placeholder="0" />
+                <Input 
+                  type="number" 
+                  value={totalBudget || ''} 
+                  onChange={handleBudgetChange}
+                  onBlur={() => saveBudget(budgetItems, totalBudget)} 
+                  className="text-2xl font-bold text-wedding-navy" 
+                  placeholder="0" 
+                />
               </div>
             </CardContent>
           </Card>
@@ -138,14 +166,21 @@ const Budget = () => {
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium">Costi Effettivi</CardTitle>
-              <CardDescription>Spese pagate</CardDescription>
+              <CardTitle className="text-lg font-medium">Budget Rimanente</CardTitle>
+              <CardDescription>Importo disponibile</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-wedding-navy">€{totalPaid.toLocaleString()}</p>
-              <Progress value={totalEstimated > 0 ? totalPaid / totalEstimated * 100 : 0} className="h-2 mt-2 bg-wedding-blush/20" />
+              <p className={`text-2xl font-bold ${remainingBudget >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                €{remainingBudget.toLocaleString()}
+              </p>
+              <Progress 
+                value={totalBudget > 0 ? (remainingBudget / totalBudget) * 100 : 0} 
+                className={`h-2 mt-2 ${remainingBudget >= 0 ? 'bg-green-100' : 'bg-red-100'}`}
+              />
               <p className="text-sm text-gray-500 mt-1">
-                €{totalPaid.toLocaleString()} di €{totalEstimated.toLocaleString()} pagati
+                {totalBudget > 0 
+                  ? `${Math.round((remainingBudget / totalBudget) * 100)}% del budget totale` 
+                  : "Imposta un budget totale"}
               </p>
             </CardContent>
           </Card>
@@ -251,4 +286,5 @@ const Budget = () => {
       </div>
     </MainLayout>;
 };
+
 export default Budget;
