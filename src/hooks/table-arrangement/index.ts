@@ -10,3 +10,4 @@ export * from "./services/guestAssignmentService";
 export * from "./services/migrationService";
 export * from "./services/tableAssignmentService";
 export * from "./services/sposiTableService";
+export * from "./hooks";
