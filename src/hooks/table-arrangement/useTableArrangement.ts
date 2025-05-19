@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { Table } from "@/types/table";
 import { useAuth } from "@/contexts/auth/AuthContext";
-import { sposiTableService } from "./services/tableDataService";
+import { sposiTableService } from "./services/sposiTableService";
 import { tableService } from "./services/tableService";
 import { UseTableArrangementReturn } from "./types";
 import { tableOperations } from "./services/tableOperations";
