@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Table } from "@/types/table";
 import { User } from "@/types/auth";
+import { tableAssignmentService } from "./tableAssignmentService";
 
 // Service for table data operations
 export const tableDataService = {
@@ -20,25 +21,9 @@ export const tableDataService = {
     return data || [];
   },
   
-  // Fetch table assignments
+  // Fetch table assignments - delegated to specialized service
   fetchAssignments: async () => {
-    const { data, error } = await supabase
-      .from('table_assignments')
-      .select(`
-        id,
-        table_id,
-        guest_id,
-        group_member_id,
-        guests:guest_id(id, name, dietary_restrictions),
-        group_members:group_member_id(id, name, dietary_restrictions, is_child, guest_id)
-      `);
-    
-    if (error) {
-      console.error('Error fetching table assignments:', error);
-      throw error;
-    }
-    
-    return data || [];
+    return await tableAssignmentService.fetchAssignments();
   },
   
   // Create default tables
@@ -122,120 +107,8 @@ export const tableDataService = {
     }
   },
   
-  // Add couple to Sposi table
+  // Add couple to Sposi table - delegated to specialized service
   addCoupleToSposiTable: async (user: User, sposiTableId: string) => {
-    if (!user.name) return;
-    
-    const coupleNames = [];
-    
-    // Add first partner
-    if (user.name) {
-      coupleNames.push(user.name);
-      
-      // Insert the first partner as a guest
-      const { data: guestData, error: guestError } = await supabase
-        .from('guests')
-        .insert({
-          name: user.name,
-          profile_id: user.id,
-          relationship: 'Sposa/Sposo',
-          rsvp: 'confirmed'
-        })
-        .select('id')
-        .single();
-        
-      if (!guestError && guestData) {
-        // Assign the first partner to the Sposi table
-        await supabase
-          .from('table_assignments')
-          .insert({
-            table_id: sposiTableId,
-            guest_id: guestData.id
-          });
-      }
-    }
-    
-    // Add second partner if available
-    if (user.partnerName) {
-      coupleNames.push(user.partnerName);
-      
-      // Insert the second partner as a guest
-      const { data: partnerData, error: partnerError } = await supabase
-        .from('guests')
-        .insert({
-          name: user.partnerName,
-          profile_id: user.id,
-          relationship: 'Sposa/Sposo',
-          rsvp: 'confirmed'
-        })
-        .select('id')
-        .single();
-        
-      if (!partnerError && partnerData) {
-        // Assign the second partner to the Sposi table
-        await supabase
-          .from('table_assignments')
-          .insert({
-            table_id: sposiTableId,
-            guest_id: partnerData.id
-          });
-      }
-    }
-    
-    return coupleNames;
-  }
-};
-
-// Create a separate service for the sposi table operations
-export const sposiTableService = {
-  // Check if Sposi table exists
-  checkSposiTableExists: async (userId: string) => {
-    const { data, error } = await supabase
-      .from('tables')
-      .select('*')
-      .eq('profile_id', userId)
-      .eq('name', 'Tavolo Sposi')
-      .eq('is_special', true)
-      .single();
-    
-    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
-      console.error("Error checking for Sposi table:", error);
-      throw error;
-    }
-    
-    return !!data;
-  },
-  
-  // Create Sposi table if it doesn't exist
-  createSposiTableIfNotExists: async (userId: string) => {
-    try {
-      const sposiTableExists = await sposiTableService.checkSposiTableExists(userId);
-      
-      if (!sposiTableExists) {
-        const sposiTable = {
-          name: 'Tavolo Sposi',
-          capacity: 2,
-          profile_id: userId,
-          is_special: true
-        };
-        
-        const { data, error } = await supabase
-          .from('tables')
-          .insert(sposiTable)
-          .select()
-          .single();
-          
-        if (error) {
-          console.error("Error creating Sposi table:", error);
-          throw error;
-        }
-        
-        return data;
-      }
-      return null;
-    } catch (error) {
-      console.error("Error in createSposiTableIfNotExists:", error);
-      throw error;
-    }
+    return await tableAssignmentService.addCoupleToSposiTable(user, sposiTableId);
   }
 };

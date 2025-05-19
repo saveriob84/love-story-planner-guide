@@ -8,3 +8,5 @@ export * from "./services/localStorageService";
 export * from "./services/tableOperations";
 export * from "./services/guestAssignmentService";
 export * from "./services/migrationService";
+export * from "./services/tableAssignmentService";
+export * from "./services/sposiTableService";

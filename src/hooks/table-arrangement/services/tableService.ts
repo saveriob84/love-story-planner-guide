@@ -1,7 +1,8 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { Table } from "@/types/table";
 import { User } from "@/types/auth";
+import { tableDataService } from "./tableDataService";
+import { tableAssignmentService } from "./tableAssignmentService";
 
 // Service for table manipulation operations
 export const tableService = {
@@ -12,7 +13,7 @@ export const tableService = {
   
   // Add couple to Sposi table
   addCoupleToSposiTable: async (user: User, sposiTableId: string) => {
-    return await tableDataService.addCoupleToSposiTable(user, sposiTableId);
+    return await tableAssignmentService.addCoupleToSposiTable(user, sposiTableId);
   },
   
   // Calculate table statistics
@@ -36,6 +37,3 @@ export const tableService = {
     };
   }
 };
-
-// Import the main service to avoid circular dependencies
-import { tableDataService } from "./tableDataService";

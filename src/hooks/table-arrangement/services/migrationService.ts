@@ -4,7 +4,7 @@ import { localStorageService } from "./localStorageService";
 import { useToast } from "@/hooks/use-toast";
 import { formatTablesWithGuests } from "../utils/tableFormatter";
 import { tableDataService } from "./tableDataService";
-import { sposiTableService } from "./tableDataService";
+import { sposiTableService } from "./sposiTableService";
 
 // Service for handling data migration and initial loading
 export const migrationService = {
