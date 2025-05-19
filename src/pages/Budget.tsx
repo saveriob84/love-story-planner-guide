@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import MainLayout from "@/components/layouts/MainLayout";
@@ -196,6 +195,7 @@ const Budget = () => {
               <Progress 
                 value={totalBudget > 0 ? (remainingBudget / totalBudget) * 100 : 0} 
                 className={`h-2 mt-2 ${remainingBudget >= 0 ? 'bg-green-100' : 'bg-red-100'}`}
+                indicatorClassName={remainingBudget >= 0 ? 'bg-green-600' : 'bg-red-600'}
               />
               <p className="text-sm text-gray-500 mt-1">
                 {totalBudget > 0 
