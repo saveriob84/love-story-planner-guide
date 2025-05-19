@@ -1,6 +1,12 @@
 
 import { TableGuest, Table } from "@/types/table";
-import { Toast } from "@/hooks/use-toast";
+
+// Define the Toast type based on the toast function's signature
+export type Toast = (props: {
+  title?: string;
+  description?: string;
+  variant?: "default" | "destructive";
+}) => void;
 
 export interface TableStats {
   totalTables: number;
@@ -18,5 +24,3 @@ export interface UseTableArrangementReturn {
   tableStats: TableStats;
   isLoading: boolean;
 }
-
-export type { Toast };

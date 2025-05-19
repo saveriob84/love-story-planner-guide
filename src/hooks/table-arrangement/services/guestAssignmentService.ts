@@ -2,7 +2,7 @@
 import { Guest } from "@/types/guest";
 import { Table } from "@/types/table";
 import { assignmentService } from "./assignmentService";
-import { Toast } from "@/hooks/use-toast";
+import { Toast } from "../types";
 
 // Service for guest-to-table assignment operations
 export const guestAssignmentService = {
