@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth/AuthContext";
@@ -6,14 +7,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { CheckIcon, Calendar, Clock, ArrowRight } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useWeddingTasks } from "@/hooks/useWeddingTasks";
+import { useGuests } from "@/hooks/useGuests";
+import { useBudget } from "@/hooks/budget/useBudget";
 
 const Dashboard = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const { tasks, completedTasks } = useWeddingTasks();
   const [progress, setProgress] = useState(0);
+  
+  // Fetch guest data
+  const { stats } = useGuests();
+  
+  // Fetch budget data
+  const { 
+    totalBudget, 
+    totalPaid 
+  } = useBudget(user?.id);
   
   useEffect(() => {
     // Redirect if not authenticated
@@ -118,14 +129,14 @@ const Dashboard = () => {
               <CardDescription>Spese e previsioni</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-wedding-navy">€0</p>
-              <p className="text-sm text-gray-500">su €0 previsti</p>
+              <p className="text-3xl font-bold text-wedding-navy">€{totalPaid}</p>
+              <p className="text-sm text-gray-500">su €{totalBudget} previsti</p>
               <Button 
                 variant="link" 
                 className="p-0 h-auto text-wedding-blush mt-2"
                 onClick={() => navigate('/budget')}
               >
-                Imposta budget
+                Gestisci budget
               </Button>
             </CardContent>
           </Card>
@@ -137,8 +148,8 @@ const Dashboard = () => {
               <CardDescription>RSVP e inviti</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold text-wedding-navy">0</p>
-              <p className="text-sm text-gray-500">su 0 inviti confermati</p>
+              <p className="text-3xl font-bold text-wedding-navy">{stats?.confirmedGuests || 0}</p>
+              <p className="text-sm text-gray-500">su {stats?.totalAttending || 0} inviti confermati</p>
               <Button 
                 variant="link" 
                 className="p-0 h-auto text-wedding-blush mt-2"
