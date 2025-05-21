@@ -1,4 +1,3 @@
-
 import { AuthState } from "./types";
 import { User } from "@/types/auth";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +12,12 @@ export const useAuthActions = (
   // Login function using Supabase auth
   const login = async (credentials: { email: string; password: string }) => {
     try {
+      setAuthState({
+        ...authState,
+        loading: true,
+        error: null
+      });
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
@@ -25,11 +30,14 @@ export const useAuthActions = (
           title: "Login effettuato",
           description: "Benvenuto nel tuo wedding planner personale!",
         });
+        
+        return data;
       }
     } catch (error: any) {
       console.error("Login error:", error);
       setAuthState({
         ...authState,
+        loading: false,
         error: error.message,
       });
       
@@ -40,6 +48,12 @@ export const useAuthActions = (
       });
       
       throw error;
+    } finally {
+      // Make sure loading is set to false when done
+      setAuthState(state => ({
+        ...state,
+        loading: false
+      }));
     }
   };
   
@@ -54,6 +68,12 @@ export const useAuthActions = (
     businessName?: string;
   }) => {
     try {
+      setAuthState({
+        ...authState,
+        loading: true,
+        error: null
+      });
+      
       const { data, error } = await supabase.auth.signUp({
         email: credentials.email,
         password: credentials.password,
@@ -119,6 +139,12 @@ export const useAuthActions = (
       });
       
       throw error;
+    } finally {
+      // Make sure loading is set to false when done
+      setAuthState(state => ({
+        ...state,
+        loading: false
+      }));
     }
   };
   

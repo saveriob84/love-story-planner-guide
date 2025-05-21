@@ -9,20 +9,27 @@ import { useServiceCategories } from '@/hooks/useServiceCategories';
 import { useVendorServices } from '@/hooks/useVendorServices';
 import { Badge } from '@/components/ui/badge';
 import { ChevronRight, Globe, Mail, Phone } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const RoadmapPage = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const { categories, loading: isLoadingCategories } = useServiceCategories();
-  const { services, loading: isLoadingServices } = useVendorServices(activeCategory);
+  const { categories, loading: loadingCategories, error: categoriesError } = useServiceCategories();
+  const { services, loading: loadingServices, error: servicesError } = useVendorServices(activeCategory);
   
   useEffect(() => {
     // Redirect if not authenticated
     if (!loading && !isAuthenticated) {
+      toast({
+        title: "Accesso richiesto",
+        description: "Effettua il login per accedere a questa pagina",
+        variant: "destructive"
+      });
       navigate('/');
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated, loading, navigate, toast]);
 
   useEffect(() => {
     // Set the first category as active when categories are loaded
@@ -31,7 +38,7 @@ const RoadmapPage = () => {
     }
   }, [categories, activeCategory]);
 
-  if (loading || isLoadingCategories) {
+  if (loading) {
     return (
       <MainLayout>
         <div className="flex items-center justify-center min-h-screen">
@@ -74,9 +81,13 @@ const RoadmapPage = () => {
         </div>
 
         {/* Services Grid */}
-        {isLoadingServices ? (
+        {loadingServices ? (
           <div className="text-center py-12">
             <p>Caricamento servizi...</p>
+          </div>
+        ) : servicesError ? (
+          <div className="text-center py-12">
+            <p className="text-red-500">Si è verificato un errore nel caricamento dei servizi.</p>
           </div>
         ) : services && services.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -106,12 +117,12 @@ const RoadmapPage = () => {
 const ServiceCard = ({ service }) => {
   // Format price range for display
   const formatPrice = () => {
-    if (service.price_min && service.price_max) {
-      return `€${service.price_min} - €${service.price_max}`;
-    } else if (service.price_min) {
-      return `da €${service.price_min}`;
-    } else if (service.price_max) {
-      return `fino a €${service.price_max}`;
+    if (service.priceMin && service.priceMax) {
+      return `€${service.priceMin} - €${service.priceMax}`;
+    } else if (service.priceMin) {
+      return `da €${service.priceMin}`;
+    } else if (service.priceMax) {
+      return `fino a €${service.priceMax}`;
     }
     return 'Prezzo su richiesta';
   };
@@ -125,7 +136,7 @@ const ServiceCard = ({ service }) => {
       </div>
       <CardHeader>
         <CardTitle className="text-wedding-navy">{service.name}</CardTitle>
-        <CardDescription>{service.business_name || "Fornitore"}</CardDescription>
+        <CardDescription>{service.vendor?.businessName || "Fornitore"}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         {service.description && (
