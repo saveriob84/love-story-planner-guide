@@ -49,7 +49,9 @@ export const useAuthActions = (
     password: string; 
     name?: string; 
     partnerName?: string; 
-    weddingDate?: Date 
+    weddingDate?: Date;
+    role?: 'couple' | 'vendor';
+    businessName?: string;
   }) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -60,11 +62,42 @@ export const useAuthActions = (
             name: credentials.name,
             partnerName: credentials.partnerName,
             weddingDate: credentials.weddingDate?.toISOString(),
+            role: credentials.role || 'couple',
+            businessName: credentials.businessName,
           },
         },
       });
       
       if (error) throw error;
+      
+      if (data.user && credentials.role === 'vendor' && credentials.businessName) {
+        // Create vendor profile if registering as vendor
+        const { error: vendorError } = await supabase
+          .from('vendors')
+          .insert({
+            user_id: data.user.id,
+            business_name: credentials.businessName,
+            email: credentials.email,
+          });
+          
+        if (vendorError) {
+          console.error("Error creating vendor profile:", vendorError);
+          throw vendorError;
+        }
+        
+        // Set vendor role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: data.user.id,
+            role: 'vendor'
+          });
+          
+        if (roleError) {
+          console.error("Error setting vendor role:", roleError);
+          throw roleError;
+        }
+      }
       
       if (data.user) {
         toast({
@@ -157,10 +190,48 @@ export const useAuthActions = (
     }
   };
 
+  // Get current user role
+  const getCurrentRole = async (): Promise<'couple' | 'vendor' | undefined> => {
+    if (!authState.user) return undefined;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', authState.user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user role:", error);
+        return 'couple'; // Default to couple if error
+      }
+
+      return data.role as 'couple' | 'vendor';
+    } catch (error) {
+      console.error("Error in getCurrentRole:", error);
+      return 'couple'; // Default to couple if error
+    }
+  };
+
+  // Check if current user is a vendor
+  const isVendor = async (): Promise<boolean> => {
+    const role = await getCurrentRole();
+    return role === 'vendor';
+  };
+
+  // Check if current user is a couple
+  const isCouple = async (): Promise<boolean> => {
+    const role = await getCurrentRole();
+    return role === 'couple';
+  };
+
   return {
     login,
     register,
     logout,
-    updateUser
+    updateUser,
+    getCurrentRole,
+    isVendor,
+    isCouple
   };
 };

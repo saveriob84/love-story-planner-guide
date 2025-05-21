@@ -15,8 +15,13 @@ export interface AuthContextType extends AuthState {
     password: string; 
     name?: string; 
     partnerName?: string; 
-    weddingDate?: Date 
+    weddingDate?: Date;
+    role?: 'couple' | 'vendor';
+    businessName?: string;
   }) => Promise<void>;
   logout: () => void;
   updateUser: (userData: Partial<User>) => void;
+  getCurrentRole: () => Promise<'couple' | 'vendor' | undefined>;
+  isVendor: () => Promise<boolean>;
+  isCouple: () => Promise<boolean>;
 }

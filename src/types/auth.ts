@@ -5,24 +5,51 @@ export interface User {
   name?: string;
   partnerName?: string;
   weddingDate?: Date;
+  role?: 'couple' | 'vendor';
 }
 
-export interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  loading: boolean;
-  error: string | null;
-}
-
-export interface LoginCredentials {
+export interface Vendor {
+  id: string;
+  userId: string;
+  businessName: string;
+  description?: string;
+  phone?: string;
   email: string;
-  password: string;
+  website?: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
+  logoUrl?: string;
 }
 
-export interface RegisterCredentials {
-  email: string;
-  password: string;
-  name?: string;
-  partnerName?: string;
-  weddingDate?: Date;
+export interface ServiceCategory {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  displayOrder: number;
+}
+
+export interface VendorService {
+  id: string;
+  vendorId: string;
+  categoryId: string;
+  name: string;
+  description?: string;
+  priceMin?: number;
+  priceMax?: number;
+  locationName?: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
+  latitude?: number;
+  longitude?: number;
+  images?: ServiceImage[];
+}
+
+export interface ServiceImage {
+  id: string;
+  serviceId: string;
+  imageUrl: string;
+  displayOrder: number;
 }
