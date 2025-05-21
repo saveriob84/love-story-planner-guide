@@ -3,7 +3,6 @@ import { AuthState } from "./types";
 import { User } from "@/types/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { AuthResponse } from "@supabase/supabase-js";
 
 export const useAuthActions = (
   authState: AuthState, 
@@ -12,34 +11,25 @@ export const useAuthActions = (
   const { toast } = useToast();
   
   // Login function using Supabase auth
-  const login = async (credentials: { email: string; password: string }): Promise<AuthResponse> => {
+  const login = async (credentials: { email: string; password: string }) => {
     try {
-      setAuthState({
-        ...authState,
-        loading: true,
-        error: null
-      });
-      
-      const response = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
       
-      if (response.error) throw response.error;
+      if (error) throw error;
       
-      if (response.data.user) {
+      if (data.user) {
         toast({
           title: "Login effettuato",
           description: "Benvenuto nel tuo wedding planner personale!",
         });
       }
-      
-      return response;
     } catch (error: any) {
       console.error("Login error:", error);
       setAuthState({
         ...authState,
-        loading: false,
         error: error.message,
       });
       
@@ -50,12 +40,6 @@ export const useAuthActions = (
       });
       
       throw error;
-    } finally {
-      // Make sure loading is set to false when done
-      setAuthState(state => ({
-        ...state,
-        loading: false
-      }));
     }
   };
   
@@ -65,17 +49,9 @@ export const useAuthActions = (
     password: string; 
     name?: string; 
     partnerName?: string; 
-    weddingDate?: Date;
-    role?: 'couple' | 'vendor';
-    businessName?: string;
+    weddingDate?: Date 
   }) => {
     try {
-      setAuthState({
-        ...authState,
-        loading: true,
-        error: null
-      });
-      
       const { data, error } = await supabase.auth.signUp({
         email: credentials.email,
         password: credentials.password,
@@ -84,42 +60,11 @@ export const useAuthActions = (
             name: credentials.name,
             partnerName: credentials.partnerName,
             weddingDate: credentials.weddingDate?.toISOString(),
-            role: credentials.role || 'couple',
-            businessName: credentials.businessName,
           },
         },
       });
       
       if (error) throw error;
-      
-      if (data.user && credentials.role === 'vendor' && credentials.businessName) {
-        // Create vendor profile if registering as vendor
-        const { error: vendorError } = await supabase
-          .from('vendors')
-          .insert({
-            user_id: data.user.id,
-            business_name: credentials.businessName,
-            email: credentials.email,
-          });
-          
-        if (vendorError) {
-          console.error("Error creating vendor profile:", vendorError);
-          throw vendorError;
-        }
-        
-        // Set vendor role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: data.user.id,
-            role: 'vendor'
-          });
-          
-        if (roleError) {
-          console.error("Error setting vendor role:", roleError);
-          throw roleError;
-        }
-      }
       
       if (data.user) {
         toast({
@@ -141,12 +86,6 @@ export const useAuthActions = (
       });
       
       throw error;
-    } finally {
-      // Make sure loading is set to false when done
-      setAuthState(state => ({
-        ...state,
-        loading: false
-      }));
     }
   };
   
@@ -218,48 +157,10 @@ export const useAuthActions = (
     }
   };
 
-  // Get current user role
-  const getCurrentRole = async (): Promise<'couple' | 'vendor' | undefined> => {
-    if (!authState.user) return undefined;
-
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', authState.user.id)
-        .single();
-
-      if (error) {
-        console.error("Error fetching user role:", error);
-        return 'couple'; // Default to couple if error
-      }
-
-      return data.role as 'couple' | 'vendor';
-    } catch (error) {
-      console.error("Error in getCurrentRole:", error);
-      return 'couple'; // Default to couple if error
-    }
-  };
-
-  // Check if current user is a vendor
-  const isVendor = async (): Promise<boolean> => {
-    const role = await getCurrentRole();
-    return role === 'vendor';
-  };
-
-  // Check if current user is a couple
-  const isCouple = async (): Promise<boolean> => {
-    const role = await getCurrentRole();
-    return role === 'couple';
-  };
-
   return {
     login,
     register,
     logout,
-    updateUser,
-    getCurrentRole,
-    isVendor,
-    isCouple
+    updateUser
   };
 };

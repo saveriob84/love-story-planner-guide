@@ -1,39 +1,46 @@
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/auth/AuthContext";
-import Index from "@/pages/Index";
-import Dashboard from "@/pages/Dashboard";
-import GuestsPage from "@/pages/GuestsPage";
-import ChecklistPage from "@/pages/ChecklistPage";
-import TableArrangementPage from "@/pages/TableArrangementPage";
-import NotFound from "@/pages/NotFound";
-import Profile from "./pages/Profile";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./contexts/auth/AuthContext";
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import ChecklistPage from "./pages/ChecklistPage";
 import Budget from "./pages/Budget";
-import RoadmapPage from "./pages/RoadmapPage";
-import VendorDashboardPage from "./pages/VendorDashboardPage";
-import "./App.css";
+import GuestsPage from "./pages/GuestsPage";
+import TableArrangementPage from "./pages/TableArrangementPage";
+import Profile from "./pages/Profile";
+import NotFound from "./pages/NotFound";
 
-function App() {
-  return (
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/guests" element={<GuestsPage />} />
-          <Route path="/checklist" element={<ChecklistPage />} />
-          <Route path="/tables" element={<TableArrangementPage />} />
-          <Route path="/budget" element={<Budget />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/roadmap" element={<RoadmapPage />} />
-          <Route path="/vendor-dashboard" element={<VendorDashboardPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
-      <Toaster />
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/checklist" element={<ChecklistPage />} />
+            <Route path="/budget" element={<Budget />} />
+            <Route path="/guests" element={<GuestsPage />} />
+            <Route path="/tables" element={<TableArrangementPage />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/calendar" element={<NotFound />} /> {/* Temporary Calendar route */}
+            <Route path="/settings" element={<NotFound />} /> {/* Temporary Settings route */}
+            <Route path="/guides" element={<NotFound />} /> {/* Temporary Guides route */}
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
     </AuthProvider>
-  );
-}
+  </QueryClientProvider>
+);
 
 export default App;

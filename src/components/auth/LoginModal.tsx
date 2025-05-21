@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,11 +28,9 @@ const LoginModal = ({ isOpen, onClose, onRegisterClick }: LoginModalProps) => {
     setIsLoading(true);
 
     try {
-      const response = await login({ email, password });
-      if (response.data.user) {
-        onClose();
-        navigate("/dashboard");
-      }
+      await login({ email, password });
+      onClose();
+      navigate("/dashboard");
     } catch (err: any) {
       setError(err.message || "Si è verificato un errore durante il login.");
     } finally {

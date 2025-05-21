@@ -187,74 +187,6 @@ export type Database = {
         }
         Relationships: []
       }
-      service_categories: {
-        Row: {
-          active: boolean
-          created_at: string
-          description: string | null
-          display_order: number
-          icon: string | null
-          id: string
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          display_order?: number
-          icon?: string | null
-          id?: string
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          description?: string | null
-          display_order?: number
-          icon?: string | null
-          id?: string
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      service_images: {
-        Row: {
-          created_at: string
-          display_order: number
-          id: string
-          image_url: string
-          service_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          display_order?: number
-          id?: string
-          image_url: string
-          service_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          display_order?: number
-          id?: string
-          image_url?: string
-          service_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "service_images_service_id_fkey"
-            columns: ["service_id"]
-            isOneToOne: false
-            referencedRelation: "vendor_services"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       table_assignments: {
         Row: {
           created_at: string
@@ -437,153 +369,6 @@ export type Database = {
           },
         ]
       }
-      user_roles: {
-        Row: {
-          created_at: string
-          id: string
-          role: Database["public"]["Enums"]["user_role"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: Database["public"]["Enums"]["user_role"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      vendor_services: {
-        Row: {
-          address: string | null
-          category_id: string
-          city: string | null
-          created_at: string
-          description: string | null
-          id: string
-          latitude: number | null
-          location_name: string | null
-          longitude: number | null
-          name: string
-          postal_code: string | null
-          price_max: number | null
-          price_min: number | null
-          updated_at: string
-          vendor_id: string
-        }
-        Insert: {
-          address?: string | null
-          category_id: string
-          city?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          latitude?: number | null
-          location_name?: string | null
-          longitude?: number | null
-          name: string
-          postal_code?: string | null
-          price_max?: number | null
-          price_min?: number | null
-          updated_at?: string
-          vendor_id: string
-        }
-        Update: {
-          address?: string | null
-          category_id?: string
-          city?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          latitude?: number | null
-          location_name?: string | null
-          longitude?: number | null
-          name?: string
-          postal_code?: string | null
-          price_max?: number | null
-          price_min?: number | null
-          updated_at?: string
-          vendor_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "vendor_services_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "service_categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vendor_services_vendor_id_fkey"
-            columns: ["vendor_id"]
-            isOneToOne: false
-            referencedRelation: "vendors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      vendors: {
-        Row: {
-          address: string | null
-          business_name: string
-          city: string | null
-          created_at: string
-          description: string | null
-          email: string
-          id: string
-          latitude: number | null
-          logo_url: string | null
-          longitude: number | null
-          phone: string | null
-          postal_code: string | null
-          updated_at: string
-          user_id: string
-          website: string | null
-        }
-        Insert: {
-          address?: string | null
-          business_name: string
-          city?: string | null
-          created_at?: string
-          description?: string | null
-          email: string
-          id?: string
-          latitude?: number | null
-          logo_url?: string | null
-          longitude?: number | null
-          phone?: string | null
-          postal_code?: string | null
-          updated_at?: string
-          user_id: string
-          website?: string | null
-        }
-        Update: {
-          address?: string | null
-          business_name?: string
-          city?: string | null
-          created_at?: string
-          description?: string | null
-          email?: string
-          id?: string
-          latitude?: number | null
-          logo_url?: string | null
-          longitude?: number | null
-          phone?: string | null
-          postal_code?: string | null
-          updated_at?: string
-          user_id?: string
-          website?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -592,7 +377,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      user_role: "couple" | "vendor"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -707,8 +492,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      user_role: ["couple", "vendor"],
-    },
+    Enums: {},
   },
 } as const

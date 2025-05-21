@@ -23,15 +23,6 @@ export const useAuthState = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          // Get user role
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single();
-
-          const role = roleData?.role as 'couple' | 'vendor' | undefined;
-          
           setAuthState({
             user: {
               id: session.user.id,
@@ -41,7 +32,6 @@ export const useAuthState = () => {
               weddingDate: session.user.user_metadata.weddingDate 
                 ? new Date(session.user.user_metadata.weddingDate) 
                 : undefined,
-              role: role || 'couple',
             },
             isAuthenticated: true,
             loading: false,
@@ -67,15 +57,6 @@ export const useAuthState = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
-          // Get user role
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single();
-
-          const role = roleData?.role as 'couple' | 'vendor' | undefined;
-          
           setAuthState({
             user: {
               id: session.user.id,
@@ -85,7 +66,6 @@ export const useAuthState = () => {
               weddingDate: session.user.user_metadata.weddingDate 
                 ? new Date(session.user.user_metadata.weddingDate) 
                 : undefined,
-              role: role || 'couple',
             },
             isAuthenticated: true,
             loading: false,

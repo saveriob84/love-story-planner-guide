@@ -1,5 +1,4 @@
 
-
 import { Database } from '@/integrations/supabase/types';
 
 // Custom types for Supabase tables
@@ -33,23 +32,3 @@ export type TaskRow = TablesRow['tasks']['Row'];
 // Timelines
 export type TimelineInsert = TablesInsert['timelines']['Insert'];
 export type TimelineRow = TablesRow['timelines']['Row'];
-
-// User Roles
-export type UserRoleInsert = TablesInsert['user_roles']['Insert'];
-export type UserRoleRow = TablesRow['user_roles']['Row'];
-
-// Vendors
-export type VendorInsert = TablesInsert['vendors']['Insert'];
-export type VendorRow = TablesRow['vendors']['Row'];
-
-// Service Categories
-export type ServiceCategoryInsert = TablesInsert['service_categories']['Insert'];
-export type ServiceCategoryRow = TablesRow['service_categories']['Row'];
-
-// Vendor Services
-export type VendorServiceInsert = TablesInsert['vendor_services']['Insert'];
-export type VendorServiceRow = TablesRow['vendor_services']['Row'];
-
-// Service Images
-export type ServiceImageInsert = TablesInsert['service_images']['Insert'];
-export type ServiceImageRow = TablesRow['service_images']['Row'];

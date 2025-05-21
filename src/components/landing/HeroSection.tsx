@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 
 interface HeroSectionProps {
   onRegisterClick: () => void;
-  onLoginClick?: () => void;
 }
 
-const HeroSection = ({ onRegisterClick, onLoginClick }: HeroSectionProps) => {
+const HeroSection = ({ onRegisterClick }: HeroSectionProps) => {
   return (
     <div className="relative overflow-hidden">
       {/* Background image with overlay */}

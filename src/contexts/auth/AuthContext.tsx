@@ -10,7 +10,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Provider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { authState, setAuthState } = useAuthState();
-  const { login, register, logout, updateUser, getCurrentRole, isVendor, isCouple } = useAuthActions(authState, setAuthState);
+  const { login, register, logout, updateUser } = useAuthActions(authState, setAuthState);
   
   const contextValue: AuthContextType = {
     ...authState,
@@ -18,9 +18,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     register,
     logout,
     updateUser,
-    getCurrentRole,
-    isVendor,
-    isCouple
   };
   
   return (
