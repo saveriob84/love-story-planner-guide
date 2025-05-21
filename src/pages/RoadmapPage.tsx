@@ -14,8 +14,8 @@ const RoadmapPage = () => {
   const { user, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const { categories, isLoading: isLoadingCategories } = useServiceCategories();
-  const { services, isLoading: isLoadingServices } = useVendorServices(activeCategory);
+  const { categories, loading: isLoadingCategories } = useServiceCategories();
+  const { services, loading: isLoadingServices } = useVendorServices(activeCategory);
   
   useEffect(() => {
     // Redirect if not authenticated
