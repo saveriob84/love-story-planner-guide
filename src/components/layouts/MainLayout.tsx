@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from "@/lib/utils";
@@ -6,7 +5,7 @@ import { PanelLeft, X, Menu, Home, Users, CheckSquare, GripHorizontal, CreditCar
 import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/auth/AuthContext';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -16,7 +15,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { pathname } = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
 
   const mainNavItems = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },

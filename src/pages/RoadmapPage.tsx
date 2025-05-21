@@ -132,7 +132,7 @@ const ServiceCard = ({ service }: { service: VendorService }) => {
       </div>
       <CardHeader>
         <CardTitle className="text-wedding-navy">{service.name}</CardTitle>
-        <CardDescription>{service.vendor?.businessName}</CardDescription>
+        <CardDescription>{service.vendorId}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         {service.description && (
@@ -163,21 +163,15 @@ const ServiceCard = ({ service }: { service: VendorService }) => {
       </CardContent>
       <CardFooter className="flex justify-between">
         <div className="flex space-x-2">
-          {service.vendor?.phone && (
-            <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
-              <Phone className="h-4 w-4" />
-            </Button>
-          )}
-          {service.vendor?.email && (
-            <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
-              <Mail className="h-4 w-4" />
-            </Button>
-          )}
-          {service.vendor?.website && (
-            <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
-              <Globe className="h-4 w-4" />
-            </Button>
-          )}
+          <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
+            <Phone className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
+            <Mail className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-9 w-9 rounded-full">
+            <Globe className="h-4 w-4" />
+          </Button>
         </div>
         <Button size="sm" className="bg-wedding-blush text-wedding-navy hover:bg-wedding-blush/90">
           Dettagli <ChevronRight className="ml-1 h-4 w-4" />
