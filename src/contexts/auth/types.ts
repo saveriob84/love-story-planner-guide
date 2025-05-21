@@ -1,5 +1,6 @@
 
 import { User } from "@/types/auth";
+import { AuthResponse } from "@supabase/supabase-js";
 
 export interface AuthState {
   user: User | null;
@@ -9,7 +10,7 @@ export interface AuthState {
 }
 
 export interface AuthContextType extends AuthState {
-  login: (credentials: { email: string; password: string }) => Promise<void>;
+  login: (credentials: { email: string; password: string }) => Promise<AuthResponse | undefined>;
   register: (credentials: { 
     email: string; 
     password: string; 

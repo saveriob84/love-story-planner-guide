@@ -28,9 +28,11 @@ const LoginModal = ({ isOpen, onClose, onRegisterClick }: LoginModalProps) => {
     setIsLoading(true);
 
     try {
-      await login({ email, password });
-      onClose();
-      navigate("/dashboard");
+      const response = await login({ email, password });
+      if (response?.data?.user) {
+        onClose();
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "Si è verificato un errore durante il login.");
     } finally {

@@ -10,6 +10,7 @@ import { useVendorServices } from '@/hooks/useVendorServices';
 import { Badge } from '@/components/ui/badge';
 import { ChevronRight, Globe, Mail, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 const RoadmapPage = () => {
   const { user, isAuthenticated, loading } = useAuth();
@@ -41,74 +42,78 @@ const RoadmapPage = () => {
   if (loading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <p>Caricamento...</p>
-        </div>
+        <SidebarProvider>
+          <div className="flex items-center justify-center min-h-screen">
+            <p>Caricamento...</p>
+          </div>
+        </SidebarProvider>
       </MainLayout>
     );
   }
 
   return (
     <MainLayout>
-      <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="font-serif text-3xl font-bold text-wedding-navy">Roadmap</h1>
-          <p className="text-gray-500 mt-2">
-            Scopri e contatta i fornitori per realizzare il matrimonio dei tuoi sogni
-          </p>
-        </div>
+      <SidebarProvider>
+        <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <h1 className="font-serif text-3xl font-bold text-wedding-navy">Roadmap</h1>
+            <p className="text-gray-500 mt-2">
+              Scopri e contatta i fornitori per realizzare il matrimonio dei tuoi sogni
+            </p>
+          </div>
 
-        {/* Categories Tabs */}
-        <div className="mb-8">
-          <div className="flex overflow-x-auto pb-2 scrollbar-hide">
-            <div className="flex space-x-2">
-              {categories?.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={activeCategory === category.id ? "default" : "outline"}
-                  className={
-                    activeCategory === category.id
-                      ? "bg-wedding-sage text-white hover:bg-wedding-sage/90"
-                      : "text-gray-600"
-                  }
-                  onClick={() => setActiveCategory(category.id)}
-                >
-                  {category.name}
-                </Button>
-              ))}
+          {/* Categories Tabs */}
+          <div className="mb-8">
+            <div className="flex overflow-x-auto pb-2 scrollbar-hide">
+              <div className="flex space-x-2">
+                {categories?.map((category) => (
+                  <Button
+                    key={category.id}
+                    variant={activeCategory === category.id ? "default" : "outline"}
+                    className={
+                      activeCategory === category.id
+                        ? "bg-wedding-sage text-white hover:bg-wedding-sage/90"
+                        : "text-gray-600"
+                    }
+                    onClick={() => setActiveCategory(category.id)}
+                  >
+                    {category.name}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Services Grid */}
-        {loadingServices ? (
-          <div className="text-center py-12">
-            <p>Caricamento servizi...</p>
-          </div>
-        ) : servicesError ? (
-          <div className="text-center py-12">
-            <p className="text-red-500">Si è verificato un errore nel caricamento dei servizi.</p>
-          </div>
-        ) : services && services.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service) => (
-              <ServiceCard key={service.id} service={service} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500">Nessun fornitore disponibile per questa categoria.</p>
-            {user?.role === 'vendor' && (
-              <Button
-                className="mt-4 bg-wedding-sage text-white hover:bg-wedding-sage/90"
-                onClick={() => navigate('/vendor-dashboard')}
-              >
-                Aggiungi il tuo servizio
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
+          {/* Services Grid */}
+          {loadingServices ? (
+            <div className="text-center py-12">
+              <p>Caricamento servizi...</p>
+            </div>
+          ) : servicesError ? (
+            <div className="text-center py-12">
+              <p className="text-red-500">Si è verificato un errore nel caricamento dei servizi.</p>
+            </div>
+          ) : services && services.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {services.map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-500">Nessun fornitore disponibile per questa categoria.</p>
+              {user?.role === 'vendor' && (
+                <Button
+                  className="mt-4 bg-wedding-sage text-white hover:bg-wedding-sage/90"
+                  onClick={() => navigate('/vendor-dashboard')}
+                >
+                  Aggiungi il tuo servizio
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      </SidebarProvider>
     </MainLayout>
   );
 };
