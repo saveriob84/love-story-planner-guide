@@ -10,7 +10,7 @@ export interface AuthState {
 }
 
 export interface AuthContextType extends AuthState {
-  login: (credentials: { email: string; password: string }) => Promise<AuthResponse | undefined>;
+  login: (credentials: { email: string; password: string }) => Promise<AuthResponse>;
   register: (credentials: { 
     email: string; 
     password: string; 

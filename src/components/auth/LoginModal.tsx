@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -29,7 +28,7 @@ const LoginModal = ({ isOpen, onClose, onRegisterClick }: LoginModalProps) => {
 
     try {
       const response = await login({ email, password });
-      if (response?.data?.user) {
+      if (response.data.user) {
         onClose();
         navigate("/dashboard");
       }

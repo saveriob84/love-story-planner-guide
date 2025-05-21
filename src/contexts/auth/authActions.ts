@@ -1,7 +1,9 @@
+
 import { AuthState } from "./types";
 import { User } from "@/types/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { AuthResponse } from "@supabase/supabase-js";
 
 export const useAuthActions = (
   authState: AuthState, 
@@ -10,7 +12,7 @@ export const useAuthActions = (
   const { toast } = useToast();
   
   // Login function using Supabase auth
-  const login = async (credentials: { email: string; password: string }) => {
+  const login = async (credentials: { email: string; password: string }): Promise<AuthResponse> => {
     try {
       setAuthState({
         ...authState,
@@ -18,21 +20,21 @@ export const useAuthActions = (
         error: null
       });
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const response = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
       
-      if (error) throw error;
+      if (response.error) throw response.error;
       
-      if (data.user) {
+      if (response.data.user) {
         toast({
           title: "Login effettuato",
           description: "Benvenuto nel tuo wedding planner personale!",
         });
-        
-        return data;
       }
+      
+      return response;
     } catch (error: any) {
       console.error("Login error:", error);
       setAuthState({
