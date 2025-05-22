@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AuthState } from "./types";
-import { CreateUserRoleParams, CreateVendorProfileParams } from "./authTypes";
+import { CreateUserRoleParams, CreateVendorProfileParams, RpcFunctionReturn } from "./authTypes";
 
 export const useAuthRegistration = (
   authState: AuthState,
@@ -50,10 +50,13 @@ export const useAuthRegistration = (
       if (data.user) {
         try {
           // Use a direct SQL RPC call to bypass RLS
-          const { error: roleError } = await supabase.rpc<void, null>('create_user_role', { 
-            user_id: data.user.id, 
-            role_name: credentials.isVendor ? 'vendor' : 'couple' 
-          } as CreateUserRoleParams);
+          const { error: roleError } = await supabase.rpc<RpcFunctionReturn>(
+            'create_user_role', 
+            { 
+              user_id: data.user.id, 
+              role_name: credentials.isVendor ? 'vendor' : 'couple' 
+            } as CreateUserRoleParams
+          );
             
           if (roleError) {
             console.error("Error setting user role:", roleError);
@@ -64,14 +67,17 @@ export const useAuthRegistration = (
           if (credentials.isVendor && credentials.businessName) {
             try {
               // Create vendor profile with the RLS policy in mind
-              const { error: vendorError } = await supabase.rpc<void, null>('create_vendor_profile', {
-                user_id: data.user.id,
-                business_name: credentials.businessName,
-                email_address: credentials.email,
-                phone_number: credentials.phone || null,
-                website_url: credentials.website || null,
-                vendor_description: credentials.description || null
-              } as CreateVendorProfileParams);
+              const { error: vendorError } = await supabase.rpc<RpcFunctionReturn>(
+                'create_vendor_profile', 
+                {
+                  user_id: data.user.id,
+                  business_name: credentials.businessName,
+                  email_address: credentials.email,
+                  phone_number: credentials.phone || null,
+                  website_url: credentials.website || null,
+                  vendor_description: credentials.description || null
+                } as CreateVendorProfileParams
+              );
               
               if (vendorError) {
                 console.error("Error creating vendor profile:", vendorError);
