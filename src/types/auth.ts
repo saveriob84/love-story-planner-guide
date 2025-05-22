@@ -6,6 +6,7 @@ export interface User {
   partnerName?: string;
   weddingDate?: Date;
   role?: 'couple' | 'vendor';
+  businessName?: string; // For vendors
 }
 
 export interface AuthState {

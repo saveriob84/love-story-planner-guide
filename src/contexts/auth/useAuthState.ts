@@ -17,34 +17,99 @@ export const useAuthState = () => {
   
   // Check for logged in user on initial load and set up auth state change listener
   useEffect(() => {
+    // Set up auth state change listener first to prevent issues
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          try {
+            // Get user role safely
+            let role = 'couple';
+            const { data: roleData, error: roleError } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .single();
+            
+            if (!roleError && roleData) {
+              role = roleData.role;
+            }
+            
+            setAuthState({
+              user: {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.user_metadata.name,
+                partnerName: session.user.user_metadata.partnerName,
+                weddingDate: session.user.user_metadata.weddingDate 
+                  ? new Date(session.user.user_metadata.weddingDate) 
+                  : undefined,
+                role: role,
+                businessName: session.user.user_metadata.businessName,
+              },
+              isAuthenticated: true,
+              loading: false,
+              error: null,
+            });
+          } catch (error) {
+            console.error("Error processing authentication:", error);
+            setAuthState({
+              ...initialState,
+              loading: false,
+              error: "Error processing authentication",
+            });
+          }
+        } else {
+          setAuthState({
+            ...initialState,
+            loading: false,
+          });
+        }
+      }
+    );
+    
+    // Now check for current session
     const checkLoggedInUser = async () => {
       try {
-        // Get current session from Supabase
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          // Get user role
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single();
-          
-          setAuthState({
-            user: {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata.name,
-              partnerName: session.user.user_metadata.partnerName,
-              weddingDate: session.user.user_metadata.weddingDate 
-                ? new Date(session.user.user_metadata.weddingDate) 
-                : undefined,
-              role: roleData?.role || 'couple',
-            },
-            isAuthenticated: true,
-            loading: false,
-            error: null,
-          });
+          try {
+            // Get user role safely
+            let role = 'couple';
+            const { data: roleData, error: roleError } = await supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .single();
+            
+            if (!roleError && roleData) {
+              role = roleData.role;
+            }
+            
+            setAuthState({
+              user: {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.user_metadata.name,
+                partnerName: session.user.user_metadata.partnerName,
+                weddingDate: session.user.user_metadata.weddingDate 
+                  ? new Date(session.user.user_metadata.weddingDate) 
+                  : undefined,
+                role: role,
+                businessName: session.user.user_metadata.businessName,
+              },
+              isAuthenticated: true,
+              loading: false,
+              error: null,
+            });
+          } catch (error) {
+            console.error("Error processing user data:", error);
+            setAuthState({
+              ...initialState,
+              loading: false,
+              error: "Error processing user data",
+            });
+          }
         } else {
           setAuthState({
             ...initialState,
@@ -60,41 +125,6 @@ export const useAuthState = () => {
         });
       }
     };
-    
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          // Get user role
-          const { data: roleData } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .single();
-          
-          setAuthState({
-            user: {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata.name,
-              partnerName: session.user.user_metadata.partnerName,
-              weddingDate: session.user.user_metadata.weddingDate 
-                ? new Date(session.user.user_metadata.weddingDate) 
-                : undefined,
-              role: roleData?.role || 'couple',
-            },
-            isAuthenticated: true,
-            loading: false,
-            error: null,
-          });
-        } else {
-          setAuthState({
-            ...initialState,
-            loading: false,
-          });
-        }
-      }
-    );
     
     checkLoggedInUser();
     
