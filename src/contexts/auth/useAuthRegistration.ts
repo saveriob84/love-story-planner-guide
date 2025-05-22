@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AuthState } from "./types";
-import { CreateUserRoleParams, CreateVendorProfileParams, RpcFunctionReturn } from "./authTypes";
+import { CreateUserRoleParams, CreateVendorProfileParams } from "./authTypes";
 
 export const useAuthRegistration = (
   authState: AuthState,
@@ -49,8 +49,8 @@ export const useAuthRegistration = (
       
       if (data.user) {
         try {
-          // Use a direct SQL RPC call to bypass RLS
-          const { error: roleError } = await supabase.rpc<RpcFunctionReturn, CreateUserRoleParams>(
+          // Use a direct SQL RPC call to bypass RLS - remove generic parameters
+          const { error: roleError } = await supabase.rpc(
             'create_user_role', 
             { 
               user_id: data.user.id, 
@@ -66,8 +66,8 @@ export const useAuthRegistration = (
           // If registering as vendor, add vendor profile
           if (credentials.isVendor && credentials.businessName) {
             try {
-              // Create vendor profile with the RLS policy in mind
-              const { error: vendorError } = await supabase.rpc<RpcFunctionReturn, CreateVendorProfileParams>(
+              // Create vendor profile with the RLS policy in mind - remove generic parameters
+              const { error: vendorError } = await supabase.rpc(
                 'create_vendor_profile', 
                 {
                   user_id: data.user.id,

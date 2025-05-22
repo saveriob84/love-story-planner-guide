@@ -13,14 +13,3 @@ export type CreateVendorProfileParams = {
   website_url: string | null;
   vendor_description: string | null;
 };
-
-// Define the return type for these RPC functions
-export type RpcFunctionReturn = {
-  data: null;
-  error: null | {
-    message: string;
-    details: string;
-    hint: string;
-    code: string;
-  };
-};
