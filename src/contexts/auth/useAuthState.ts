@@ -23,7 +23,7 @@ export const useAuthState = () => {
         if (session?.user) {
           try {
             // Get user role safely
-            let role = 'couple';
+            let role: 'couple' | 'vendor' = 'couple';
             const { data: roleData, error: roleError } = await supabase
               .from('user_roles')
               .select('role')
@@ -31,7 +31,8 @@ export const useAuthState = () => {
               .single();
             
             if (!roleError && roleData) {
-              role = roleData.role;
+              // Cast the role string to our expected union type
+              role = roleData.role === 'vendor' ? 'vendor' : 'couple';
             }
             
             setAuthState({
@@ -75,7 +76,7 @@ export const useAuthState = () => {
         if (session?.user) {
           try {
             // Get user role safely
-            let role = 'couple';
+            let role: 'couple' | 'vendor' = 'couple';
             const { data: roleData, error: roleError } = await supabase
               .from('user_roles')
               .select('role')
@@ -83,7 +84,8 @@ export const useAuthState = () => {
               .single();
             
             if (!roleError && roleData) {
-              role = roleData.role;
+              // Cast the role string to our expected union type
+              role = roleData.role === 'vendor' ? 'vendor' : 'couple';
             }
             
             setAuthState({
