@@ -17,9 +17,13 @@ export const useAuthState = () => {
   
   // Check for logged in user on initial load and set up auth state change listener
   useEffect(() => {
+    console.log("Setting up auth state listener");
+    
     // Set up auth state change listener first to prevent issues
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event);
+        
         if (session?.user) {
           try {
             // Get user role safely
@@ -31,9 +35,11 @@ export const useAuthState = () => {
               .single();
             
             if (!roleError && roleData) {
-              // Cast the role string to our expected union type
+              // Ensure the role is correctly typed
               role = roleData.role === 'vendor' ? 'vendor' : 'couple';
             }
+            
+            console.log("User authenticated with role:", role);
             
             setAuthState({
               user: {
@@ -60,6 +66,7 @@ export const useAuthState = () => {
             });
           }
         } else {
+          console.log("No authenticated user");
           setAuthState({
             ...initialState,
             loading: false,
@@ -71,6 +78,7 @@ export const useAuthState = () => {
     // Now check for current session
     const checkLoggedInUser = async () => {
       try {
+        console.log("Checking for logged in user");
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
@@ -84,9 +92,11 @@ export const useAuthState = () => {
               .single();
             
             if (!roleError && roleData) {
-              // Cast the role string to our expected union type
+              // Ensure the role is correctly typed
               role = roleData.role === 'vendor' ? 'vendor' : 'couple';
             }
+            
+            console.log("Found existing session with role:", role);
             
             setAuthState({
               user: {
@@ -113,6 +123,7 @@ export const useAuthState = () => {
             });
           }
         } else {
+          console.log("No existing session found");
           setAuthState({
             ...initialState,
             loading: false,
