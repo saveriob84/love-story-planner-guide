@@ -109,34 +109,42 @@ export const useAuthActions = (
       if (error) throw error;
       
       if (data.user) {
+        // First, update the user_roles table to set role as 'vendor' or 'couple'
+        const role = credentials.isVendor ? 'vendor' : 'couple';
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: data.user.id,
+            role: role
+          });
+          
+        if (roleError) {
+          console.error("Error setting user role:", roleError);
+          throw new Error("Errore nell'impostazione del ruolo utente");
+        }
+        
         // If registering as vendor, add vendor profile
         if (credentials.isVendor && credentials.businessName) {
-          const { error: vendorError } = await supabase
-            .from('vendors')
-            .insert({
-              user_id: data.user.id,
-              business_name: credentials.businessName,
-              email: credentials.email,
-              phone: credentials.phone || null,
-              website: credentials.website || null,
-              description: credentials.description || null,
-            });
-          
-          if (vendorError) {
-            console.error("Error creating vendor profile:", vendorError);
-            throw new Error("Errore nella creazione del profilo fornitore");
-          }
-
-          // Update user_roles table to set role as 'vendor'
-          const { error: roleError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: data.user.id,
-              role: 'vendor'
-            });
+          try {
+            // Create vendor profile with the RLS policy in mind
+            const { error: vendorError } = await supabase
+              .from('vendors')
+              .insert({
+                user_id: data.user.id,
+                business_name: credentials.businessName,
+                email: credentials.email,
+                phone: credentials.phone || null,
+                website: credentials.website || null,
+                description: credentials.description || null,
+              });
             
-          if (roleError) {
-            console.error("Error setting vendor role:", roleError);
+            if (vendorError) {
+              console.error("Error creating vendor profile:", vendorError);
+              throw new Error("Errore nella creazione del profilo fornitore");
+            }
+          } catch (err) {
+            console.error("Vendor profile creation caught error:", err);
+            throw err;
           }
         }
         
