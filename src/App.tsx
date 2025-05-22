@@ -13,6 +13,7 @@ import GuestsPage from "./pages/GuestsPage";
 import TableArrangementPage from "./pages/TableArrangementPage";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import VendorDashboard from "./pages/vendor/VendorDashboard";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/guests" element={<GuestsPage />} />
             <Route path="/tables" element={<TableArrangementPage />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/vendor/dashboard" element={<VendorDashboard />} />
             <Route path="/calendar" element={<NotFound />} /> {/* Temporary Calendar route */}
             <Route path="/settings" element={<NotFound />} /> {/* Temporary Settings route */}
             <Route path="/guides" element={<NotFound />} /> {/* Temporary Guides route */}

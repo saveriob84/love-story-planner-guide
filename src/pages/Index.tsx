@@ -7,10 +7,16 @@ import FeaturesSection from '@/components/landing/FeaturesSection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import LoginModal from '@/components/auth/LoginModal';
 import RegisterModal from '@/components/auth/RegisterModal';
+import VendorLoginModal from '@/components/auth/VendorLoginModal';
+import VendorRegisterModal from '@/components/auth/VendorRegisterModal';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isVendorLoginModalOpen, setIsVendorLoginModalOpen] = useState(false);
+  const [isVendorRegisterModalOpen, setIsVendorRegisterModalOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen">
@@ -19,16 +25,54 @@ const Index = () => {
           <img src="/wedding-logo.svg" alt="Wedding Planner" className="h-8 w-8" />
           <h1 className="font-serif text-2xl font-medium text-wedding-navy">Wedding<span className="text-wedding-blush">Planner</span></h1>
         </div>
-        <div className="flex space-x-4">
-          <Button variant="ghost" onClick={() => setIsLoginModalOpen(true)}>Accedi</Button>
-          <Button className="bg-wedding-blush text-wedding-navy hover:bg-wedding-blush/90" onClick={() => setIsRegisterModalOpen(true)}>Registrati</Button>
-        </div>
+        
+        {isMobile ? (
+          <div className="flex">
+            <Button variant="ghost" onClick={() => setIsLoginModalOpen(true)}>Accedi</Button>
+          </div>
+        ) : (
+          <div className="flex space-x-4">
+            <Button variant="ghost" onClick={() => setIsLoginModalOpen(true)}>Accedi</Button>
+            <Button className="bg-wedding-blush text-wedding-navy hover:bg-wedding-blush/90" onClick={() => setIsRegisterModalOpen(true)}>Registrati</Button>
+            <Button variant="outline" onClick={() => setIsVendorLoginModalOpen(true)}>Area Fornitori</Button>
+          </div>
+        )}
       </header>
 
       <main>
         <HeroSection onRegisterClick={() => setIsRegisterModalOpen(true)} />
         <FeaturesSection />
         <TestimonialsSection />
+        
+        {/* Vendor Section */}
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h2 className="text-3xl font-serif text-wedding-navy mb-4">Sei un Fornitore?</h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+                Registrati come fornitore e connettiti con coppie che stanno pianificando il loro matrimonio. 
+                Espandi la tua attività e raggiungi nuovi clienti.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                <Button 
+                  className="bg-wedding-navy text-white hover:bg-wedding-navy/90" 
+                  size="lg"
+                  onClick={() => setIsVendorRegisterModalOpen(true)}
+                >
+                  Registrati come Fornitore
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="border-wedding-navy text-wedding-navy hover:bg-wedding-navy/5"
+                  size="lg"
+                  onClick={() => setIsVendorLoginModalOpen(true)}
+                >
+                  Accedi come Fornitore
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer className="bg-wedding-navy text-white py-12 px-4 sm:px-6 lg:px-8">
@@ -83,6 +127,24 @@ const Index = () => {
         setIsRegisterModalOpen(false);
         setIsLoginModalOpen(true);
       }} />
+      
+      <VendorLoginModal 
+        isOpen={isVendorLoginModalOpen} 
+        onClose={() => setIsVendorLoginModalOpen(false)} 
+        onRegisterClick={() => {
+          setIsVendorLoginModalOpen(false);
+          setIsVendorRegisterModalOpen(true);
+        }} 
+      />
+      
+      <VendorRegisterModal 
+        isOpen={isVendorRegisterModalOpen} 
+        onClose={() => setIsVendorRegisterModalOpen(false)} 
+        onLoginClick={() => {
+          setIsVendorRegisterModalOpen(false);
+          setIsVendorLoginModalOpen(true);
+        }} 
+      />
     </div>
   );
 };

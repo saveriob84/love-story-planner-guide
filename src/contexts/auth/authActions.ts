@@ -11,7 +11,7 @@ export const useAuthActions = (
   const { toast } = useToast();
   
   // Login function using Supabase auth
-  const login = async (credentials: { email: string; password: string }) => {
+  const login = async (credentials: { email: string; password: string; isVendor?: boolean }) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
@@ -21,9 +21,39 @@ export const useAuthActions = (
       if (error) throw error;
       
       if (data.user) {
+        // Check if user is the correct role type
+        const { data: userRoleData, error: userRoleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .single();
+          
+        if (userRoleError) {
+          console.error("Error fetching user role:", userRoleError);
+        }
+        
+        const userRole = userRoleData?.role;
+        
+        // If trying to login as vendor but user is couple or vice versa
+        if (
+          (credentials.isVendor && userRole === 'couple') || 
+          (!credentials.isVendor && userRole === 'vendor')
+        ) {
+          // Sign out the user since they're using the wrong login form
+          await supabase.auth.signOut();
+          
+          throw new Error(
+            credentials.isVendor ? 
+              "Questo account non è registrato come fornitore. Usa il login normale." : 
+              "Questo account è registrato come fornitore. Usa il login fornitori."
+          );
+        }
+        
         toast({
           title: "Login effettuato",
-          description: "Benvenuto nel tuo wedding planner personale!",
+          description: credentials.isVendor ? 
+            "Benvenuto nel tuo portale fornitori!" : 
+            "Benvenuto nel tuo wedding planner personale!",
         });
       }
     } catch (error: any) {
@@ -49,27 +79,72 @@ export const useAuthActions = (
     password: string; 
     name?: string; 
     partnerName?: string; 
-    weddingDate?: Date 
+    weddingDate?: Date;
+    isVendor?: boolean;
+    businessName?: string;
+    phone?: string;
+    website?: string;
+    description?: string;
   }) => {
     try {
+      // Create user metadata based on user type
+      const userMetadata = credentials.isVendor ? {
+        name: credentials.name,
+        businessName: credentials.businessName,
+        isVendor: true,
+      } : {
+        name: credentials.name,
+        partnerName: credentials.partnerName,
+        weddingDate: credentials.weddingDate?.toISOString(),
+      };
+      
       const { data, error } = await supabase.auth.signUp({
         email: credentials.email,
         password: credentials.password,
         options: {
-          data: {
-            name: credentials.name,
-            partnerName: credentials.partnerName,
-            weddingDate: credentials.weddingDate?.toISOString(),
-          },
+          data: userMetadata,
         },
       });
       
       if (error) throw error;
       
       if (data.user) {
+        // If registering as vendor, add vendor profile
+        if (credentials.isVendor && credentials.businessName) {
+          const { error: vendorError } = await supabase
+            .from('vendors')
+            .insert({
+              user_id: data.user.id,
+              business_name: credentials.businessName,
+              email: credentials.email,
+              phone: credentials.phone || null,
+              website: credentials.website || null,
+              description: credentials.description || null,
+            });
+          
+          if (vendorError) {
+            console.error("Error creating vendor profile:", vendorError);
+            throw new Error("Errore nella creazione del profilo fornitore");
+          }
+
+          // Update user_roles table to set role as 'vendor'
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: data.user.id,
+              role: 'vendor'
+            });
+            
+          if (roleError) {
+            console.error("Error setting vendor role:", roleError);
+          }
+        }
+        
         toast({
           title: "Registrazione completata",
-          description: "Il tuo account è stato creato con successo!",
+          description: credentials.isVendor ? 
+            "Il tuo account fornitore è stato creato con successo!" :
+            "Il tuo account è stato creato con successo!",
         });
       }
     } catch (error: any) {

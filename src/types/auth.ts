@@ -5,6 +5,7 @@ export interface User {
   name?: string;
   partnerName?: string;
   weddingDate?: Date;
+  role?: 'couple' | 'vendor';
 }
 
 export interface AuthState {
@@ -17,6 +18,7 @@ export interface AuthState {
 export interface LoginCredentials {
   email: string;
   password: string;
+  isVendor?: boolean;
 }
 
 export interface RegisterCredentials {
@@ -25,4 +27,9 @@ export interface RegisterCredentials {
   name?: string;
   partnerName?: string;
   weddingDate?: Date;
+  isVendor?: boolean;
+  businessName?: string;
+  phone?: string;
+  website?: string;
+  description?: string;
 }
