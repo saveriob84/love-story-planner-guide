@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/auth/AuthContext";
+import { useAuth } from "./contexts/auth/AuthContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import ChecklistPage from "./pages/ChecklistPage";
@@ -14,13 +15,19 @@ import TableArrangementPage from "./pages/TableArrangementPage";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
-import { useAuth } from "./contexts/auth/AuthContext";
 
 const queryClient = new QueryClient();
 
 // Protected route component
 const ProtectedRoute = ({ children, requiredRole }: { children: JSX.Element, requiredRole?: 'couple' | 'vendor' }) => {
   const { user, isAuthenticated, loading } = useAuth();
+  
+  console.log("ProtectedRoute check:", { 
+    isAuthenticated, 
+    loading, 
+    userRole: user?.role, 
+    requiredRole 
+  });
   
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">
@@ -29,26 +36,53 @@ const ProtectedRoute = ({ children, requiredRole }: { children: JSX.Element, req
   }
   
   if (!isAuthenticated) {
+    console.log("Not authenticated, redirecting to home");
     return <Navigate to="/" replace />;
   }
   
   // Role-based access control
   if (requiredRole && user?.role !== requiredRole) {
-    console.log("Access denied. Required role:", requiredRole, "User role:", user?.role);
+    console.log(`Access denied. Required role: ${requiredRole}, User role: ${user?.role}`);
     if (user?.role === 'vendor') {
+      console.log("Redirecting vendor to vendor dashboard");
       return <Navigate to="/vendor/dashboard" replace />;
     } else {
+      console.log("Redirecting couple to couple dashboard");
       return <Navigate to="/dashboard" replace />;
     }
   }
   
+  console.log("Access granted to protected route");
   return children;
 };
 
 const AppRoutes = () => {
+  const { isAuthenticated, user } = useAuth();
+  
+  console.log("App routes rendering with auth state:", { 
+    isAuthenticated, 
+    userRole: user?.role 
+  });
+  
+  // Handle authenticated users on the index page
+  const IndexComponent = () => {
+    if (isAuthenticated) {
+      // Redirect based on role
+      if (user?.role === 'vendor') {
+        console.log("Authenticated vendor on index page, redirecting to vendor dashboard");
+        return <Navigate to="/vendor/dashboard" replace />;
+      } else {
+        console.log("Authenticated couple on index page, redirecting to couple dashboard");
+        return <Navigate to="/dashboard" replace />;
+      }
+    }
+    // If not authenticated, show the landing page
+    return <Index />;
+  };
+  
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<IndexComponent />} />
       <Route path="/dashboard" element={
         <ProtectedRoute requiredRole="couple">
           <Dashboard />
