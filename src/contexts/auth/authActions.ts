@@ -4,6 +4,21 @@ import { User } from "@/types/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+// Define types for our RPC functions to fix TypeScript errors
+type CreateUserRoleParams = {
+  user_id: string;
+  role_name: string;
+};
+
+type CreateVendorProfileParams = {
+  user_id: string;
+  business_name: string;
+  email_address: string;
+  phone_number: string | null;
+  website_url: string | null;
+  vendor_description: string | null;
+};
+
 export const useAuthActions = (
   authState: AuthState, 
   setAuthState: React.Dispatch<React.SetStateAction<AuthState>>
@@ -113,10 +128,10 @@ export const useAuthActions = (
       if (data.user) {
         try {
           // Use a direct SQL RPC call to bypass RLS
-          const { error: roleError } = await supabase.rpc('create_user_role', { 
+          const { error: roleError } = await supabase.rpc<void>('create_user_role', { 
             user_id: data.user.id, 
             role_name: credentials.isVendor ? 'vendor' : 'couple' 
-          });
+          } as CreateUserRoleParams);
             
           if (roleError) {
             console.error("Error setting user role:", roleError);
@@ -127,14 +142,14 @@ export const useAuthActions = (
           if (credentials.isVendor && credentials.businessName) {
             try {
               // Create vendor profile with the RLS policy in mind
-              const { error: vendorError } = await supabase.rpc('create_vendor_profile', {
+              const { error: vendorError } = await supabase.rpc<void>('create_vendor_profile', {
                 user_id: data.user.id,
                 business_name: credentials.businessName,
                 email_address: credentials.email,
                 phone_number: credentials.phone || null,
                 website_url: credentials.website || null,
                 vendor_description: credentials.description || null
-              });
+              } as CreateVendorProfileParams);
               
               if (vendorError) {
                 console.error("Error creating vendor profile:", vendorError);
