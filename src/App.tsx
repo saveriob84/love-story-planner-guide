@@ -14,8 +14,83 @@ import TableArrangementPage from "./pages/TableArrangementPage";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
+import { useAuth } from "./contexts/auth/AuthContext";
 
 const queryClient = new QueryClient();
+
+// Protected route component
+const ProtectedRoute = ({ children, requiredRole }: { children: JSX.Element, requiredRole?: 'couple' | 'vendor' }) => {
+  const { user, isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-wedding-blush"></div>
+    </div>;
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  // Role-based access control
+  if (requiredRole && user?.role !== requiredRole) {
+    console.log("Access denied. Required role:", requiredRole, "User role:", user?.role);
+    if (user?.role === 'vendor') {
+      return <Navigate to="/vendor/dashboard" replace />;
+    } else {
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+  
+  return children;
+};
+
+const AppRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/dashboard" element={
+        <ProtectedRoute requiredRole="couple">
+          <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/checklist" element={
+        <ProtectedRoute requiredRole="couple">
+          <ChecklistPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/budget" element={
+        <ProtectedRoute requiredRole="couple">
+          <Budget />
+        </ProtectedRoute>
+      } />
+      <Route path="/guests" element={
+        <ProtectedRoute requiredRole="couple">
+          <GuestsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/tables" element={
+        <ProtectedRoute requiredRole="couple">
+          <TableArrangementPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <Profile />
+        </ProtectedRoute>
+      } />
+      <Route path="/vendor/dashboard" element={
+        <ProtectedRoute requiredRole="vendor">
+          <VendorDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/calendar" element={<NotFound />} />
+      <Route path="/settings" element={<NotFound />} />
+      <Route path="/guides" element={<NotFound />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -24,21 +99,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/checklist" element={<ChecklistPage />} />
-            <Route path="/budget" element={<Budget />} />
-            <Route path="/guests" element={<GuestsPage />} />
-            <Route path="/tables" element={<TableArrangementPage />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/vendor/dashboard" element={<VendorDashboard />} />
-            <Route path="/calendar" element={<NotFound />} /> {/* Temporary Calendar route */}
-            <Route path="/settings" element={<NotFound />} /> {/* Temporary Settings route */}
-            <Route path="/guides" element={<NotFound />} /> {/* Temporary Guides route */}
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppRoutes />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
