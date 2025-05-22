@@ -35,8 +35,9 @@ export const useAuthState = () => {
               .single();
             
             if (!roleError && roleData) {
-              // Ensure the role is correctly typed
-              role = roleData.role === 'vendor' ? 'vendor' : 'couple';
+              // Strict type checking for role value
+              const roleValue = roleData.role as string;
+              role = (roleValue === 'vendor') ? 'vendor' : 'couple';
             }
             
             console.log("User authenticated with role:", role);
@@ -92,8 +93,9 @@ export const useAuthState = () => {
               .single();
             
             if (!roleError && roleData) {
-              // Ensure the role is correctly typed
-              role = roleData.role === 'vendor' ? 'vendor' : 'couple';
+              // Strict type checking for role value
+              const roleValue = roleData.role as string;
+              role = (roleValue === 'vendor') ? 'vendor' : 'couple';
             }
             
             console.log("Found existing session with role:", role);
