@@ -62,18 +62,17 @@ export const useAuthRegistration = (
       
       if (data.user) {
         try {
-          // First, set the user role using the corrected function
+          // Set the user role using explicit parameter names to avoid ambiguity
           const roleName = credentials.isVendor ? 'vendor' : 'couple';
           console.log(`Setting user role: ${roleName} for user ID: ${data.user.id}`);
           
-          // Call the corrected create_user_role function
-          const { error: roleError } = await supabase.rpc(
-            'create_user_role', 
-            {
-              user_id: data.user.id, 
-              role_name: roleName 
-            }
-          );
+          // Insert user role directly to avoid function parameter conflicts
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: data.user.id,
+              role: roleName
+            });
             
           if (roleError) {
             console.error("Error setting user role:", roleError);
@@ -85,17 +84,16 @@ export const useAuthRegistration = (
           // If registering as vendor, add vendor profile
           if (credentials.isVendor && credentials.businessName) {
             console.log("Creating vendor profile for:", credentials.businessName);
-            const { error: vendorError } = await supabase.rpc(
-              'create_vendor_profile', 
-              {
+            const { error: vendorError } = await supabase
+              .from('vendors')
+              .insert({
                 user_id: data.user.id,
                 business_name: credentials.businessName,
-                email_address: credentials.email,
-                phone_number: credentials.phone || null,
-                website_url: credentials.website || null,
-                vendor_description: credentials.description || null
-              }
-            );
+                email: credentials.email,
+                phone: credentials.phone || null,
+                website: credentials.website || null,
+                description: credentials.description || null
+              });
             
             if (vendorError) {
               console.error("Error creating vendor profile:", vendorError);
@@ -117,7 +115,7 @@ export const useAuthRegistration = (
         } catch (setupError: any) {
           console.error("Error during user setup:", setupError);
           
-          // If there's an error in setup, clean up by deleting the user
+          // If there's an error in setup, clean up by signing out the user
           console.log("Attempting to clean up user due to setup error");
           await supabase.auth.signOut();
           
