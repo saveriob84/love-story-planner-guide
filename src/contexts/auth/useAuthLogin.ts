@@ -30,7 +30,7 @@ export const useAuthLogin = (
       if (data.user) {
         console.log("User logged in:", data.user.id);
         
-        // Check if user has any role assigned
+        // Check user role
         const { data: userRoleData, error: userRoleError } = await supabase
           .from('user_roles')
           .select('role')
@@ -38,13 +38,15 @@ export const useAuthLogin = (
           .single();
           
         console.log("User role query result:", { userRoleData, userRoleError });
-          
+        
+        let userRole = userRoleData?.role;
+        
         if (userRoleError || !userRoleData) {
-          console.error("Error fetching user role or no role found:", userRoleError);
+          console.log("No role found, creating default role based on login type");
           
-          // If no role exists, create one based on login type
+          // Create role based on login context
           const defaultRole = credentials.isVendor ? 'vendor' : 'couple';
-          console.log(`No role found, creating default role: ${defaultRole}`);
+          console.log(`Creating default role: ${defaultRole}`);
           
           const { error: createRoleError } = await supabase
             .from('user_roles')
@@ -56,10 +58,11 @@ export const useAuthLogin = (
           if (createRoleError) {
             console.error("Error creating default role:", createRoleError);
             await supabase.auth.signOut();
-            throw new Error("Account non configurato correttamente. Contatta il supporto.");
+            throw new Error("Errore nella configurazione dell'account. Contatta il supporto.");
           }
           
-          console.log("Default role created successfully");
+          userRole = defaultRole;
+          console.log("Default role created successfully:", defaultRole);
           
           // If creating vendor role, check if vendor profile exists
           if (credentials.isVendor) {
@@ -70,23 +73,32 @@ export const useAuthLogin = (
               .single();
             
             if (!vendorData) {
-              console.log("Vendor role created but no vendor profile found - user should complete vendor registration");
+              console.log("Vendor role created but no vendor profile found");
+              // Create a basic vendor profile
+              const { error: vendorProfileError } = await supabase
+                .from('vendors')
+                .insert({
+                  user_id: data.user.id,
+                  business_name: data.user.user_metadata?.businessName || 'Nome Attività',
+                  email: data.user.email || ''
+                });
+              
+              if (vendorProfileError) {
+                console.error("Error creating vendor profile:", vendorProfileError);
+              }
             }
           }
-        } else {
-          const userRole = userRoleData.role;
-          console.log("User role found:", userRole);
-          
-          // Check if user is trying to login with the correct form
-          if (credentials.isVendor && userRole === 'couple') {
-            await supabase.auth.signOut();
-            throw new Error("Questo account è registrato come coppia. Usa il login normale.");
-          }
-          
-          if (!credentials.isVendor && userRole === 'vendor') {
-            await supabase.auth.signOut();
-            throw new Error("Questo account è registrato come fornitore. Usa il login fornitori.");
-          }
+        }
+        
+        // Validate role matches login type
+        if (credentials.isVendor && userRole === 'couple') {
+          await supabase.auth.signOut();
+          throw new Error("Questo account è registrato come coppia. Usa il login normale.");
+        }
+        
+        if (!credentials.isVendor && userRole === 'vendor') {
+          await supabase.auth.signOut();
+          throw new Error("Questo account è registrato come fornitore. Usa il login fornitori.");
         }
         
         toast({
@@ -96,7 +108,7 @@ export const useAuthLogin = (
             "Benvenuto nel tuo wedding planner personale!",
         });
         
-        console.log("Login successful");
+        console.log("Login successful with role:", userRole);
       }
     } catch (error: any) {
       console.error("Login error:", error);

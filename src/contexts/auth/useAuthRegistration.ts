@@ -61,24 +61,12 @@ export const useAuthRegistration = (
       console.log("User created:", data.user?.id);
       
       if (data.user) {
-        // Check if email confirmation is required
-        if (!data.session) {
-          console.log("Email confirmation required - no session created yet");
-          toast({
-            title: "Registrazione completata",
-            description: "Controlla la tua email e clicca sul link di conferma per completare la registrazione.",
-          });
-          return;
-        }
-        
+        // Always create the role immediately, even if email confirmation is pending
         try {
-          console.log("Session established, proceeding with role setup");
-          
-          // Set the user role using explicit parameter names to avoid ambiguity
           const roleName = credentials.isVendor ? 'vendor' : 'couple';
-          console.log(`Setting user role: ${roleName} for user ID: ${data.user.id}`);
+          console.log(`Creating user role: ${roleName} for user ID: ${data.user.id}`);
           
-          // First check if role already exists
+          // Check if role already exists
           const { data: existingRole } = await supabase
             .from('user_roles')
             .select('role')
@@ -88,7 +76,7 @@ export const useAuthRegistration = (
           if (existingRole) {
             console.log("User role already exists:", existingRole.role);
           } else {
-            // Insert user role directly to avoid function parameter conflicts
+            // Create the role using direct insert
             const { error: roleError } = await supabase
               .from('user_roles')
               .insert({
@@ -97,14 +85,14 @@ export const useAuthRegistration = (
               });
               
             if (roleError) {
-              console.error("Error setting user role:", roleError);
-              throw new Error("Errore nell'impostazione del ruolo utente: " + roleError.message);
+              console.error("Error creating user role:", roleError);
+              // Don't throw here - the user is created, we'll handle role creation on login if needed
+            } else {
+              console.log("User role created successfully:", roleName);
             }
-            
-            console.log("User role set successfully");
           }
           
-          // If registering as vendor, add vendor profile
+          // If registering as vendor, create vendor profile
           if (credentials.isVendor && credentials.businessName) {
             console.log("Creating vendor profile for:", credentials.businessName);
             const { error: vendorError } = await supabase
@@ -120,30 +108,35 @@ export const useAuthRegistration = (
             
             if (vendorError) {
               console.error("Error creating vendor profile:", vendorError);
-              throw new Error("Errore nella creazione del profilo fornitore: " + vendorError.message);
+              // Don't throw here - we'll handle vendor profile creation later if needed
+            } else {
+              console.log("Vendor profile created successfully");
             }
-            
-            console.log("Vendor profile created successfully");
           }
           
+        } catch (setupError: any) {
+          console.error("Error during user setup (non-blocking):", setupError);
+          // Don't block registration for setup errors
+        }
+        
+        // Check if email confirmation is required
+        if (!data.session) {
+          console.log("Email confirmation required - no session created yet");
           toast({
             title: "Registrazione completata",
-            description: credentials.isVendor ? 
-              "Il tuo account fornitore è stato creato con successo!" :
-              "Il tuo account è stato creato con successo!",
+            description: "Controlla la tua email e clicca sul link di conferma per completare la registrazione.",
           });
-          
-          console.log("Registration completed successfully");
-          
-        } catch (setupError: any) {
-          console.error("Error during user setup:", setupError);
-          
-          // If there's an error in setup, clean up by signing out the user
-          console.log("Attempting to clean up user due to setup error");
-          await supabase.auth.signOut();
-          
-          throw new Error(setupError.message || "Errore durante la configurazione dell'account");
+          return;
         }
+        
+        toast({
+          title: "Registrazione completata",
+          description: credentials.isVendor ? 
+            "Il tuo account fornitore è stato creato con successo!" :
+            "Il tuo account è stato creato con successo!",
+        });
+        
+        console.log("Registration completed successfully");
       }
     } catch (error: any) {
       console.error("Registration error:", error);
