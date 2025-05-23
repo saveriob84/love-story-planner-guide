@@ -11,15 +11,25 @@ export const useAuthLogin = (
   
   // Login function using Supabase auth
   const login = async (credentials: { email: string; password: string; isVendor?: boolean }) => {
+    console.log("Login attempt:", { 
+      email: credentials.email, 
+      isVendor: credentials.isVendor 
+    });
+    
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
       
       if (data.user) {
+        console.log("User logged in:", data.user.id);
+        
         // Check if user is the correct role type
         const { data: userRoleData, error: userRoleError } = await supabase
           .from('user_roles')
@@ -29,23 +39,34 @@ export const useAuthLogin = (
           
         if (userRoleError) {
           console.error("Error fetching user role:", userRoleError);
-        }
-        
-        const userRole = userRoleData?.role;
-        
-        // If trying to login as vendor but user is couple or vice versa
-        if (
-          (credentials.isVendor && userRole === 'couple') || 
-          (!credentials.isVendor && userRole === 'vendor')
-        ) {
-          // Sign out the user since they're using the wrong login form
-          await supabase.auth.signOut();
           
-          throw new Error(
-            credentials.isVendor ? 
+          // If role doesn't exist and trying to login as vendor, that's an error
+          if (credentials.isVendor) {
+            await supabase.auth.signOut();
+            throw new Error("Questo account non è registrato come fornitore. Usa il login normale.");
+          }
+          
+          // If no role found for normal login, assume it's a couple (for backward compatibility)
+          console.log("No role found, assuming couple for backward compatibility");
+        } else {
+          const userRole = userRoleData?.role;
+          console.log("User role found:", userRole);
+          
+          // If trying to login as vendor but user is couple or vice versa
+          if (
+            (credentials.isVendor && userRole === 'couple') || 
+            (!credentials.isVendor && userRole === 'vendor')
+          ) {
+            // Sign out the user since they're using the wrong login form
+            await supabase.auth.signOut();
+            
+            const errorMessage = credentials.isVendor ? 
               "Questo account non è registrato come fornitore. Usa il login normale." : 
-              "Questo account è registrato come fornitore. Usa il login fornitori."
-          );
+              "Questo account è registrato come fornitore. Usa il login fornitori.";
+            
+            console.log("Role mismatch:", errorMessage);
+            throw new Error(errorMessage);
+          }
         }
         
         toast({
@@ -54,6 +75,8 @@ export const useAuthLogin = (
             "Benvenuto nel tuo portale fornitori!" : 
             "Benvenuto nel tuo wedding planner personale!",
         });
+        
+        console.log("Login successful");
       }
     } catch (error: any) {
       console.error("Login error:", error);

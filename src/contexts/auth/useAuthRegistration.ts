@@ -23,19 +23,27 @@ export const useAuthRegistration = (
     website?: string;
     description?: string;
   }) => {
+    console.log("Starting registration for:", { 
+      email: credentials.email, 
+      isVendor: credentials.isVendor,
+      businessName: credentials.businessName 
+    });
+    
     try {
       // Create user metadata based on user type
       const userMetadata = credentials.isVendor ? {
         name: credentials.name,
         businessName: credentials.businessName,
         isVendor: true,
-        role: 'vendor' // Add role directly to metadata
+        role: 'vendor'
       } : {
         name: credentials.name,
         partnerName: credentials.partnerName,
         weddingDate: credentials.weddingDate?.toISOString(),
-        role: 'couple' // Add role directly to metadata
+        role: 'couple'
       };
+      
+      console.log("User metadata:", userMetadata);
       
       const { data, error } = await supabase.auth.signUp({
         email: credentials.email,
@@ -45,11 +53,17 @@ export const useAuthRegistration = (
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase auth error:", error);
+        throw error;
+      }
+      
+      console.log("User created:", data.user?.id);
       
       if (data.user) {
         try {
-          // Use a direct SQL RPC call to bypass RLS
+          // First, set the user role
+          console.log("Setting user role:", credentials.isVendor ? 'vendor' : 'couple');
           const { error: roleError } = await supabase.rpc(
             'create_user_role', 
             { 
@@ -60,33 +74,32 @@ export const useAuthRegistration = (
             
           if (roleError) {
             console.error("Error setting user role:", roleError);
-            throw new Error("Errore nell'impostazione del ruolo utente");
+            throw new Error("Errore nell'impostazione del ruolo utente: " + roleError.message);
           }
+          
+          console.log("User role set successfully");
           
           // If registering as vendor, add vendor profile
           if (credentials.isVendor && credentials.businessName) {
-            try {
-              // Create vendor profile with the RLS policy in mind
-              const { error: vendorError } = await supabase.rpc(
-                'create_vendor_profile', 
-                {
-                  user_id: data.user.id,
-                  business_name: credentials.businessName,
-                  email_address: credentials.email,
-                  phone_number: credentials.phone || null,
-                  website_url: credentials.website || null,
-                  vendor_description: credentials.description || null
-                } as CreateVendorProfileParams
-              );
-              
-              if (vendorError) {
-                console.error("Error creating vendor profile:", vendorError);
-                throw new Error("Errore nella creazione del profilo fornitore");
-              }
-            } catch (err) {
-              console.error("Vendor profile creation caught error:", err);
-              throw err;
+            console.log("Creating vendor profile for:", credentials.businessName);
+            const { error: vendorError } = await supabase.rpc(
+              'create_vendor_profile', 
+              {
+                user_id: data.user.id,
+                business_name: credentials.businessName,
+                email_address: credentials.email,
+                phone_number: credentials.phone || null,
+                website_url: credentials.website || null,
+                vendor_description: credentials.description || null
+              } as CreateVendorProfileParams
+            );
+            
+            if (vendorError) {
+              console.error("Error creating vendor profile:", vendorError);
+              throw new Error("Errore nella creazione del profilo fornitore: " + vendorError.message);
             }
+            
+            console.log("Vendor profile created successfully");
           }
           
           toast({
@@ -95,13 +108,15 @@ export const useAuthRegistration = (
               "Il tuo account fornitore è stato creato con successo!" :
               "Il tuo account è stato creato con successo!",
           });
-        } catch (error: any) {
-          // If there was an error setting up the user, clean up by deleting the auth account
-          if (data.user?.id) {
-            await supabase.auth.admin.deleteUser(data.user.id)
-              .catch(e => console.error("Error cleaning up user after failed setup:", e));
-          }
-          throw error;
+          
+          console.log("Registration completed successfully");
+          
+        } catch (setupError: any) {
+          console.error("Error during user setup:", setupError);
+          
+          // If there was an error setting up the user, we should not delete the auth account
+          // as this might be handled by the email verification flow
+          throw new Error(setupError.message || "Errore durante la configurazione dell'account");
         }
       }
     } catch (error: any) {
