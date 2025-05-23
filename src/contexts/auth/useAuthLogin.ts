@@ -37,6 +37,8 @@ export const useAuthLogin = (
           .eq('user_id', data.user.id)
           .single();
           
+        console.log("User role query result:", { userRoleData, userRoleError });
+          
         if (userRoleError) {
           console.error("Error fetching user role:", userRoleError);
           
@@ -44,7 +46,7 @@ export const useAuthLogin = (
           await supabase.auth.signOut();
           
           if (credentials.isVendor) {
-            throw new Error("Questo account non è registrato come fornitore. Usa il login normale.");
+            throw new Error("Questo account non è registrato come fornitore. Usa il login normale o registrati come fornitore.");
           } else {
             throw new Error("Account non trovato o non configurato correttamente. Riprova a registrarti.");
           }

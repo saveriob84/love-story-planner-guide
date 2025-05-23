@@ -77,20 +77,31 @@ export const useAuthRegistration = (
           const roleName = credentials.isVendor ? 'vendor' : 'couple';
           console.log(`Setting user role: ${roleName} for user ID: ${data.user.id}`);
           
-          // Insert user role directly to avoid function parameter conflicts
-          const { error: roleError } = await supabase
+          // First check if role already exists
+          const { data: existingRole } = await supabase
             .from('user_roles')
-            .insert({
-              user_id: data.user.id,
-              role: roleName
-            });
-            
-          if (roleError) {
-            console.error("Error setting user role:", roleError);
-            throw new Error("Errore nell'impostazione del ruolo utente: " + roleError.message);
-          }
+            .select('role')
+            .eq('user_id', data.user.id)
+            .single();
           
-          console.log("User role set successfully");
+          if (existingRole) {
+            console.log("User role already exists:", existingRole.role);
+          } else {
+            // Insert user role directly to avoid function parameter conflicts
+            const { error: roleError } = await supabase
+              .from('user_roles')
+              .insert({
+                user_id: data.user.id,
+                role: roleName
+              });
+              
+            if (roleError) {
+              console.error("Error setting user role:", roleError);
+              throw new Error("Errore nell'impostazione del ruolo utente: " + roleError.message);
+            }
+            
+            console.log("User role set successfully");
+          }
           
           // If registering as vendor, add vendor profile
           if (credentials.isVendor && credentials.businessName) {
