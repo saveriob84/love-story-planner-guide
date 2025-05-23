@@ -49,8 +49,8 @@ export const useAuthRegistration = (
       
       if (data.user) {
         try {
-          // Use a direct SQL RPC call to bypass RLS - use as any to bypass type checking
-          const { error: roleError } = await supabase.rpc<void>(
+          // Use a direct SQL RPC call to bypass RLS
+          const { error: roleError } = await supabase.rpc(
             'create_user_role', 
             { 
               user_id: data.user.id, 
@@ -67,7 +67,7 @@ export const useAuthRegistration = (
           if (credentials.isVendor && credentials.businessName) {
             try {
               // Create vendor profile with the RLS policy in mind
-              const { error: vendorError } = await supabase.rpc<void>(
+              const { error: vendorError } = await supabase.rpc(
                 'create_vendor_profile', 
                 {
                   user_id: data.user.id,
