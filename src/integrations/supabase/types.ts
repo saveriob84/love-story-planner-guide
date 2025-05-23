@@ -589,7 +589,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_user_role: {
+        Args: { user_id: string; role_name: string }
+        Returns: undefined
+      }
+      create_vendor_profile: {
+        Args: {
+          user_id: string
+          business_name: string
+          email_address: string
+          phone_number?: string
+          website_url?: string
+          vendor_description?: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       user_role: "couple" | "vendor"
