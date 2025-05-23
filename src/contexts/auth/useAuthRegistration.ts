@@ -62,10 +62,11 @@ export const useAuthRegistration = (
       
       if (data.user) {
         try {
-          // First, set the user role
+          // First, set the user role using the corrected function
           const roleName = credentials.isVendor ? 'vendor' : 'couple';
           console.log(`Setting user role: ${roleName} for user ID: ${data.user.id}`);
           
+          // Call the corrected create_user_role function
           const { error: roleError } = await supabase.rpc(
             'create_user_role', 
             {
@@ -115,6 +116,11 @@ export const useAuthRegistration = (
           
         } catch (setupError: any) {
           console.error("Error during user setup:", setupError);
+          
+          // If there's an error in setup, clean up by deleting the user
+          console.log("Attempting to clean up user due to setup error");
+          await supabase.auth.signOut();
+          
           throw new Error(setupError.message || "Errore durante la configurazione dell'account");
         }
       }

@@ -46,8 +46,7 @@ export const useAuthLogin = (
           if (credentials.isVendor) {
             throw new Error("Questo account non è registrato come fornitore. Usa il login normale.");
           } else {
-            // For normal login with no role found, assume couple (for backward compatibility)
-            console.log("No role found, assuming couple for backward compatibility");
+            throw new Error("Account non trovato o non configurato correttamente. Riprova a registrarti.");
           }
         } else if (userRoleData) {
           const userRole = userRoleData.role;
