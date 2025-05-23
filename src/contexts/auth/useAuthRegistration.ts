@@ -62,6 +62,17 @@ export const useAuthRegistration = (
       
       if (data.user) {
         try {
+          // Wait a moment to ensure the session is properly established
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Verify the user is authenticated before proceeding
+          const { data: sessionData } = await supabase.auth.getSession();
+          console.log("Session check:", sessionData.session ? "authenticated" : "not authenticated");
+          
+          if (!sessionData.session) {
+            throw new Error("Session not established after registration");
+          }
+          
           // Set the user role using explicit parameter names to avoid ambiguity
           const roleName = credentials.isVendor ? 'vendor' : 'couple';
           console.log(`Setting user role: ${roleName} for user ID: ${data.user.id}`);
