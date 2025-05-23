@@ -35,13 +35,13 @@ export const useAuthLogin = (
           .from('user_roles')
           .select('role')
           .eq('user_id', data.user.id)
-          .single();
+          .maybeSingle();
           
         console.log("User role query result:", { userRoleData, userRoleError });
         
         let userRole = userRoleData?.role;
         
-        if (userRoleError || !userRoleData) {
+        if (!userRoleData) {
           console.log("No role found, creating default role based on login type");
           
           // Create role based on login context
@@ -70,11 +70,10 @@ export const useAuthLogin = (
               .from('vendors')
               .select('id')
               .eq('user_id', data.user.id)
-              .single();
+              .maybeSingle();
             
             if (!vendorData) {
-              console.log("Vendor role created but no vendor profile found");
-              // Create a basic vendor profile
+              console.log("Vendor role created but no vendor profile found, creating basic profile");
               const { error: vendorProfileError } = await supabase
                 .from('vendors')
                 .insert({
@@ -85,6 +84,7 @@ export const useAuthLogin = (
               
               if (vendorProfileError) {
                 console.error("Error creating vendor profile:", vendorProfileError);
+                // Don't throw here - profile can be created later
               }
             }
           }

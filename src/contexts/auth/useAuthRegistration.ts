@@ -60,74 +60,10 @@ export const useAuthRegistration = (
       
       console.log("User created:", data.user?.id);
       
-      if (data.user) {
-        // Always create the role immediately, even if email confirmation is pending
-        try {
-          const roleName = credentials.isVendor ? 'vendor' : 'couple';
-          console.log(`Creating user role: ${roleName} for user ID: ${data.user.id}`);
-          
-          // Check if role already exists
-          const { data: existingRole } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', data.user.id)
-            .single();
-          
-          if (existingRole) {
-            console.log("User role already exists:", existingRole.role);
-          } else {
-            // Create the role using direct insert
-            const { error: roleError } = await supabase
-              .from('user_roles')
-              .insert({
-                user_id: data.user.id,
-                role: roleName
-              });
-              
-            if (roleError) {
-              console.error("Error creating user role:", roleError);
-              // Don't throw here - the user is created, we'll handle role creation on login if needed
-            } else {
-              console.log("User role created successfully:", roleName);
-            }
-          }
-          
-          // If registering as vendor, create vendor profile
-          if (credentials.isVendor && credentials.businessName) {
-            console.log("Creating vendor profile for:", credentials.businessName);
-            const { error: vendorError } = await supabase
-              .from('vendors')
-              .insert({
-                user_id: data.user.id,
-                business_name: credentials.businessName,
-                email: credentials.email,
-                phone: credentials.phone || null,
-                website: credentials.website || null,
-                description: credentials.description || null
-              });
-            
-            if (vendorError) {
-              console.error("Error creating vendor profile:", vendorError);
-              // Don't throw here - we'll handle vendor profile creation later if needed
-            } else {
-              console.log("Vendor profile created successfully");
-            }
-          }
-          
-        } catch (setupError: any) {
-          console.error("Error during user setup (non-blocking):", setupError);
-          // Don't block registration for setup errors
-        }
-        
-        // Check if email confirmation is required
-        if (!data.session) {
-          console.log("Email confirmation required - no session created yet");
-          toast({
-            title: "Registrazione completata",
-            description: "Controlla la tua email e clicca sul link di conferma per completare la registrazione.",
-          });
-          return;
-        }
+      if (data.user && data.session) {
+        // User is confirmed and has a session - create role and profile immediately
+        console.log("User confirmed immediately, creating role and profile");
+        await createUserRoleAndProfile(data.user.id, credentials);
         
         toast({
           title: "Registrazione completata",
@@ -135,9 +71,15 @@ export const useAuthRegistration = (
             "Il tuo account fornitore è stato creato con successo!" :
             "Il tuo account è stato creato con successo!",
         });
-        
-        console.log("Registration completed successfully");
+      } else if (data.user && !data.session) {
+        // Email confirmation required
+        console.log("Email confirmation required - no session created yet");
+        toast({
+          title: "Registrazione completata",
+          description: "Controlla la tua email e clicca sul link di conferma per completare la registrazione.",
+        });
       }
+      
     } catch (error: any) {
       console.error("Registration error:", error);
       setAuthState({
@@ -151,6 +93,54 @@ export const useAuthRegistration = (
         variant: "destructive",
       });
       
+      throw error;
+    }
+  };
+
+  const createUserRoleAndProfile = async (userId: string, credentials: any) => {
+    try {
+      const roleName = credentials.isVendor ? 'vendor' : 'couple';
+      console.log(`Creating user role: ${roleName} for user ID: ${userId}`);
+      
+      // Create the role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: roleName
+        });
+        
+      if (roleError) {
+        console.error("Error creating user role:", roleError);
+        throw new Error("Errore nella creazione del ruolo utente");
+      }
+      
+      console.log("User role created successfully:", roleName);
+      
+      // If registering as vendor, create vendor profile
+      if (credentials.isVendor && credentials.businessName) {
+        console.log("Creating vendor profile for:", credentials.businessName);
+        const { error: vendorError } = await supabase
+          .from('vendors')
+          .insert({
+            user_id: userId,
+            business_name: credentials.businessName,
+            email: credentials.email,
+            phone: credentials.phone || null,
+            website: credentials.website || null,
+            description: credentials.description || null
+          });
+        
+        if (vendorError) {
+          console.error("Error creating vendor profile:", vendorError);
+          throw new Error("Errore nella creazione del profilo fornitore");
+        }
+        
+        console.log("Vendor profile created successfully");
+      }
+      
+    } catch (error: any) {
+      console.error("Error during user setup:", error);
       throw error;
     }
   };
