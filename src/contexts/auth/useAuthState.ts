@@ -15,53 +15,54 @@ const initialState: AuthState = {
 export const useAuthState = () => {
   const [authState, setAuthState] = useState<AuthState>(initialState);
   
+  // Function to fetch user role and create user object
+  const fetchUserWithRole = async (user: any): Promise<User | null> => {
+    try {
+      console.log("Fetching role for user:", user.id);
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (roleError) {
+        console.error("Error fetching user role:", roleError);
+        return null;
+      }
+      
+      const role = roleData?.role || 'couple'; // Default fallback
+      console.log("User role found:", role);
+      
+      return {
+        id: user.id,
+        email: user.email || '',
+        name: user.user_metadata?.name,
+        partnerName: user.user_metadata?.partnerName,
+        weddingDate: user.user_metadata?.weddingDate 
+          ? new Date(user.user_metadata.weddingDate) 
+          : undefined,
+        role: role as 'couple' | 'vendor',
+        businessName: user.user_metadata?.businessName,
+      };
+    } catch (error: any) {
+      console.error("Error processing user data:", error);
+      return null;
+    }
+  };
+  
   // Check for logged in user on initial load and set up auth state change listener
   useEffect(() => {
     console.log("Setting up auth state listener");
     
-    // Set up auth state change listener first to prevent issues
+    // Set up auth state change listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, "Session:", session ? "exists" : "null");
         
         if (session?.user) {
-          try {
-            // Get user role safely
-            console.log("Fetching role for user:", session.user.id);
-            const { data: roleData, error: roleError } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .single();
-            
-            let role: 'couple' | 'vendor' = 'couple'; // Default role
-            
-            if (roleError) {
-              console.error("Error fetching user role:", roleError);
-              // If no explicit role is found, default to 'couple'
-              console.log("No role found in database, defaulting to 'couple'");
-            } else if (roleData && roleData.role) {
-              // Strict type checking for role
-              if (roleData.role === 'vendor') {
-                role = 'vendor';
-              } else {
-                role = 'couple';
-              }
-              console.log("User authenticated with role:", role);
-            }
-            
-            const userData: User = {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata?.name,
-              partnerName: session.user.user_metadata?.partnerName,
-              weddingDate: session.user.user_metadata?.weddingDate 
-                ? new Date(session.user.user_metadata.weddingDate) 
-                : undefined,
-              role: role,
-              businessName: session.user.user_metadata?.businessName,
-            };
-            
+          const userData = await fetchUserWithRole(session.user);
+          
+          if (userData) {
             console.log("Setting auth state with user data:", {
               id: userData.id,
               email: userData.email,
@@ -74,12 +75,12 @@ export const useAuthState = () => {
               loading: false,
               error: null,
             });
-          } catch (error: any) {
-            console.error("Error processing authentication:", error);
+          } else {
+            console.error("Failed to fetch user role");
             setAuthState({
               ...initialState,
               loading: false,
-              error: "Error processing authentication: " + error.message,
+              error: "Error processing user data",
             });
           }
         } else {
@@ -92,50 +93,16 @@ export const useAuthState = () => {
       }
     );
     
-    // Now check for current session
+    // Check for current session
     const checkLoggedInUser = async () => {
       try {
         console.log("Checking for logged in user");
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          try {
-            // Get user role safely
-            console.log("Fetching role for existing session user:", session.user.id);
-            const { data: roleData, error: roleError } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id)
-              .single();
-            
-            let role: 'couple' | 'vendor' = 'couple'; // Default role
-            
-            if (roleError) {
-              console.error("Error fetching user role:", roleError);
-              // If no explicit role is found, default to 'couple'
-              console.log("No role found in database, defaulting to 'couple'");
-            } else if (roleData && roleData.role) {
-              // Strict type checking for role
-              if (roleData.role === 'vendor') {
-                role = 'vendor';
-              } else {
-                role = 'couple';
-              }
-              console.log("Found existing session with role:", role);
-            }
-            
-            const userData: User = {
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata?.name,
-              partnerName: session.user.user_metadata?.partnerName,
-              weddingDate: session.user.user_metadata?.weddingDate 
-                ? new Date(session.user.user_metadata.weddingDate) 
-                : undefined,
-              role: role,
-              businessName: session.user.user_metadata?.businessName,
-            };
-            
+          const userData = await fetchUserWithRole(session.user);
+          
+          if (userData) {
             console.log("Setting auth state with existing session user data:", {
               id: userData.id,
               email: userData.email,
@@ -148,12 +115,12 @@ export const useAuthState = () => {
               loading: false,
               error: null,
             });
-          } catch (error: any) {
-            console.error("Error processing user data:", error);
+          } else {
+            console.error("Failed to fetch user role for existing session");
             setAuthState({
               ...initialState,
               loading: false,
-              error: "Error processing user data: " + error.message,
+              error: "Error processing existing session",
             });
           }
         } else {

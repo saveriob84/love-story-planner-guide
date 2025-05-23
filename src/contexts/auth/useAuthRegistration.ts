@@ -2,7 +2,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AuthState } from "./types";
-import { CreateUserRoleParams, CreateVendorProfileParams } from "./authTypes";
 
 export const useAuthRegistration = (
   authState: AuthState,
@@ -35,7 +34,10 @@ export const useAuthRegistration = (
         name: credentials.name,
         businessName: credentials.businessName,
         isVendor: true,
-        role: 'vendor'
+        role: 'vendor',
+        phone: credentials.phone,
+        website: credentials.website,
+        description: credentials.description
       } : {
         name: credentials.name,
         partnerName: credentials.partnerName,
@@ -61,9 +63,8 @@ export const useAuthRegistration = (
       console.log("User created:", data.user?.id);
       
       if (data.user && data.session) {
-        // User is confirmed and has a session - create role and profile immediately
-        console.log("User confirmed immediately, creating role and profile");
-        await createUserRoleAndProfile(data.user.id, credentials);
+        // User is confirmed immediately - role and profile are created by the database trigger
+        console.log("User confirmed immediately, role and profile created by database trigger");
         
         toast({
           title: "Registrazione completata",
@@ -72,8 +73,8 @@ export const useAuthRegistration = (
             "Il tuo account è stato creato con successo!",
         });
       } else if (data.user && !data.session) {
-        // Email confirmation required
-        console.log("Email confirmation required - no session created yet");
+        // Email confirmation required - role and profile will be created when user confirms
+        console.log("Email confirmation required - role will be created when user confirms email");
         toast({
           title: "Registrazione completata",
           description: "Controlla la tua email e clicca sul link di conferma per completare la registrazione.",
@@ -93,54 +94,6 @@ export const useAuthRegistration = (
         variant: "destructive",
       });
       
-      throw error;
-    }
-  };
-
-  const createUserRoleAndProfile = async (userId: string, credentials: any) => {
-    try {
-      const roleName = credentials.isVendor ? 'vendor' : 'couple';
-      console.log(`Creating user role: ${roleName} for user ID: ${userId}`);
-      
-      // Create the role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: roleName
-        });
-        
-      if (roleError) {
-        console.error("Error creating user role:", roleError);
-        throw new Error("Errore nella creazione del ruolo utente");
-      }
-      
-      console.log("User role created successfully:", roleName);
-      
-      // If registering as vendor, create vendor profile
-      if (credentials.isVendor && credentials.businessName) {
-        console.log("Creating vendor profile for:", credentials.businessName);
-        const { error: vendorError } = await supabase
-          .from('vendors')
-          .insert({
-            user_id: userId,
-            business_name: credentials.businessName,
-            email: credentials.email,
-            phone: credentials.phone || null,
-            website: credentials.website || null,
-            description: credentials.description || null
-          });
-        
-        if (vendorError) {
-          console.error("Error creating vendor profile:", vendorError);
-          throw new Error("Errore nella creazione del profilo fornitore");
-        }
-        
-        console.log("Vendor profile created successfully");
-      }
-      
-    } catch (error: any) {
-      console.error("Error during user setup:", error);
       throw error;
     }
   };

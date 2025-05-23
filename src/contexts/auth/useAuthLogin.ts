@@ -30,7 +30,7 @@ export const useAuthLogin = (
       if (data.user) {
         console.log("User logged in:", data.user.id);
         
-        // Check user role
+        // Check user role from database
         const { data: userRoleData, error: userRoleError } = await supabase
           .from('user_roles')
           .select('role')
@@ -39,55 +39,16 @@ export const useAuthLogin = (
           
         console.log("User role query result:", { userRoleData, userRoleError });
         
-        let userRole = userRoleData?.role;
+        if (userRoleError) {
+          console.error("Error fetching user role:", userRoleError);
+          throw new Error("Errore nel recupero del ruolo utente");
+        }
         
-        if (!userRoleData) {
-          console.log("No role found, creating default role based on login type");
-          
-          // Create role based on login context
-          const defaultRole = credentials.isVendor ? 'vendor' : 'couple';
-          console.log(`Creating default role: ${defaultRole}`);
-          
-          const { error: createRoleError } = await supabase
-            .from('user_roles')
-            .insert({
-              user_id: data.user.id,
-              role: defaultRole
-            });
-          
-          if (createRoleError) {
-            console.error("Error creating default role:", createRoleError);
-            await supabase.auth.signOut();
-            throw new Error("Errore nella configurazione dell'account. Contatta il supporto.");
-          }
-          
-          userRole = defaultRole;
-          console.log("Default role created successfully:", defaultRole);
-          
-          // If creating vendor role, check if vendor profile exists
-          if (credentials.isVendor) {
-            const { data: vendorData } = await supabase
-              .from('vendors')
-              .select('id')
-              .eq('user_id', data.user.id)
-              .maybeSingle();
-            
-            if (!vendorData) {
-              console.log("Vendor role created but no vendor profile found, creating basic profile");
-              const { error: vendorProfileError } = await supabase
-                .from('vendors')
-                .insert({
-                  user_id: data.user.id,
-                  business_name: data.user.user_metadata?.businessName || 'Nome Attività',
-                  email: data.user.email || ''
-                });
-              
-              if (vendorProfileError) {
-                console.error("Error creating vendor profile:", vendorProfileError);
-                // Don't throw here - profile can be created later
-              }
-            }
-          }
+        const userRole = userRoleData?.role;
+        
+        if (!userRole) {
+          console.log("No role found for user, this should not happen with the new trigger");
+          throw new Error("Nessun ruolo trovato per questo utente. Contatta il supporto.");
         }
         
         // Validate role matches login type
