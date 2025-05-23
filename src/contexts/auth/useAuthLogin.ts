@@ -40,16 +40,17 @@ export const useAuthLogin = (
         if (userRoleError) {
           console.error("Error fetching user role:", userRoleError);
           
-          // If role doesn't exist and trying to login as vendor, that's an error
-          if (credentials.isVendor) {
-            await supabase.auth.signOut();
-            throw new Error("Questo account non è registrato come fornitore. Usa il login normale.");
-          }
+          // If role doesn't exist, log out the user and show appropriate error
+          await supabase.auth.signOut();
           
-          // If no role found for normal login, assume it's a couple (for backward compatibility)
-          console.log("No role found, assuming couple for backward compatibility");
-        } else {
-          const userRole = userRoleData?.role;
+          if (credentials.isVendor) {
+            throw new Error("Questo account non è registrato come fornitore. Usa il login normale.");
+          } else {
+            // For normal login with no role found, assume couple (for backward compatibility)
+            console.log("No role found, assuming couple for backward compatibility");
+          }
+        } else if (userRoleData) {
+          const userRole = userRoleData.role;
           console.log("User role found:", userRole);
           
           // If trying to login as vendor but user is couple or vice versa
