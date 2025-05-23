@@ -30,7 +30,7 @@ export const useAuthLogin = (
       if (data.user) {
         console.log("User logged in:", data.user.id);
         
-        // Check if user is the correct role type
+        // Check if user has any role assigned
         const { data: userRoleData, error: userRoleError } = await supabase
           .from('user_roles')
           .select('role')
@@ -39,35 +39,53 @@ export const useAuthLogin = (
           
         console.log("User role query result:", { userRoleData, userRoleError });
           
-        if (userRoleError) {
-          console.error("Error fetching user role:", userRoleError);
+        if (userRoleError || !userRoleData) {
+          console.error("Error fetching user role or no role found:", userRoleError);
           
-          // If role doesn't exist, log out the user and show appropriate error
-          await supabase.auth.signOut();
+          // If no role exists, create one based on login type
+          const defaultRole = credentials.isVendor ? 'vendor' : 'couple';
+          console.log(`No role found, creating default role: ${defaultRole}`);
           
-          if (credentials.isVendor) {
-            throw new Error("Questo account non è registrato come fornitore. Usa il login normale o registrati come fornitore.");
-          } else {
-            throw new Error("Account non trovato o non configurato correttamente. Riprova a registrarti.");
+          const { error: createRoleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: data.user.id,
+              role: defaultRole
+            });
+          
+          if (createRoleError) {
+            console.error("Error creating default role:", createRoleError);
+            await supabase.auth.signOut();
+            throw new Error("Account non configurato correttamente. Contatta il supporto.");
           }
-        } else if (userRoleData) {
+          
+          console.log("Default role created successfully");
+          
+          // If creating vendor role, check if vendor profile exists
+          if (credentials.isVendor) {
+            const { data: vendorData } = await supabase
+              .from('vendors')
+              .select('id')
+              .eq('user_id', data.user.id)
+              .single();
+            
+            if (!vendorData) {
+              console.log("Vendor role created but no vendor profile found - user should complete vendor registration");
+            }
+          }
+        } else {
           const userRole = userRoleData.role;
           console.log("User role found:", userRole);
           
-          // If trying to login as vendor but user is couple or vice versa
-          if (
-            (credentials.isVendor && userRole === 'couple') || 
-            (!credentials.isVendor && userRole === 'vendor')
-          ) {
-            // Sign out the user since they're using the wrong login form
+          // Check if user is trying to login with the correct form
+          if (credentials.isVendor && userRole === 'couple') {
             await supabase.auth.signOut();
-            
-            const errorMessage = credentials.isVendor ? 
-              "Questo account non è registrato come fornitore. Usa il login normale." : 
-              "Questo account è registrato come fornitore. Usa il login fornitori.";
-            
-            console.log("Role mismatch:", errorMessage);
-            throw new Error(errorMessage);
+            throw new Error("Questo account è registrato come coppia. Usa il login normale.");
+          }
+          
+          if (!credentials.isVendor && userRole === 'vendor') {
+            await supabase.auth.signOut();
+            throw new Error("Questo account è registrato come fornitore. Usa il login fornitori.");
           }
         }
         

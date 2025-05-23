@@ -61,17 +61,18 @@ export const useAuthRegistration = (
       console.log("User created:", data.user?.id);
       
       if (data.user) {
+        // Check if email confirmation is required
+        if (!data.session) {
+          console.log("Email confirmation required - no session created yet");
+          toast({
+            title: "Registrazione completata",
+            description: "Controlla la tua email e clicca sul link di conferma per completare la registrazione.",
+          });
+          return;
+        }
+        
         try {
-          // Wait a moment to ensure the session is properly established
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Verify the user is authenticated before proceeding
-          const { data: sessionData } = await supabase.auth.getSession();
-          console.log("Session check:", sessionData.session ? "authenticated" : "not authenticated");
-          
-          if (!sessionData.session) {
-            throw new Error("Session not established after registration");
-          }
+          console.log("Session established, proceeding with role setup");
           
           // Set the user role using explicit parameter names to avoid ambiguity
           const roleName = credentials.isVendor ? 'vendor' : 'couple';
