@@ -63,13 +63,15 @@ export const useAuthRegistration = (
       if (data.user) {
         try {
           // First, set the user role
-          console.log("Setting user role:", credentials.isVendor ? 'vendor' : 'couple');
+          const roleName = credentials.isVendor ? 'vendor' : 'couple';
+          console.log(`Setting user role: ${roleName} for user ID: ${data.user.id}`);
+          
           const { error: roleError } = await supabase.rpc(
             'create_user_role', 
-            { 
+            {
               user_id: data.user.id, 
-              role_name: credentials.isVendor ? 'vendor' : 'couple' 
-            } as CreateUserRoleParams
+              role_name: roleName 
+            }
           );
             
           if (roleError) {
@@ -91,7 +93,7 @@ export const useAuthRegistration = (
                 phone_number: credentials.phone || null,
                 website_url: credentials.website || null,
                 vendor_description: credentials.description || null
-              } as CreateVendorProfileParams
+              }
             );
             
             if (vendorError) {
@@ -113,9 +115,6 @@ export const useAuthRegistration = (
           
         } catch (setupError: any) {
           console.error("Error during user setup:", setupError);
-          
-          // If there was an error setting up the user, we should not delete the auth account
-          // as this might be handled by the email verification flow
           throw new Error(setupError.message || "Errore durante la configurazione dell'account");
         }
       }
