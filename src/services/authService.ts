@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/auth";
 
@@ -14,16 +13,18 @@ class AuthService {
         // First try direct query with timeout
         console.log('Trying direct query to user_roles table...');
         try {
-          const { data: directData, error: directError } = await Promise.race([
-            supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', userId)
-              .maybeSingle(),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('Direct query timeout')), 5000)
-            )
-          ]);
+          const directQueryPromise = supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .maybeSingle();
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Direct query timeout')), 5000)
+          );
+          
+          const result = await Promise.race([directQueryPromise, timeoutPromise]);
+          const { data: directData, error: directError } = result as any;
           
           if (directData?.role) {
             console.log(`Role found via direct query: ${directData.role}`);
@@ -40,12 +41,13 @@ class AuthService {
         
         // Fallback to RPC call with timeout
         try {
-          const { data: roleData, error: roleError } = await Promise.race([
-            supabase.rpc('get_user_role_safe', { p_user_id: userId }),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('RPC timeout')), 5000)
-            )
-          ]);
+          const rpcQueryPromise = supabase.rpc('get_user_role_safe', { p_user_id: userId });
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('RPC timeout')), 5000)
+          );
+          
+          const result = await Promise.race([rpcQueryPromise, timeoutPromise]);
+          const { data: roleData, error: roleError } = result as any;
           
           console.log('RPC call completed. Data:', roleData, 'Error:', roleError);
           
