@@ -10,54 +10,25 @@ class AuthService {
       try {
         console.log(`Fetching user role (attempt ${attempt}/${this.maxRetries}) for user:`, userId);
         
-        // First try direct query with timeout
+        // Try direct query first with a shorter timeout
         console.log('Trying direct query to user_roles table...');
-        try {
-          const directQueryPromise = supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', userId)
-            .maybeSingle();
-          
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Direct query timeout')), 5000)
-          );
-          
-          const result = await Promise.race([directQueryPromise, timeoutPromise]);
-          const { data: directData, error: directError } = result as any;
-          
-          if (directData?.role) {
-            console.log(`Role found via direct query: ${directData.role}`);
-            this.retryCount = 0;
-            return directData.role;
-          }
-          
-          if (directError && !directError.message.includes('timeout')) {
-            console.log('Direct query failed, trying RPC function...');
-          }
-        } catch (timeoutError) {
-          console.log('Direct query timed out, trying RPC function...');
+        
+        const { data: directData, error: directError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+        
+        if (directData?.role) {
+          console.log(`Role found via direct query: ${directData.role}`);
+          this.retryCount = 0;
+          return directData.role;
         }
         
-        // Fallback to RPC call with timeout
-        try {
-          const rpcQueryPromise = supabase.rpc('get_user_role_safe', { p_user_id: userId });
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('RPC timeout')), 5000)
-          );
-          
-          const result = await Promise.race([rpcQueryPromise, timeoutPromise]);
-          const { data: roleData, error: roleError } = result as any;
-          
-          console.log('RPC call completed. Data:', roleData, 'Error:', roleError);
-          
-          if (roleData) {
-            console.log(`User role found via RPC: ${roleData}`);
-            this.retryCount = 0;
-            return roleData;
-          }
-        } catch (rpcError) {
-          console.log('RPC call failed or timed out:', rpcError);
+        if (directError) {
+          console.log('Direct query error:', directError);
+        } else {
+          console.log('Direct query returned no data');
         }
         
         // If no role found, create one based on user metadata
@@ -74,23 +45,14 @@ class AuthService {
         
         console.log(`Creating role for user ${userId} with role: ${defaultRole}`);
         
-        // Try to create role using direct insert first
+        // Try to create role using direct insert
         const { error: insertError } = await supabase
           .from('user_roles')
           .insert({ user_id: userId, role: defaultRole });
         
         if (insertError) {
-          console.log('Direct insert failed, trying RPC create function...');
-          // Fallback to RPC function
-          const { error: createError } = await supabase.rpc('create_user_role', {
-            user_id: userId,
-            role_name: defaultRole
-          });
-          
-          if (createError) {
-            console.error(`Error creating role on attempt ${attempt}:`, createError);
-            throw createError;
-          }
+          console.error(`Error creating role on attempt ${attempt}:`, insertError);
+          throw insertError;
         }
         
         console.log(`Role created successfully for user ${userId}: ${defaultRole}`);
@@ -109,8 +71,8 @@ class AuthService {
           return fallbackRole;
         }
         
-        // Exponential backoff with jitter
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000) + Math.random() * 1000;
+        // Wait before retry
+        const delay = Math.min(1000 * attempt, 3000);
         console.log(`Waiting ${delay}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
