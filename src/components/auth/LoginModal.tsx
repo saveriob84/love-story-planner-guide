@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -22,22 +23,31 @@ const LoginModal = ({ isOpen, onClose, onRegisterClick }: LoginModalProps) => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
+  const debouncedLogin = useDebounce(async (credentials: { email: string; password: string }) => {
     try {
-      await login({ email, password });
+      await login(credentials);
       onClose();
       navigate("/dashboard");
     } catch (err: any) {
       console.error("Login modal error:", err);
       setError(err.message || "Si è verificato un errore durante il login.");
     } finally {
-      // Always reset loading state
       setIsLoading(false);
     }
+  }, 300);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (isLoading || debouncedLogin.isActive()) {
+      console.log("Login already in progress, ignoring submit");
+      return;
+    }
+    
+    setError("");
+    setIsLoading(true);
+    
+    await debouncedLogin.debouncedCallback({ email, password });
   };
 
   const handleClose = () => {
@@ -46,8 +56,16 @@ const LoginModal = ({ isOpen, onClose, onRegisterClick }: LoginModalProps) => {
     setPassword("");
     setError("");
     setIsLoading(false);
+    debouncedLogin.cleanup();
     onClose();
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      debouncedLogin.cleanup();
+    };
+  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface VendorLoginModalProps {
   isOpen: boolean;
@@ -22,22 +23,31 @@ const VendorLoginModal = ({ isOpen, onClose, onRegisterClick }: VendorLoginModal
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setIsLoading(true);
-
+  const debouncedLogin = useDebounce(async (credentials: { email: string; password: string; isVendor: boolean }) => {
     try {
-      await login({ email, password, isVendor: true });
+      await login(credentials);
       onClose();
       navigate("/vendor/dashboard");
     } catch (err: any) {
       console.error("Vendor login modal error:", err);
       setError(err.message || "Si è verificato un errore durante il login.");
     } finally {
-      // Always reset loading state
       setIsLoading(false);
     }
+  }, 300);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (isLoading || debouncedLogin.isActive()) {
+      console.log("Vendor login already in progress, ignoring submit");
+      return;
+    }
+    
+    setError("");
+    setIsLoading(true);
+
+    await debouncedLogin.debouncedCallback({ email, password, isVendor: true });
   };
 
   const handleClose = () => {
@@ -46,8 +56,16 @@ const VendorLoginModal = ({ isOpen, onClose, onRegisterClick }: VendorLoginModal
     setPassword("");
     setError("");
     setIsLoading(false);
+    debouncedLogin.cleanup();
     onClose();
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      debouncedLogin.cleanup();
+    };
+  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

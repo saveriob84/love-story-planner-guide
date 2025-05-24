@@ -2,21 +2,90 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AuthState } from "./types";
+import { useRef } from "react";
 
 export const useAuthLogin = (
   authState: AuthState,
   setAuthState: React.Dispatch<React.SetStateAction<AuthState>>
 ) => {
   const { toast } = useToast();
+  const loginInProgressRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
-  // Login function using Supabase auth
+  // Enhanced role fetching with retry logic
+  const fetchUserRoleWithRetry = async (userId: string, maxRetries = 3): Promise<string> => {
+    let lastError: Error | null = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Attempting to fetch user role (attempt ${attempt}/${maxRetries}) for user:`, userId);
+        
+        // Create abort controller for this attempt
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+        
+        // Set aggressive timeout for role check
+        const timeoutId = setTimeout(() => {
+          abortController.abort();
+        }, 5000); // 5 second timeout per attempt
+        
+        const { data: userRoleData, error: userRoleError } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle()
+          .abortSignal(abortController.signal);
+        
+        clearTimeout(timeoutId);
+        
+        if (userRoleError) {
+          throw userRoleError;
+        }
+        
+        const userRole = userRoleData?.role;
+        console.log(`User role found on attempt ${attempt}:`, userRole);
+        
+        if (!userRole) {
+          throw new Error("Nessun ruolo trovato per questo utente");
+        }
+        
+        return userRole;
+        
+      } catch (error: any) {
+        lastError = error;
+        console.error(`Role fetch attempt ${attempt} failed:`, error);
+        
+        if (error.name === 'AbortError') {
+          console.log(`Attempt ${attempt} was aborted due to timeout`);
+        }
+        
+        // If it's the last attempt, don't wait
+        if (attempt < maxRetries) {
+          console.log(`Waiting before retry attempt ${attempt + 1}...`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+        }
+      }
+    }
+    
+    throw lastError || new Error("Errore nel recupero del ruolo utente dopo tutti i tentativi");
+  };
+  
+  // Login function with comprehensive error handling and debouncing
   const login = async (credentials: { email: string; password: string; isVendor?: boolean }) => {
-    console.log("Login attempt:", { 
+    // Prevent concurrent login attempts
+    if (loginInProgressRef.current) {
+      console.log("Login already in progress, ignoring duplicate attempt");
+      return;
+    }
+    
+    console.log("Starting login process:", { 
       email: credentials.email, 
-      isVendor: credentials.isVendor 
+      isVendor: credentials.isVendor,
+      timestamp: new Date().toISOString()
     });
     
-    // Set loading state immediately
+    // Set login in progress flag and loading state
+    loginInProgressRef.current = true;
     setAuthState(prev => ({
       ...prev,
       loading: true,
@@ -24,83 +93,69 @@ export const useAuthLogin = (
     }));
     
     try {
+      // Step 1: Authenticate with Supabase
+      console.log("Step 1: Authenticating with Supabase");
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       });
       
       if (error) {
-        console.error("Login error:", error);
+        console.error("Supabase authentication error:", error);
         throw error;
       }
       
-      if (data.user) {
-        console.log("User logged in:", data.user.id);
-        
-        // Check user role from database with timeout
-        const rolePromise = supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .maybeSingle();
-          
-        // Add timeout to prevent hanging
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout durante il controllo del ruolo utente')), 10000)
-        );
-        
-        const { data: userRoleData, error: userRoleError } = await Promise.race([
-          rolePromise,
-          timeoutPromise
-        ]) as any;
-          
-        console.log("User role query result:", { userRoleData, userRoleError });
-        
-        if (userRoleError) {
-          console.error("Error fetching user role:", userRoleError);
-          await supabase.auth.signOut();
-          throw new Error("Errore nel recupero del ruolo utente");
-        }
-        
-        const userRole = userRoleData?.role;
-        
-        if (!userRole) {
-          console.log("No role found for user, this should not happen with the new trigger");
-          await supabase.auth.signOut();
-          throw new Error("Nessun ruolo trovato per questo utente. Contatta il supporto.");
-        }
-        
-        // Validate role matches login type
-        if (credentials.isVendor && userRole === 'couple') {
-          await supabase.auth.signOut();
-          throw new Error("Questo account è registrato come coppia. Usa il login normale.");
-        }
-        
-        if (!credentials.isVendor && userRole === 'vendor') {
-          await supabase.auth.signOut();
-          throw new Error("Questo account è registrato come fornitore. Usa il login fornitori.");
-        }
-        
-        toast({
-          title: "Login effettuato",
-          description: credentials.isVendor ? 
-            "Benvenuto nel tuo portale fornitori!" : 
-            "Benvenuto nel tuo wedding planner personale!",
-        });
-        
-        console.log("Login successful with role:", userRole);
-        
-        // Reset loading state on success - the auth state change will handle the rest
-        setAuthState(prev => ({
-          ...prev,
-          loading: false,
-          error: null
-        }));
+      if (!data.user) {
+        throw new Error("Nessun utente restituito dall'autenticazione");
       }
-    } catch (error: any) {
-      console.error("Login error:", error);
       
-      // Always reset loading state on error
+      console.log("Step 2: User authenticated successfully:", data.user.id);
+      
+      // Step 2: Fetch and validate user role
+      let userRole: string;
+      try {
+        userRole = await fetchUserRoleWithRetry(data.user.id);
+      } catch (roleError: any) {
+        console.error("Failed to fetch user role, signing out:", roleError);
+        await supabase.auth.signOut();
+        throw new Error("Errore nel recupero del ruolo utente. Riprova più tardi.");
+      }
+      
+      console.log("Step 3: User role validated:", userRole);
+      
+      // Step 3: Validate role matches login type
+      if (credentials.isVendor && userRole === 'couple') {
+        await supabase.auth.signOut();
+        throw new Error("Questo account è registrato come coppia. Usa il login normale.");
+      }
+      
+      if (!credentials.isVendor && userRole === 'vendor') {
+        await supabase.auth.signOut();
+        throw new Error("Questo account è registrato come fornitore. Usa il login fornitori.");
+      }
+      
+      console.log("Step 4: Login successful, role validation passed");
+      
+      // Success toast
+      toast({
+        title: "Login effettuato",
+        description: credentials.isVendor ? 
+          "Benvenuto nel tuo portale fornitori!" : 
+          "Benvenuto nel tuo wedding planner personale!",
+      });
+      
+      // The auth state will be updated by the onAuthStateChange listener
+      // Just reset loading state here
+      setAuthState(prev => ({
+        ...prev,
+        loading: false,
+        error: null
+      }));
+      
+    } catch (error: any) {
+      console.error("Login process failed:", error);
+      
+      // Always reset loading state and login flag on error
       setAuthState(prev => ({
         ...prev,
         loading: false,
@@ -116,8 +171,35 @@ export const useAuthLogin = (
       });
       
       throw error;
+    } finally {
+      // Always reset the login in progress flag
+      loginInProgressRef.current = false;
+      
+      // Clean up abort controller
+      if (abortControllerRef.current) {
+        abortControllerRef.current = null;
+      }
+      
+      console.log("Login process completed, flags reset");
     }
   };
 
-  return { login };
+  // Cleanup function for component unmount
+  const cleanup = () => {
+    console.log("Cleaning up login state");
+    loginInProgressRef.current = false;
+    
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    
+    setAuthState(prev => ({
+      ...prev,
+      loading: false,
+      error: null
+    }));
+  };
+
+  return { login, cleanup, isLoginInProgress: () => loginInProgressRef.current };
 };
