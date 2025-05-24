@@ -21,21 +21,26 @@ export const useAuthState = () => {
     console.log("fetchUserWithRole called for user:", userId);
     
     try {
-      // Create abort controller for timeout
-      const abortController = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.log("Role fetch timeout, aborting request");
-        abortController.abort();
-      }, 8000); // 8 second timeout
+      // Create timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          console.log("Role fetch timeout, rejecting request");
+          reject(new Error('Timeout'));
+        }, 8000); // 8 second timeout
+      });
       
-      const { data: roleData, error: roleError } = await supabase
+      // Create the query promise
+      const queryPromise = supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .maybeSingle()
-        .abortSignal(abortController.signal);
+        .maybeSingle();
       
-      clearTimeout(timeoutId);
+      // Race between query and timeout
+      const { data: roleData, error: roleError } = await Promise.race([
+        queryPromise,
+        timeoutPromise
+      ]);
       
       if (roleError) {
         console.error("Error fetching user role in fetchUserWithRole:", roleError);
@@ -57,7 +62,7 @@ export const useAuthState = () => {
         businessName: user.user_metadata?.businessName,
       };
     } catch (error: any) {
-      if (error.name === 'AbortError') {
+      if (error.message === 'Timeout') {
         console.error("Role fetch was aborted due to timeout");
       } else {
         console.error("Error processing user data in fetchUserWithRole:", error);

@@ -12,7 +12,7 @@ export const useAuthLogin = (
   const loginInProgressRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   
-  // Enhanced role fetching with retry logic
+  // Enhanced role fetching with retry logic and timeout
   const fetchUserRoleWithRetry = async (userId: string, maxRetries = 3): Promise<string> => {
     let lastError: Error | null = null;
     
@@ -20,23 +20,23 @@ export const useAuthLogin = (
       try {
         console.log(`Attempting to fetch user role (attempt ${attempt}/${maxRetries}) for user:`, userId);
         
-        // Create abort controller for this attempt
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
+        // Create timeout promise
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Timeout')), 5000); // 5 second timeout
+        });
         
-        // Set aggressive timeout for role check
-        const timeoutId = setTimeout(() => {
-          abortController.abort();
-        }, 5000); // 5 second timeout per attempt
-        
-        const { data: userRoleData, error: userRoleError } = await supabase
+        // Create the query promise
+        const queryPromise = supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', userId)
-          .maybeSingle()
-          .abortSignal(abortController.signal);
+          .maybeSingle();
         
-        clearTimeout(timeoutId);
+        // Race between query and timeout
+        const { data: userRoleData, error: userRoleError } = await Promise.race([
+          queryPromise,
+          timeoutPromise
+        ]);
         
         if (userRoleError) {
           throw userRoleError;
@@ -55,7 +55,7 @@ export const useAuthLogin = (
         lastError = error;
         console.error(`Role fetch attempt ${attempt} failed:`, error);
         
-        if (error.name === 'AbortError') {
+        if (error.message === 'Timeout') {
           console.log(`Attempt ${attempt} was aborted due to timeout`);
         }
         
