@@ -1,85 +1,80 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/auth";
 
 class AuthService {
   private retryCount: number = 0;
-  private maxRetries: number = 3;
+  private maxRetries: number = 2;
 
   async fetchUserRoleWithRetry(userId: string): Promise<string> {
-    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+    console.log(`Fetching user role for user:`, userId);
+    
+    try {
+      // Get user metadata directly from auth
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        console.log("Unable to get user metadata, using default role");
+        return 'couple';
+      }
+      
+      // Check if user is vendor from metadata
+      const isVendor = user.user_metadata?.isVendor === true || user.user_metadata?.role === 'vendor';
+      const roleFromMetadata = isVendor ? 'vendor' : 'couple';
+      
+      console.log(`Role determined from user metadata: ${roleFromMetadata}`);
+      
+      // Try to query user_roles table only as a secondary check
       try {
-        console.log(`Fetching user role (attempt ${attempt}/${this.maxRetries}) for user:`, userId);
-        
-        // Try direct query first with a shorter timeout
-        console.log('Trying direct query to user_roles table...');
-        
-        const { data: directData, error: directError } = await supabase
+        console.log('Trying quick check of user_roles table...');
+        const { data: roleData } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', userId)
-          .maybeSingle();
+          .limit(1)
+          .single();
         
-        if (directData?.role) {
-          console.log(`Role found via direct query: ${directData.role}`);
-          this.retryCount = 0;
-          return directData.role;
+        if (roleData?.role) {
+          console.log(`Role confirmed from database: ${roleData.role}`);
+          return roleData.role;
         }
-        
-        if (directError) {
-          console.log('Direct query error:', directError);
-        } else {
-          console.log('Direct query returned no data');
-        }
-        
-        // If no role found, create one based on user metadata
-        console.log(`No role found for user ${userId}, attempting to create role`);
-        
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if (userError || !user) {
-          throw new Error("Unable to get user metadata");
-        }
-        
-        const isVendor = user.user_metadata?.isVendor === true || user.user_metadata?.role === 'vendor';
-        const defaultRole = isVendor ? 'vendor' : 'couple';
-        
-        console.log(`Creating role for user ${userId} with role: ${defaultRole}`);
-        
-        // Try to create role using direct insert
-        const { error: insertError } = await supabase
-          .from('user_roles')
-          .insert({ user_id: userId, role: defaultRole });
-        
-        if (insertError) {
-          console.error(`Error creating role on attempt ${attempt}:`, insertError);
-          throw insertError;
-        }
-        
-        console.log(`Role created successfully for user ${userId}: ${defaultRole}`);
-        this.retryCount = 0;
-        return defaultRole;
-        
-      } catch (error: any) {
-        console.error(`Role fetch attempt ${attempt} failed:`, error);
-        
-        if (attempt === this.maxRetries) {
-          // As a last resort, return a default role based on user metadata
-          const { data: { user } } = await supabase.auth.getUser();
-          const isVendor = user?.user_metadata?.isVendor === true || user?.user_metadata?.role === 'vendor';
-          const fallbackRole = isVendor ? 'vendor' : 'couple';
-          console.log(`Using fallback role: ${fallbackRole}`);
-          return fallbackRole;
-        }
-        
-        // Wait before retry
-        const delay = Math.min(1000 * attempt, 3000);
-        console.log(`Waiting ${delay}ms before retry...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+      } catch (dbError) {
+        console.log('Database role check failed, using metadata role:', dbError);
       }
+      
+      // Use role from metadata as primary source
+      console.log(`Using role from user metadata: ${roleFromMetadata}`);
+      
+      // Try to insert role in database for future use (non-blocking)
+      setTimeout(() => {
+        this.insertUserRoleAsync(userId, roleFromMetadata);
+      }, 100);
+      
+      return roleFromMetadata;
+      
+    } catch (error: any) {
+      console.error("Error in fetchUserRoleWithRetry:", error);
+      
+      // Final fallback - return couple role
+      return 'couple';
     }
-    
-    // Final fallback
-    return 'couple';
+  }
+
+  private async insertUserRoleAsync(userId: string, role: string) {
+    try {
+      console.log(`Attempting to insert role ${role} for user ${userId} in background`);
+      const { error } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: role });
+      
+      if (error) {
+        console.log('Background role insert failed (non-critical):', error);
+      } else {
+        console.log('Background role insert successful');
+      }
+    } catch (error) {
+      console.log('Background role insert error (non-critical):', error);
+    }
   }
 
   async createUserWithRole(user: any): Promise<User | null> {
