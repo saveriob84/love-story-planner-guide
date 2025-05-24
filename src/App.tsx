@@ -15,6 +15,7 @@ import TableArrangementPage from "./pages/TableArrangementPage";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import VendorDashboard from "./pages/vendor/VendorDashboard";
+import VendorProfile from "./pages/vendor/VendorProfile";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +117,11 @@ const AppRoutes = () => {
       <Route path="/vendor/dashboard" element={
         <ProtectedRoute requiredRole="vendor">
           <VendorDashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/vendor/profile" element={
+        <ProtectedRoute requiredRole="vendor">
+          <VendorProfile />
         </ProtectedRoute>
       } />
       <Route path="/calendar" element={<NotFound />} />

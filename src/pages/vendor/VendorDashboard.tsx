@@ -4,10 +4,10 @@ import { useAuth } from "@/contexts/auth/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Layout, Store, Package, Settings } from "lucide-react";
+import { Layout, Store, Package, Settings, LogOut } from "lucide-react";
 
 const VendorDashboard = () => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, logout } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if user is not authenticated or not a vendor
@@ -38,11 +38,27 @@ const VendorDashboard = () => {
             <p className="text-gray-200">Benvenuto, {user.name || 'Fornitore'}</p>
           </div>
           <div className="mt-4 md:mt-0 flex space-x-4">
-            <Button variant="outline" className="text-white border-white hover:bg-white/10">
+            <Button 
+              variant="outline" 
+              className="text-white border-white hover:bg-white/10"
+              onClick={() => navigate('/vendor/profile')}
+            >
               Il tuo profilo
             </Button>
-            <Button variant="outline" className="text-white border-white hover:bg-white/10" onClick={() => navigate('/')}>
+            <Button 
+              variant="outline" 
+              className="text-white border-white hover:bg-white/10" 
+              onClick={() => navigate('/')}
+            >
               Vai al sito
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={logout}
+              className="text-white border-white hover:bg-white/10"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
             </Button>
           </div>
         </div>
@@ -76,7 +92,9 @@ const VendorDashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full">Modifica Profilo</Button>
+              <Button className="w-full" onClick={() => navigate('/vendor/profile')}>
+                Modifica Profilo
+              </Button>
             </CardContent>
           </Card>
 
