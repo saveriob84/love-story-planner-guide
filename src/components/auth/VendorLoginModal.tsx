@@ -32,14 +32,25 @@ const VendorLoginModal = ({ isOpen, onClose, onRegisterClick }: VendorLoginModal
       onClose();
       navigate("/vendor/dashboard");
     } catch (err: any) {
+      console.error("Vendor login modal error:", err);
       setError(err.message || "Si è verificato un errore durante il login.");
     } finally {
+      // Always reset loading state
       setIsLoading(false);
     }
   };
 
+  const handleClose = () => {
+    // Reset form state when closing
+    setEmail("");
+    setPassword("");
+    setError("");
+    setIsLoading(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl text-wedding-navy text-center">Area Fornitori</DialogTitle>
@@ -56,9 +67,9 @@ const VendorLoginModal = ({ isOpen, onClose, onRegisterClick }: VendorLoginModal
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="vendor-email">Email</Label>
             <Input 
-              id="email"
+              id="vendor-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -70,13 +81,13 @@ const VendorLoginModal = ({ isOpen, onClose, onRegisterClick }: VendorLoginModal
           
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="vendor-password">Password</Label>
               <a href="#" className="text-xs text-wedding-blush hover:underline">
                 Password dimenticata?
               </a>
             </div>
             <Input 
-              id="password"
+              id="vendor-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -102,6 +113,7 @@ const VendorLoginModal = ({ isOpen, onClose, onRegisterClick }: VendorLoginModal
               onClick={onRegisterClick}
               className="text-wedding-navy hover:underline font-medium"
               type="button"
+              disabled={isLoading}
             >
               Registrati
             </button>

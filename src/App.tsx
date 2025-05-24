@@ -4,8 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./contexts/auth/AuthContext";
-import { useAuth } from "./contexts/auth/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/auth/AuthContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import ChecklistPage from "./pages/ChecklistPage";
@@ -58,12 +57,19 @@ const ProtectedRoute = ({ children, requiredRole }: { children: JSX.Element, req
 };
 
 const AppRoutes = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   
   console.log("App routes rendering with auth state:", { 
     isAuthenticated, 
-    userRole: user?.role 
+    userRole: user?.role,
+    loading
   });
+  
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-wedding-blush"></div>
+    </div>;
+  }
   
   // Handle authenticated users on the index page
   const IndexComponent = () => {
@@ -134,15 +140,15 @@ const AppRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
           <AppRoutes />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 
