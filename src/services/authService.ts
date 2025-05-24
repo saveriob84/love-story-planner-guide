@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/auth";
 
@@ -12,28 +13,38 @@ class AuthService {
         
         // First try direct query with timeout
         console.log('Trying direct query to user_roles table...');
-        const { data: directData, error: directError } = await Promise.race([
-          supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', userId)
-            .maybeSingle(),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 5000))
-        ]);
-        
-        if (directData?.role) {
-          console.log(`Role found via direct query: ${directData.role}`);
-          this.retryCount = 0;
-          return directData.role;
+        try {
+          const { data: directData, error: directError } = await Promise.race([
+            supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', userId)
+              .maybeSingle(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Direct query timeout')), 5000)
+            )
+          ]);
+          
+          if (directData?.role) {
+            console.log(`Role found via direct query: ${directData.role}`);
+            this.retryCount = 0;
+            return directData.role;
+          }
+          
+          if (directError && !directError.message.includes('timeout')) {
+            console.log('Direct query failed, trying RPC function...');
+          }
+        } catch (timeoutError) {
+          console.log('Direct query timed out, trying RPC function...');
         }
         
-        if (directError && !directError.message.includes('timeout')) {
-          console.log('Direct query failed, trying RPC function...');
-          
-          // Fallback to RPC call with timeout
+        // Fallback to RPC call with timeout
+        try {
           const { data: roleData, error: roleError } = await Promise.race([
             supabase.rpc('get_user_role_safe', { p_user_id: userId }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('RPC timeout')), 5000))
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('RPC timeout')), 5000)
+            )
           ]);
           
           console.log('RPC call completed. Data:', roleData, 'Error:', roleError);
@@ -43,6 +54,8 @@ class AuthService {
             this.retryCount = 0;
             return roleData;
           }
+        } catch (rpcError) {
+          console.log('RPC call failed or timed out:', rpcError);
         }
         
         // If no role found, create one based on user metadata
