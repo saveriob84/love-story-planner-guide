@@ -19,11 +19,11 @@ export const useAuthState = () => {
   useEffect(() => {
     console.log("Setting up auth state management");
     let mounted = true;
-    let processingUser = false; // Prevent concurrent processing
+    let processingUser = false;
     
     // Function to process authenticated user
     const processAuthenticatedUser = async (session: any) => {
-      if (!mounted || processingUser) return;
+      if (!mounted || processingUser || !session?.user) return;
       
       processingUser = true;
       
@@ -74,13 +74,59 @@ export const useAuthState = () => {
       }
     };
 
-    // Check for existing session at startup
-    const checkExistingSession = async () => {
+    // Set up auth state change listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        console.log("Auth state changed:", event, "Session:", session ? "exists" : "null");
+        
+        // Handle different auth events
+        switch (event) {
+          case 'SIGNED_IN':
+          case 'TOKEN_REFRESHED':
+            if (session?.user) {
+              console.log("User authenticated, processing");
+              await processAuthenticatedUser(session);
+            }
+            break;
+            
+          case 'SIGNED_OUT':
+            console.log("User signed out, clearing state");
+            setAuthState({
+              ...initialState,
+              loading: false,
+            });
+            authService.notifyAuthChange(null, null);
+            break;
+            
+          case 'PASSWORD_RECOVERY':
+            // Don't change auth state for password recovery
+            break;
+            
+          default:
+            // For other events, check if we have a valid session
+            if (session?.user) {
+              await processAuthenticatedUser(session);
+            } else {
+              setAuthState({
+                ...initialState,
+                loading: false,
+              });
+              authService.notifyAuthChange(null, null);
+            }
+        }
+      }
+    );
+
+    // Check for existing session AFTER setting up the listener
+    const initializeSession = async () => {
       try {
         console.log("Checking for existing session at app startup");
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
+          console.error("Error getting session:", error);
           throw error;
         }
         
@@ -107,30 +153,8 @@ export const useAuthState = () => {
       }
     };
 
-    // Set up auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-        
-        console.log("Auth state changed:", event, "Session:", session ? "exists" : "null");
-        
-        if (session?.user) {
-          console.log("User found in auth state change, processing");
-          await processAuthenticatedUser(session);
-        } else {
-          console.log("No user in auth state change, setting logged out state");
-          const loggedOutState = {
-            ...initialState,
-            loading: false,
-          };
-          setAuthState(loggedOutState);
-          authService.notifyAuthChange(null, null);
-        }
-      }
-    );
-    
-    // Start checking for existing session
-    checkExistingSession();
+    // Initialize session
+    initializeSession();
     
     // Cleanup function
     return () => {

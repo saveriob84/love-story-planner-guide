@@ -3,33 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/auth";
 
 class AuthService {
-  private readonly maxRetries = 2;
-  private readonly timeoutMs = 3000; // Reduced timeout to 3 seconds
+  private readonly maxRetries = 3;
+  private readonly timeoutMs = 5000;
 
   async fetchUserRoleWithRetry(userId: string): Promise<string> {
     console.log(`Fetching user role for user:`, userId);
     
-    // First strategy: get role from user metadata (fastest)
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (!userError && user) {
-        // Check if user is a vendor from metadata
-        const isVendor = user.user_metadata?.isVendor === true || user.user_metadata?.role === 'vendor';
-        const roleFromMetadata = isVendor ? 'vendor' : 'couple';
-        
-        console.log(`Role determined from user metadata: ${roleFromMetadata}`);
-        
-        // Start background sync without blocking
-        this.syncRoleToDatabase(userId, roleFromMetadata as 'couple' | 'vendor');
-        
-        return roleFromMetadata;
-      }
-    } catch (metadataError) {
-      console.log('Error getting user metadata:', metadataError);
-    }
-
-    // Second strategy: try database with timeout and limited retries
+    // Strategy 1: Try database first with timeout
     try {
       const roleFromDb = await this.fetchRoleFromDatabaseWithTimeout(userId);
       if (roleFromDb) {
@@ -40,6 +20,25 @@ class AuthService {
       console.log('Database role fetch failed:', dbError);
     }
 
+    // Strategy 2: Get role from user metadata as fallback
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (!userError && user) {
+        const isVendor = user.user_metadata?.isVendor === true || user.user_metadata?.role === 'vendor';
+        const roleFromMetadata = isVendor ? 'vendor' : 'couple';
+        
+        console.log(`Role determined from user metadata: ${roleFromMetadata}`);
+        
+        // Start background sync to update database
+        this.syncRoleToDatabase(userId, roleFromMetadata as 'couple' | 'vendor');
+        
+        return roleFromMetadata;
+      }
+    } catch (metadataError) {
+      console.log('Error getting user metadata:', metadataError);
+    }
+
     // Final fallback: default role
     console.log('Using fallback role: couple');
     return 'couple';
@@ -47,7 +46,6 @@ class AuthService {
 
   private async fetchRoleFromDatabaseWithTimeout(userId: string): Promise<string | null> {
     return new Promise(async (resolve) => {
-      // Set a timeout to prevent hanging
       const timeoutId = setTimeout(() => {
         console.log('Database query timeout');
         resolve(null);
@@ -69,11 +67,7 @@ class AuthService {
           return;
         }
         
-        if (data?.role) {
-          resolve(data.role);
-        } else {
-          resolve(null);
-        }
+        resolve(data?.role || null);
         
       } catch (error: any) {
         clearTimeout(timeoutId);
@@ -134,7 +128,7 @@ class AuthService {
     } catch (error: any) {
       console.error("Error creating user with role:", error);
       
-      // Return a fallback user object to prevent infinite loops
+      // Return a fallback user object to prevent app crashes
       return {
         id: user.id,
         email: user.email || '',
@@ -143,7 +137,7 @@ class AuthService {
         weddingDate: user.user_metadata?.weddingDate 
           ? new Date(user.user_metadata.weddingDate) 
           : undefined,
-        role: 'couple', // Default role
+        role: 'couple',
         businessName: user.user_metadata?.businessName,
       };
     }
