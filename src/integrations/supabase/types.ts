@@ -535,6 +535,7 @@ export type Database = {
           address: string | null
           business_name: string
           city: string | null
+          codice_fiscale: string | null
           created_at: string
           description: string | null
           email: string
@@ -542,8 +543,10 @@ export type Database = {
           latitude: number | null
           logo_url: string | null
           longitude: number | null
+          partita_iva: string | null
           phone: string | null
           postal_code: string | null
+          ragione_sociale: string | null
           updated_at: string
           user_id: string
           website: string | null
@@ -552,6 +555,7 @@ export type Database = {
           address?: string | null
           business_name: string
           city?: string | null
+          codice_fiscale?: string | null
           created_at?: string
           description?: string | null
           email: string
@@ -559,8 +563,10 @@ export type Database = {
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          partita_iva?: string | null
           phone?: string | null
           postal_code?: string | null
+          ragione_sociale?: string | null
           updated_at?: string
           user_id: string
           website?: string | null
@@ -569,6 +575,7 @@ export type Database = {
           address?: string | null
           business_name?: string
           city?: string | null
+          codice_fiscale?: string | null
           created_at?: string
           description?: string | null
           email?: string
@@ -576,8 +583,10 @@ export type Database = {
           latitude?: number | null
           logo_url?: string | null
           longitude?: number | null
+          partita_iva?: string | null
           phone?: string | null
           postal_code?: string | null
+          ragione_sociale?: string | null
           updated_at?: string
           user_id?: string
           website?: string | null
