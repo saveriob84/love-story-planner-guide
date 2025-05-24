@@ -1,82 +1,117 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/auth";
 
 class AuthService {
-  private retryCount: number = 0;
-  private maxRetries: number = 2;
+  private readonly maxRetries = 2;
+  private readonly timeoutMs = 5000; // 5 secondi timeout
 
   async fetchUserRoleWithRetry(userId: string): Promise<string> {
     console.log(`Fetching user role for user:`, userId);
     
+    // Prima strategia: ottieni il ruolo dai metadati utente (più veloce)
     try {
-      // Get user metadata directly from auth
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError || !user) {
-        console.log("Unable to get user metadata, using default role");
-        return 'couple';
+        console.log("Unable to get user metadata, will try database fallback");
+      } else {
+        // Controlla se l'utente è un fornitore dai metadati
+        const isVendor = user.user_metadata?.isVendor === true || user.user_metadata?.role === 'vendor';
+        const roleFromMetadata = isVendor ? 'vendor' : 'couple';
+        
+        console.log(`Role determined from user metadata: ${roleFromMetadata}`);
+        
+        // Prova a sincronizzare con il database in background (non bloccante)
+        this.syncRoleToDatabase(userId, roleFromMetadata as 'couple' | 'vendor');
+        
+        return roleFromMetadata;
       }
-      
-      // Check if user is vendor from metadata
-      const isVendor = user.user_metadata?.isVendor === true || user.user_metadata?.role === 'vendor';
-      const roleFromMetadata = isVendor ? 'vendor' : 'couple';
-      
-      console.log(`Role determined from user metadata: ${roleFromMetadata}`);
-      
-      // Try to query user_roles table only as a secondary check
+    } catch (metadataError) {
+      console.log('Error getting user metadata:', metadataError);
+    }
+
+    // Seconda strategia: prova a ottenere il ruolo dal database con timeout
+    const roleFromDb = await this.fetchRoleFromDatabase(userId);
+    if (roleFromDb) {
+      console.log(`Role fetched from database: ${roleFromDb}`);
+      return roleFromDb;
+    }
+
+    // Fallback finale: ruolo predefinito
+    console.log('Using fallback role: couple');
+    return 'couple';
+  }
+
+  private async fetchRoleFromDatabase(userId: string): Promise<string | null> {
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        console.log('Trying quick check of user_roles table...');
-        const { data: roleData } = await supabase
+        console.log(`Database role fetch attempt ${attempt}/${this.maxRetries}`);
+        
+        // Crea una promise con timeout per la query
+        const queryPromise = supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', userId)
           .limit(1)
           .single();
+
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Query timeout')), this.timeoutMs);
+        });
+
+        const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
         
-        if (roleData?.role) {
-          console.log(`Role confirmed from database: ${roleData.role}`);
-          return roleData.role;
+        if (error) {
+          console.log(`Database query failed (attempt ${attempt}):`, error);
+          continue;
         }
-      } catch (dbError) {
-        console.log('Database role check failed, using metadata role:', dbError);
+        
+        if (data?.role) {
+          return data.role;
+        }
+        
+        console.log(`No role found in database (attempt ${attempt})`);
+        return null;
+        
+      } catch (error: any) {
+        console.log(`Database role fetch error (attempt ${attempt}):`, error.message);
+        
+        if (attempt === this.maxRetries) {
+          console.log('All database attempts failed');
+          return null;
+        }
+        
+        // Attendi un po' prima del prossimo tentativo
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
-      
-      // Use role from metadata as primary source
-      console.log(`Using role from user metadata: ${roleFromMetadata}`);
-      
-      // Try to insert role in database for future use (non-blocking)
-      setTimeout(() => {
-        this.insertUserRoleAsync(userId, roleFromMetadata as 'couple' | 'vendor');
-      }, 100);
-      
-      return roleFromMetadata;
-      
-    } catch (error: any) {
-      console.error("Error in fetchUserRoleWithRetry:", error);
-      
-      // Final fallback - return couple role
-      return 'couple';
     }
+    
+    return null;
   }
 
-  private async insertUserRoleAsync(userId: string, role: 'couple' | 'vendor') {
-    try {
-      console.log(`Attempting to insert role ${role} for user ${userId} in background`);
-      const { error } = await supabase
-        .from('user_roles')
-        .insert({ 
-          user_id: userId, 
-          role: role 
-        });
-      
-      if (error) {
-        console.log('Background role insert failed (non-critical):', error);
-      } else {
-        console.log('Background role insert successful');
+  private async syncRoleToDatabase(userId: string, role: 'couple' | 'vendor') {
+    // Operazione non bloccante per sincronizzare il ruolo nel database
+    setTimeout(async () => {
+      try {
+        console.log(`Syncing role ${role} to database for user ${userId}`);
+        
+        const { error } = await supabase
+          .from('user_roles')
+          .upsert({ 
+            user_id: userId, 
+            role: role 
+          });
+        
+        if (error) {
+          console.log('Role sync failed (non-critical):', error);
+        } else {
+          console.log('Role synced to database successfully');
+        }
+      } catch (error) {
+        console.log('Role sync error (non-critical):', error);
       }
-    } catch (error) {
-      console.log('Background role insert error (non-critical):', error);
-    }
+    }, 100);
   }
 
   async createUserWithRole(user: any): Promise<User | null> {
