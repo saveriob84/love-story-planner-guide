@@ -617,6 +617,10 @@ export type Database = {
         Args: { _user_id: string; _is_vendor?: boolean }
         Returns: undefined
       }
+      get_user_role_safe: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
     }
     Enums: {
       user_role: "couple" | "vendor"
