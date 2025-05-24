@@ -48,6 +48,7 @@ class AuthService {
 
   async createUserWithRole(user: any): Promise<User | null> {
     try {
+      console.log("Creating user with role for user:", user.id);
       const userRole = await this.fetchUserRoleWithRetry(user.id);
       
       const userData: User = {
@@ -62,6 +63,12 @@ class AuthService {
         businessName: user.user_metadata?.businessName,
       };
       
+      console.log("User data created successfully:", {
+        id: userData.id,
+        email: userData.email,
+        role: userData.role
+      });
+      
       return userData;
     } catch (error: any) {
       console.error("Error creating user with role:", error);
@@ -69,17 +76,19 @@ class AuthService {
     }
   }
 
-  // Metodi semplificati per compatibilità
   notifyAuthChange(user: User | null, session: any) {
-    // Metodo vuoto per compatibilità, non più necessario
+    console.log("Auth change notification:", {
+      user: user ? { id: user.id, email: user.email, role: user.role } : null,
+      hasSession: !!session
+    });
   }
 
   cleanup() {
-    // Metodo vuoto per compatibilità
+    console.log("AuthService cleanup called");
   }
 
   isMaster(): boolean {
-    return true; // Semplificato
+    return true;
   }
 
   getTabId(): string {

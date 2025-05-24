@@ -20,7 +20,7 @@ export const useAuthState = () => {
     console.log("Setting up auth state management");
     let mounted = true;
     
-    // Funzione per processare l'utente autenticato
+    // Function to process authenticated user
     const processAuthenticatedUser = async (session: any) => {
       if (!mounted) return;
       
@@ -37,12 +37,19 @@ export const useAuthState = () => {
             role: userData.role
           });
           
-          setAuthState({
+          const newAuthState = {
             user: userData,
             isAuthenticated: true,
             loading: false,
             error: null,
-          });
+          };
+          
+          setAuthState(newAuthState);
+          
+          // Pass the actual userData, not the stale authState.user
+          authService.notifyAuthChange(userData, session);
+          
+          console.log("Auth state updated successfully with user:", userData.email);
         } else {
           console.error("Failed to fetch user role");
           setAuthState({
@@ -61,10 +68,10 @@ export const useAuthState = () => {
       }
     };
 
-    // 1. PRIMA: Controlla sessione esistente
+    // Check for existing session at startup
     const checkExistingSession = async () => {
       try {
-        console.log("Checking for existing session at app boot");
+        console.log("Checking for existing session at app startup");
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -94,33 +101,29 @@ export const useAuthState = () => {
       }
     };
 
-    // 2. DOPO: Setup listener per futuri cambi di stato
+    // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
         
         console.log("Auth state changed:", event, "Session:", session ? "exists" : "null");
         
-        // Evita di processare di nuovo la sessione iniziale se già gestita
-        if (event === 'INITIAL_SESSION') {
-          return;
-        }
-        
         if (session?.user) {
+          console.log("User found in auth state change, processing");
           await processAuthenticatedUser(session);
-          authService.notifyAuthChange(authState.user, session);
         } else {
-          console.log("No user in auth state change, logging out");
-          setAuthState({
+          console.log("No user in auth state change, setting logged out state");
+          const loggedOutState = {
             ...initialState,
             loading: false,
-          });
+          };
+          setAuthState(loggedOutState);
           authService.notifyAuthChange(null, null);
         }
       }
     );
     
-    // Avvia il controllo della sessione esistente
+    // Start checking for existing session
     checkExistingSession();
     
     // Cleanup function
