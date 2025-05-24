@@ -19,16 +19,22 @@ export const useAuthState = () => {
   useEffect(() => {
     console.log("Setting up auth state management");
     let mounted = true;
+    let processingUser = false; // Prevent concurrent processing
     
     // Function to process authenticated user
     const processAuthenticatedUser = async (session: any) => {
-      if (!mounted) return;
+      if (!mounted || processingUser) return;
+      
+      processingUser = true;
       
       try {
         console.log("Processing authenticated user:", session.user.id);
         const userData = await authService.createUserWithRole(session.user);
         
-        if (!mounted) return;
+        if (!mounted) {
+          processingUser = false;
+          return;
+        }
         
         if (userData) {
           console.log("Setting auth state with user data:", {
@@ -45,13 +51,11 @@ export const useAuthState = () => {
           };
           
           setAuthState(newAuthState);
-          
-          // Pass the actual userData, not the stale authState.user
           authService.notifyAuthChange(userData, session);
           
           console.log("Auth state updated successfully with user:", userData.email);
         } else {
-          console.error("Failed to fetch user role");
+          console.error("Failed to create user data");
           setAuthState({
             ...initialState,
             loading: false,
@@ -65,6 +69,8 @@ export const useAuthState = () => {
           loading: false,
           error: error.message,
         });
+      } finally {
+        processingUser = false;
       }
     };
 
@@ -130,6 +136,7 @@ export const useAuthState = () => {
     return () => {
       console.log("Cleaning up auth state listener");
       mounted = false;
+      processingUser = false;
       subscription.unsubscribe();
     };
   }, []);
