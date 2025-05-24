@@ -11,23 +11,9 @@ const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiO
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     persistSession: true,
-    detectSessionInUrl: false,
     autoRefreshToken: true,
-    flowType: 'pkce'
-  },
-  global: {
-    headers: {
-      'x-client-info': 'wedding-planner@1.0.0'
-    }
-  },
-  db: {
-    schema: 'public'
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10
-    }
+    detectSessionInUrl: false,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
   }
 });
