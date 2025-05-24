@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AuthState } from "./types";
 import { useRef } from "react";
+import { authService } from "@/services/authService";
 
 export const useAuthLogin = (
   authState: AuthState,
@@ -10,67 +11,8 @@ export const useAuthLogin = (
 ) => {
   const { toast } = useToast();
   const loginInProgressRef = useRef(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
   
-  // Enhanced role fetching with retry logic and timeout
-  const fetchUserRoleWithRetry = async (userId: string, maxRetries = 3): Promise<string> => {
-    let lastError: Error | null = null;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`Attempting to fetch user role (attempt ${attempt}/${maxRetries}) for user:`, userId);
-        
-        // Create timeout promise
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('Timeout')), 5000); // 5 second timeout
-        });
-        
-        // Create the query promise
-        const queryPromise = supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId)
-          .maybeSingle();
-        
-        // Race between query and timeout
-        const { data: userRoleData, error: userRoleError } = await Promise.race([
-          queryPromise,
-          timeoutPromise
-        ]);
-        
-        if (userRoleError) {
-          throw userRoleError;
-        }
-        
-        const userRole = userRoleData?.role;
-        console.log(`User role found on attempt ${attempt}:`, userRole);
-        
-        if (!userRole) {
-          throw new Error("Nessun ruolo trovato per questo utente");
-        }
-        
-        return userRole;
-        
-      } catch (error: any) {
-        lastError = error;
-        console.error(`Role fetch attempt ${attempt} failed:`, error);
-        
-        if (error.message === 'Timeout') {
-          console.log(`Attempt ${attempt} was aborted due to timeout`);
-        }
-        
-        // If it's the last attempt, don't wait
-        if (attempt < maxRetries) {
-          console.log(`Waiting before retry attempt ${attempt + 1}...`);
-          await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
-        }
-      }
-    }
-    
-    throw lastError || new Error("Errore nel recupero del ruolo utente dopo tutti i tentativi");
-  };
-  
-  // Login function with comprehensive error handling and debouncing
+  // Login function with comprehensive error handling and optimized flow
   const login = async (credentials: { email: string; password: string; isVendor?: boolean }) => {
     // Prevent concurrent login attempts
     if (loginInProgressRef.current) {
@@ -78,9 +20,11 @@ export const useAuthLogin = (
       return;
     }
     
-    console.log("Starting login process:", { 
+    console.log("Starting optimized login process:", { 
       email: credentials.email, 
       isVendor: credentials.isVendor,
+      tabId: authService.getTabId(),
+      isMaster: authService.isMaster(),
       timestamp: new Date().toISOString()
     });
     
@@ -114,7 +58,7 @@ export const useAuthLogin = (
       // Step 2: Fetch and validate user role
       let userRole: string;
       try {
-        userRole = await fetchUserRoleWithRetry(data.user.id);
+        userRole = await authService.fetchUserRoleWithRetry(data.user.id);
       } catch (roleError: any) {
         console.error("Failed to fetch user role, signing out:", roleError);
         await supabase.auth.signOut();
@@ -174,12 +118,6 @@ export const useAuthLogin = (
     } finally {
       // Always reset the login in progress flag
       loginInProgressRef.current = false;
-      
-      // Clean up abort controller
-      if (abortControllerRef.current) {
-        abortControllerRef.current = null;
-      }
-      
       console.log("Login process completed, flags reset");
     }
   };
@@ -188,11 +126,6 @@ export const useAuthLogin = (
   const cleanup = () => {
     console.log("Cleaning up login state");
     loginInProgressRef.current = false;
-    
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-    }
     
     setAuthState(prev => ({
       ...prev,

@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { User } from "@/types/auth";
 import { AuthState } from "./types";
 import { supabase } from "@/integrations/supabase/client";
+import { authService } from "@/services/authService";
+import { useAuthDebounce } from "@/hooks/useAuthDebounce";
 
 // Initial auth state
 const initialState: AuthState = {
@@ -15,66 +17,16 @@ const initialState: AuthState = {
 export const useAuthState = () => {
   const [authState, setAuthState] = useState<AuthState>(initialState);
   
-  // Function to fetch user role and create user object with timeout
-  const fetchUserWithRole = async (user: any): Promise<User | null> => {
-    const userId = user.id;
-    console.log("fetchUserWithRole called for user:", userId);
-    
-    try {
-      // Create timeout promise
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-          console.log("Role fetch timeout, rejecting request");
-          reject(new Error('Timeout'));
-        }, 8000); // 8 second timeout
-      });
-      
-      // Create the query promise
-      const queryPromise = supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      // Race between query and timeout
-      const { data: roleData, error: roleError } = await Promise.race([
-        queryPromise,
-        timeoutPromise
-      ]);
-      
-      if (roleError) {
-        console.error("Error fetching user role in fetchUserWithRole:", roleError);
-        return null;
-      }
-      
-      const role = roleData?.role || 'couple'; // Default fallback
-      console.log("fetchUserWithRole - User role found:", role);
-      
-      return {
-        id: userId,
-        email: user.email || '',
-        name: user.user_metadata?.name,
-        partnerName: user.user_metadata?.partnerName,
-        weddingDate: user.user_metadata?.weddingDate 
-          ? new Date(user.user_metadata.weddingDate) 
-          : undefined,
-        role: role as 'couple' | 'vendor',
-        businessName: user.user_metadata?.businessName,
-      };
-    } catch (error: any) {
-      if (error.message === 'Timeout') {
-        console.error("Role fetch was aborted due to timeout");
-      } else {
-        console.error("Error processing user data in fetchUserWithRole:", error);
-      }
-      return null;
-    }
-  };
-  
+  // Debounced state setter to prevent rapid updates
+  const debouncedSetAuthState = useAuthDebounce((newState: AuthState) => {
+    setAuthState(newState);
+  }, 100);
+
   // Check for logged in user on initial load and set up auth state change listener
   useEffect(() => {
-    console.log("Setting up auth state listener");
+    console.log("Setting up optimized auth state listener");
     let mounted = true;
+    let isInitialized = false;
     
     // Set up auth state change listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -84,55 +36,74 @@ export const useAuthState = () => {
           return;
         }
         
-        console.log("Auth state changed:", event, "Session:", session ? "exists" : "null");
+        console.log("Auth state changed:", event, "Session:", session ? "exists" : "null", "Tab:", authService.getTabId());
         
-        if (session?.user) {
-          console.log("Processing authenticated user in auth state change");
-          const userData = await fetchUserWithRole(session.user);
-          
-          if (!mounted) {
-            console.log("Component unmounted during user data fetch");
-            return;
-          }
-          
-          if (userData) {
-            console.log("Setting auth state with user data from state change:", {
-              id: userData.id,
-              email: userData.email,
-              role: userData.role
-            });
+        // Prevent race conditions with session lock
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          authService.setSessionLock(true);
+        }
+        
+        try {
+          if (session?.user) {
+            console.log("Processing authenticated user in auth state change");
+            const userData = await authService.createUserWithRole(session.user);
             
-            setAuthState({
-              user: userData,
-              isAuthenticated: true,
-              loading: false,
-              error: null,
-            });
+            if (!mounted) {
+              console.log("Component unmounted during user data fetch");
+              return;
+            }
+            
+            if (userData) {
+              console.log("Setting auth state with user data from state change:", {
+                id: userData.id,
+                email: userData.email,
+                role: userData.role,
+                tabId: authService.getTabId()
+              });
+              
+              const newState = {
+                user: userData,
+                isAuthenticated: true,
+                loading: false,
+                error: null,
+              };
+              
+              setAuthState(newState);
+              authService.notifyAuthChange(userData, session);
+            } else {
+              console.error("Failed to fetch user role in auth state change");
+              setAuthState({
+                ...initialState,
+                loading: false,
+                error: "Error processing user data",
+              });
+            }
           } else {
-            console.error("Failed to fetch user role in auth state change");
-            setAuthState({
+            console.log("No authenticated user in auth state change");
+            const newState = {
               ...initialState,
               loading: false,
-              error: "Error processing user data",
-            });
+            };
+            setAuthState(newState);
+            authService.notifyAuthChange(null, null);
           }
-        } else {
-          console.log("No authenticated user in auth state change");
-          setAuthState({
-            ...initialState,
-            loading: false,
-          });
+        } finally {
+          authService.setSessionLock(false);
         }
       }
     );
     
-    // Check for current session
-    const checkLoggedInUser = async () => {
+    // Check for current session with retry logic
+    const checkLoggedInUser = async (retryCount = 0) => {
       if (!mounted) return;
       
       try {
-        console.log("Checking for existing logged in user");
-        const { data: { session } } = await supabase.auth.getSession();
+        console.log("Checking for existing logged in user, attempt:", retryCount + 1);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          throw error;
+        }
         
         if (!mounted) {
           console.log("Component unmounted during session check");
@@ -141,7 +112,7 @@ export const useAuthState = () => {
         
         if (session?.user) {
           console.log("Found existing session, processing user");
-          const userData = await fetchUserWithRole(session.user);
+          const userData = await authService.createUserWithRole(session.user);
           
           if (!mounted) {
             console.log("Component unmounted during existing session user data fetch");
@@ -161,6 +132,7 @@ export const useAuthState = () => {
               loading: false,
               error: null,
             });
+            isInitialized = true;
           } else {
             console.error("Failed to fetch user role for existing session");
             setAuthState({
@@ -175,11 +147,22 @@ export const useAuthState = () => {
             ...initialState,
             loading: false,
           });
+          isInitialized = true;
         }
       } catch (error: any) {
         if (!mounted) return;
         
         console.error("Error checking logged in user:", error);
+        
+        // Retry logic with exponential backoff
+        if (retryCount < 2) {
+          console.log(`Retrying session check in ${(retryCount + 1) * 1000}ms`);
+          setTimeout(() => {
+            checkLoggedInUser(retryCount + 1);
+          }, (retryCount + 1) * 1000);
+          return;
+        }
+        
         setAuthState({
           ...initialState,
           loading: false,
@@ -188,11 +171,16 @@ export const useAuthState = () => {
       }
     };
     
-    checkLoggedInUser();
+    // Delay initial check to allow for tab coordination
+    setTimeout(() => {
+      if (mounted) {
+        checkLoggedInUser();
+      }
+    }, authService.isMaster() ? 0 : 200);
     
     // Cleanup function
     return () => {
-      console.log("Cleaning up auth state listener");
+      console.log("Cleaning up optimized auth state listener");
       mounted = false;
       subscription.unsubscribe();
     };
