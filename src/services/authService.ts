@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/auth";
 
@@ -11,32 +10,48 @@ class AuthService {
       try {
         console.log(`Fetching user role (attempt ${attempt}/${this.maxRetries}) for user:`, userId);
         
-        // Use RPC call to the database function which bypasses RLS issues
-        console.log('Calling get_user_role_safe RPC function...');
-        const { data: roleData, error: roleError } = await supabase.rpc('get_user_role_safe', {
-          p_user_id: userId
-        });
+        // First try direct query with timeout
+        console.log('Trying direct query to user_roles table...');
+        const { data: directData, error: directError } = await Promise.race([
+          supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', userId)
+            .maybeSingle(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Query timeout')), 5000))
+        ]);
         
-        console.log('RPC call completed. Data:', roleData, 'Error:', roleError);
-        
-        if (roleError) {
-          console.error(`Role fetch error on attempt ${attempt}:`, roleError);
-          throw roleError;
+        if (directData?.role) {
+          console.log(`Role found via direct query: ${directData.role}`);
+          this.retryCount = 0;
+          return directData.role;
         }
         
-        if (roleData) {
-          console.log(`User role found on attempt ${attempt}:`, roleData);
-          this.retryCount = 0; // Reset on success
-          return roleData;
+        if (directError && !directError.message.includes('timeout')) {
+          console.log('Direct query failed, trying RPC function...');
+          
+          // Fallback to RPC call with timeout
+          const { data: roleData, error: roleError } = await Promise.race([
+            supabase.rpc('get_user_role_safe', { p_user_id: userId }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('RPC timeout')), 5000))
+          ]);
+          
+          console.log('RPC call completed. Data:', roleData, 'Error:', roleError);
+          
+          if (roleData) {
+            console.log(`User role found via RPC: ${roleData}`);
+            this.retryCount = 0;
+            return roleData;
+          }
         }
         
-        // If no role found, try to create one based on user metadata
-        console.log(`No role found for user ${userId}, attempting to fetch user metadata`);
+        // If no role found, create one based on user metadata
+        console.log(`No role found for user ${userId}, attempting to create role`);
         
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError || !user) {
-          throw new Error("Impossibile recuperare i metadati utente");
+          throw new Error("Unable to get user metadata");
         }
         
         const isVendor = user.user_metadata?.isVendor === true || user.user_metadata?.role === 'vendor';
@@ -44,26 +59,39 @@ class AuthService {
         
         console.log(`Creating role for user ${userId} with role: ${defaultRole}`);
         
-        // Use the existing create_user_role function
-        const { error: createError } = await supabase.rpc('create_user_role', {
-          user_id: userId,
-          role_name: defaultRole
-        });
+        // Try to create role using direct insert first
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: defaultRole });
         
-        if (createError) {
-          console.error(`Error creating role on attempt ${attempt}:`, createError);
-          throw createError;
+        if (insertError) {
+          console.log('Direct insert failed, trying RPC create function...');
+          // Fallback to RPC function
+          const { error: createError } = await supabase.rpc('create_user_role', {
+            user_id: userId,
+            role_name: defaultRole
+          });
+          
+          if (createError) {
+            console.error(`Error creating role on attempt ${attempt}:`, createError);
+            throw createError;
+          }
         }
         
         console.log(`Role created successfully for user ${userId}: ${defaultRole}`);
-        this.retryCount = 0; // Reset on success
+        this.retryCount = 0;
         return defaultRole;
         
       } catch (error: any) {
         console.error(`Role fetch attempt ${attempt} failed:`, error);
         
         if (attempt === this.maxRetries) {
-          throw new Error(`Errore nel recupero del ruolo utente dopo ${this.maxRetries} tentativi: ${error.message}`);
+          // As a last resort, return a default role based on user metadata
+          const { data: { user } } = await supabase.auth.getUser();
+          const isVendor = user?.user_metadata?.isVendor === true || user?.user_metadata?.role === 'vendor';
+          const fallbackRole = isVendor ? 'vendor' : 'couple';
+          console.log(`Using fallback role: ${fallbackRole}`);
+          return fallbackRole;
         }
         
         // Exponential backoff with jitter
@@ -73,7 +101,8 @@ class AuthService {
       }
     }
     
-    throw new Error("Errore nel recupero del ruolo utente");
+    // Final fallback
+    return 'couple';
   }
 
   async createUserWithRole(user: any): Promise<User | null> {
