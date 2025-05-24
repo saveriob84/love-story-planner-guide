@@ -32,14 +32,25 @@ const LoginModal = ({ isOpen, onClose, onRegisterClick }: LoginModalProps) => {
       onClose();
       navigate("/dashboard");
     } catch (err: any) {
+      console.error("Login modal error:", err);
       setError(err.message || "Si è verificato un errore durante il login.");
     } finally {
+      // Always reset loading state
       setIsLoading(false);
     }
   };
 
+  const handleClose = () => {
+    // Reset form state when closing
+    setEmail("");
+    setPassword("");
+    setError("");
+    setIsLoading(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl text-wedding-navy text-center">Benvenuto</DialogTitle>
@@ -102,6 +113,7 @@ const LoginModal = ({ isOpen, onClose, onRegisterClick }: LoginModalProps) => {
               onClick={onRegisterClick}
               className="text-wedding-blush hover:underline font-medium"
               type="button"
+              disabled={isLoading}
             >
               Registrati
             </button>
