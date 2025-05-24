@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useDebounce } from "@/hooks/useDebounce";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -23,9 +22,19 @@ const LoginModal = ({ isOpen, onClose, onRegisterClick }: LoginModalProps) => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const debouncedLogin = useDebounce(async (credentials: { email: string; password: string }) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (isLoading) {
+      console.log("Login already in progress, ignoring submit");
+      return;
+    }
+    
+    setError("");
+    setIsLoading(true);
+    
     try {
-      await login(credentials);
+      await login({ email, password });
       onClose();
       navigate("/dashboard");
     } catch (err: any) {
@@ -34,38 +43,18 @@ const LoginModal = ({ isOpen, onClose, onRegisterClick }: LoginModalProps) => {
     } finally {
       setIsLoading(false);
     }
-  }, 300);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (isLoading || debouncedLogin.isActive()) {
-      console.log("Login already in progress, ignoring submit");
-      return;
-    }
-    
-    setError("");
-    setIsLoading(true);
-    
-    await debouncedLogin.debouncedCallback({ email, password });
   };
 
   const handleClose = () => {
+    if (isLoading) return; // Prevent closing during loading
+    
     // Reset form state when closing
     setEmail("");
     setPassword("");
     setError("");
     setIsLoading(false);
-    debouncedLogin.cleanup();
     onClose();
   };
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      debouncedLogin.cleanup();
-    };
-  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
