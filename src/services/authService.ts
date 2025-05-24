@@ -12,9 +12,12 @@ class AuthService {
         console.log(`Fetching user role (attempt ${attempt}/${this.maxRetries}) for user:`, userId);
         
         // Use RPC call to the database function which bypasses RLS issues
+        console.log('Calling get_user_role_safe RPC function...');
         const { data: roleData, error: roleError } = await supabase.rpc('get_user_role_safe', {
           p_user_id: userId
         });
+        
+        console.log('RPC call completed. Data:', roleData, 'Error:', roleError);
         
         if (roleError) {
           console.error(`Role fetch error on attempt ${attempt}:`, roleError);
@@ -65,6 +68,7 @@ class AuthService {
         
         // Exponential backoff with jitter
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000) + Math.random() * 1000;
+        console.log(`Waiting ${delay}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
