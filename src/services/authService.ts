@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/auth";
 
@@ -47,7 +46,7 @@ class AuthService {
       
       // Try to insert role in database for future use (non-blocking)
       setTimeout(() => {
-        this.insertUserRoleAsync(userId, roleFromMetadata);
+        this.insertUserRoleAsync(userId, roleFromMetadata as 'couple' | 'vendor');
       }, 100);
       
       return roleFromMetadata;
@@ -60,12 +59,15 @@ class AuthService {
     }
   }
 
-  private async insertUserRoleAsync(userId: string, role: string) {
+  private async insertUserRoleAsync(userId: string, role: 'couple' | 'vendor') {
     try {
       console.log(`Attempting to insert role ${role} for user ${userId} in background`);
       const { error } = await supabase
         .from('user_roles')
-        .insert({ user_id: userId, role: role });
+        .insert({ 
+          user_id: userId, 
+          role: role 
+        });
       
       if (error) {
         console.log('Background role insert failed (non-critical):', error);
