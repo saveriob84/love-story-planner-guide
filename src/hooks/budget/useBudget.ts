@@ -1,8 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/auth/AuthContext";
-import { BudgetItem, BudgetState, BudgetActions } from "./types";
+import { BudgetItem } from "./types";
 import { budgetService } from "./budgetService";
 import { migrationService } from "./migrationService";
 import { budgetCalculations } from "./budgetCalculations";
