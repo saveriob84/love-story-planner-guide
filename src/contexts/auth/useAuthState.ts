@@ -84,10 +84,19 @@ export const useAuthState = () => {
         // Handle different auth events
         switch (event) {
           case 'SIGNED_IN':
-          case 'TOKEN_REFRESHED':
             if (session?.user) {
-              console.log("User authenticated, processing");
+              console.log("User signed in, processing");
               await processAuthenticatedUser(session);
+            }
+            break;
+            
+          case 'TOKEN_REFRESHED':
+            // Don't re-process user on token refresh if we already have user data
+            if (session?.user && !authState.user) {
+              console.log("Token refreshed and no existing user, processing");
+              await processAuthenticatedUser(session);
+            } else {
+              console.log("Token refreshed, user already loaded");
             }
             break;
             
@@ -163,7 +172,7 @@ export const useAuthState = () => {
       processingUser = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, []); // Empty dependency array to prevent re-initialization
 
   return { authState, setAuthState };
 };

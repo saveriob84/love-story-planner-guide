@@ -3,13 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/auth";
 
 class AuthService {
-  private readonly maxRetries = 3;
-  private readonly timeoutMs = 5000;
+  private readonly maxRetries = 2;
+  private readonly timeoutMs = 10000; // Increased to 10 seconds
 
   async fetchUserRoleWithRetry(userId: string): Promise<string> {
     console.log(`Fetching user role for user:`, userId);
     
-    // Strategy 1: Try database first with timeout
+    // Strategy 1: Try database first with increased timeout
     try {
       const roleFromDb = await this.fetchRoleFromDatabaseWithTimeout(userId);
       if (roleFromDb) {
@@ -17,7 +17,7 @@ class AuthService {
         return roleFromDb;
       }
     } catch (dbError) {
-      console.log('Database role fetch failed:', dbError);
+      console.log('Database role fetch failed, using fallback:', dbError);
     }
 
     // Strategy 2: Get role from user metadata as fallback
@@ -30,7 +30,7 @@ class AuthService {
         
         console.log(`Role determined from user metadata: ${roleFromMetadata}`);
         
-        // Start background sync to update database
+        // Start background sync to update database (non-blocking)
         this.syncRoleToDatabase(userId, roleFromMetadata as 'couple' | 'vendor');
         
         return roleFromMetadata;
@@ -47,7 +47,7 @@ class AuthService {
   private async fetchRoleFromDatabaseWithTimeout(userId: string): Promise<string | null> {
     return new Promise(async (resolve) => {
       const timeoutId = setTimeout(() => {
-        console.log('Database query timeout');
+        console.log('Database query timeout after', this.timeoutMs, 'ms');
         resolve(null);
       }, this.timeoutMs);
 
@@ -81,7 +81,7 @@ class AuthService {
     // Non-blocking operation to sync role to database
     setTimeout(async () => {
       try {
-        console.log(`Syncing role ${role} to database for user ${userId}`);
+        console.log(`Background sync: updating role ${role} for user ${userId}`);
         
         const { error } = await supabase
           .from('user_roles')
@@ -91,14 +91,14 @@ class AuthService {
           });
         
         if (error) {
-          console.log('Role sync failed (non-critical):', error);
+          console.log('Background role sync failed (non-critical):', error);
         } else {
-          console.log('Role synced to database successfully');
+          console.log('Background role sync completed successfully');
         }
       } catch (error) {
-        console.log('Role sync error (non-critical):', error);
+        console.log('Background role sync error (non-critical):', error);
       }
-    }, 100);
+    }, 500); // Slight delay to avoid blocking
   }
 
   async createUserWithRole(user: any): Promise<User | null> {

@@ -12,7 +12,7 @@ export const useAuthLogin = (
   const { toast } = useToast();
   const loginInProgressRef = useRef(false);
   
-  // Login function with comprehensive error handling and optimized flow
+  // Login function with improved error handling
   const login = async (credentials: { email: string; password: string; isVendor?: boolean }) => {
     // Prevent concurrent login attempts
     if (loginInProgressRef.current) {
@@ -20,11 +20,9 @@ export const useAuthLogin = (
       return;
     }
     
-    console.log("Starting optimized login process:", { 
+    console.log("Starting login process:", { 
       email: credentials.email, 
       isVendor: credentials.isVendor,
-      tabId: authService.getTabId(),
-      isMaster: authService.isMaster(),
       timestamp: new Date().toISOString()
     });
     
@@ -38,7 +36,7 @@ export const useAuthLogin = (
     
     try {
       // Step 1: Authenticate with Supabase
-      console.log("Step 1: Authenticating with Supabase");
+      console.log("Authenticating with Supabase");
       const { data, error } = await supabase.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
@@ -53,19 +51,19 @@ export const useAuthLogin = (
         throw new Error("Nessun utente restituito dall'autenticazione");
       }
       
-      console.log("Step 2: User authenticated successfully:", data.user.id);
+      console.log("User authenticated successfully:", data.user.id);
       
       // Step 2: Fetch and validate user role
       let userRole: string;
       try {
         userRole = await authService.fetchUserRoleWithRetry(data.user.id);
       } catch (roleError: any) {
-        console.error("Failed to fetch user role, signing out:", roleError);
-        await supabase.auth.signOut();
-        throw new Error("Errore nel recupero del ruolo utente. Riprova più tardi.");
+        console.error("Failed to fetch user role:", roleError);
+        // Don't sign out on role fetch failure, use fallback
+        userRole = 'couple';
       }
       
-      console.log("Step 3: User role validated:", userRole);
+      console.log("User role determined:", userRole);
       
       // Step 3: Validate role matches login type
       if (credentials.isVendor && userRole === 'couple') {
@@ -78,7 +76,7 @@ export const useAuthLogin = (
         throw new Error("Questo account è registrato come fornitore. Usa il login fornitori.");
       }
       
-      console.log("Step 4: Login successful, role validation passed");
+      console.log("Login successful, role validation passed");
       
       // Success toast
       toast({
@@ -89,7 +87,6 @@ export const useAuthLogin = (
       });
       
       // The auth state will be updated by the onAuthStateChange listener
-      // Just reset loading state here
       setAuthState(prev => ({
         ...prev,
         loading: false,
@@ -118,7 +115,7 @@ export const useAuthLogin = (
     } finally {
       // Always reset the login in progress flag
       loginInProgressRef.current = false;
-      console.log("Login process completed, flags reset");
+      console.log("Login process completed");
     }
   };
 
