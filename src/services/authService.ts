@@ -67,7 +67,7 @@ class AuthService {
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
-          .eq('user_id', userId)
+          .eq('user_id', userId as any)
           .limit(1)
           .single();
         
@@ -79,7 +79,7 @@ class AuthService {
           return;
         }
         
-        resolve(data?.role || null);
+        resolve((data as any)?.role || null);
         
       } catch (error: any) {
         clearTimeout(timeoutId);
@@ -100,7 +100,7 @@ class AuthService {
           .upsert({ 
             user_id: userId, 
             role: role 
-          });
+          } as any);
         
         if (!error) {
           console.log('Background role sync completed successfully');

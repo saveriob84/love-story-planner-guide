@@ -18,9 +18,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     flowType: 'pkce',
     // Configurazioni specifiche per Chrome e stabilità della sessione
     storageKey: 'sb-auth-token',
-    debug: false,
-    refreshOnWindowFocus: true,
-    refreshOnServerError: true
+    debug: false
   },
   global: {
     headers: {

@@ -1,5 +1,4 @@
 
-
 import { WeddingTask } from '../types';
 import { generateDefaultTasks } from '../utils';
 import { supabase } from "@/integrations/supabase/client";
