@@ -1,4 +1,5 @@
 
+
 import { WeddingTask } from '../types';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -21,11 +22,11 @@ export function useTaskMutations(userId: string | undefined) {
         const { data: timeline } = await supabase
           .from('timelines')
           .select('id')
-          .eq('profile_id', userId)
-          .eq('name', updates.timeline)
+          .eq('profile_id', userId as any)
+          .eq('name', updates.timeline as any)
           .single();
           
-        timelineId = timeline?.id;
+        timelineId = (timeline as any)?.id;
       }
       
       // Update task in database
@@ -39,8 +40,8 @@ export function useTaskMutations(userId: string | undefined) {
           completed: updates.completed !== undefined ? updates.completed : undefined,
           notes: updates.notes !== undefined ? updates.notes : undefined,
           category: updates.category !== undefined ? updates.category : undefined
-        })
-        .eq('id', taskId);
+        } as any)
+        .eq('id', taskId as any);
       
       if (error) {
         console.error('Error updating task:', error);
@@ -64,8 +65,8 @@ export function useTaskMutations(userId: string | undefined) {
       const { data: timeline } = await supabase
         .from('timelines')
         .select('id')
-        .eq('profile_id', userId)
-        .eq('name', task.timeline)
+        .eq('profile_id', userId as any)
+        .eq('name', task.timeline as any)
         .single();
         
       if (!timeline) {
@@ -78,14 +79,14 @@ export function useTaskMutations(userId: string | undefined) {
         .from('tasks')
         .insert({
           profile_id: userId,
-          timeline_id: timeline.id,
+          timeline_id: (timeline as any).id,
           title: task.title,
           description: task.description,
           due_date: task.dueDate,
           completed: task.completed,
           notes: task.notes || null,
           category: task.category
-        })
+        } as any)
         .select('*')
         .single();
       
@@ -95,14 +96,14 @@ export function useTaskMutations(userId: string | undefined) {
       }
       
       const newTask: WeddingTask = {
-        id: insertedTask.id,
-        title: insertedTask.title,
-        description: insertedTask.description || "",
+        id: (insertedTask as any).id,
+        title: (insertedTask as any).title,
+        description: (insertedTask as any).description || "",
         timeline: task.timeline,
-        dueDate: insertedTask.due_date || new Date().toISOString(),
-        completed: insertedTask.completed || false,
-        notes: insertedTask.notes || "",
-        category: insertedTask.category || "Altro"
+        dueDate: (insertedTask as any).due_date || new Date().toISOString(),
+        completed: (insertedTask as any).completed || false,
+        notes: (insertedTask as any).notes || "",
+        category: (insertedTask as any).category || "Altro"
       };
       
       return [...tasks, newTask];
@@ -119,7 +120,7 @@ export function useTaskMutations(userId: string | undefined) {
       const { error } = await supabase
         .from('tasks')
         .delete()
-        .eq('id', taskId);
+        .eq('id', taskId as any);
         
       if (error) {
         console.error('Error deleting task:', error);
@@ -147,8 +148,8 @@ export function useTaskMutations(userId: string | undefined) {
       const { data: timeline } = await supabase
         .from('timelines')
         .select('id')
-        .eq('profile_id', userId)
-        .eq('name', newTimeline)
+        .eq('profile_id', userId as any)
+        .eq('name', newTimeline as any)
         .single();
         
       if (!timeline) {
@@ -160,9 +161,9 @@ export function useTaskMutations(userId: string | undefined) {
       const { error } = await supabase
         .from('tasks')
         .update({
-          timeline_id: timeline.id
-        })
-        .eq('id', taskId);
+          timeline_id: (timeline as any).id
+        } as any)
+        .eq('id', taskId as any);
       
       if (error) {
         console.error('Error reordering task:', error);
@@ -185,3 +186,4 @@ export function useTaskMutations(userId: string | undefined) {
     reorderTasks
   };
 }
+
