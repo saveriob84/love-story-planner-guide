@@ -51,7 +51,7 @@ export const budgetService = {
     if (error && error.code !== 'PGRST116') throw error;
     if (!data) return 0;
     
-    return Number(data.total_budget);
+    return Number((data as any).total_budget);
   },
 
   async saveBudgetSettings(userId: string, totalBudget: number): Promise<void> {
@@ -102,13 +102,14 @@ export const budgetService = {
     if (error) throw error;
     if (!data) throw new Error('Nessun dato restituito dall\'inserimento');
     
+    const item = data as any;
     return {
-      id: data.id,
-      category: data.category,
-      description: data.description || "",
-      estimatedCost: Number(data.estimated_cost),
-      actualCost: data.actual_cost ? Number(data.actual_cost) : null,
-      paid: Boolean(data.paid)
+      id: item.id,
+      category: item.category,
+      description: item.description || "",
+      estimatedCost: Number(item.estimated_cost),
+      actualCost: item.actual_cost ? Number(item.actual_cost) : null,
+      paid: Boolean(item.paid)
     };
   },
 

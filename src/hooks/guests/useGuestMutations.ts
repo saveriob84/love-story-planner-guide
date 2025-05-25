@@ -49,7 +49,7 @@ export const useGuestMutations = (
           plus_one: guestData.plusOne || false,
           dietary_restrictions: guestData.dietaryRestrictions,
           notes: guestData.notes
-        });
+        } as any);
 
       if (guestError) {
         console.error("Error adding guest:", guestError);
@@ -68,7 +68,7 @@ export const useGuestMutations = (
 
         const { error: groupError } = await supabase
           .from('group_members')
-          .insert(groupMembersData);
+          .insert(groupMembersData as any);
 
         if (groupError) {
           console.error("Error adding group members:", groupError);
@@ -113,7 +113,7 @@ export const useGuestMutations = (
           plus_one: updatedData.plusOne,
           dietary_restrictions: updatedData.dietaryRestrictions,
           notes: updatedData.notes
-        })
+        } as any)
         .eq('id', id);
 
       if (guestError) {
@@ -167,7 +167,7 @@ export const useGuestMutations = (
                 name: member.name,
                 dietary_restrictions: member.dietaryRestrictions,
                 is_child: member.isChild
-              })
+              } as any)
               .eq('id', memberId);
 
             if (updateError) {
@@ -184,7 +184,7 @@ export const useGuestMutations = (
                 name: member.name,
                 dietary_restrictions: member.dietaryRestrictions,
                 is_child: member.isChild
-              });
+              } as any);
 
             if (insertError) {
               console.error("Error inserting group member:", insertError);

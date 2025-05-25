@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Guest } from "@/types/guest";
@@ -47,7 +48,7 @@ export const useGuestMigration = () => {
             plus_one: guest.plusOne,
             dietary_restrictions: guest.dietaryRestrictions,
             notes: guest.notes
-          });
+          } as any);
 
         if (guestError) {
           console.error("Error migrating guest:", guestError);
@@ -67,7 +68,7 @@ export const useGuestMigration = () => {
           // Insert group members
           const { error: groupError } = await supabase
             .from('group_members')
-            .insert(groupMembersData);
+            .insert(groupMembersData as any);
 
           if (groupError) {
             console.error("Error migrating group members:", groupError);

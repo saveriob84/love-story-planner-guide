@@ -1,6 +1,6 @@
 
 // Esportiamo i tipi principali dal budgetService
-export { BudgetItem, BudgetSettings } from './budgetService';
+export type { BudgetItem, BudgetSettings } from './budgetService';
 
 // Tipo per lo stato del budget nell'hook
 export interface BudgetState {
@@ -19,4 +19,4 @@ export interface BudgetActions {
 }
 
 // Import per compatibilità
-import { BudgetItem } from './budgetService';
+import type { BudgetItem } from './budgetService';
