@@ -43,7 +43,7 @@ export const useBudget = (userId?: string) => {
         throw itemsError;
       }
 
-      // Transform data for our component
+      // Transform data for our component - only if items exist and no error
       const transformedItems = (items || []).map(item => ({
         id: item.id,
         category: item.category,
@@ -106,15 +106,19 @@ export const useBudget = (userId?: string) => {
 
       if (existingSettings) {
         // Update existing settings
-        await supabase
+        const { error } = await supabase
           .from('budget_settings')
           .update({ total_budget: totalBudget })
           .eq('user_id', userId);
+        
+        if (error) throw error;
       } else {
         // Insert new settings
-        await supabase
+        const { error } = await supabase
           .from('budget_settings')
           .insert({ user_id: userId, total_budget: totalBudget });
+        
+        if (error) throw error;
       }
       
       toast({
@@ -279,7 +283,7 @@ export const useBudget = (userId?: string) => {
           
           // Insert items into Supabase
           for (const item of parsedItems) {
-            await supabase
+            const { error } = await supabase
               .from('budget_items')
               .insert({
                 user_id: userId,
@@ -289,6 +293,8 @@ export const useBudget = (userId?: string) => {
                 actual_cost: item.actualCost || null,
                 paid: item.paid
               });
+            
+            if (error) console.error('Error migrating item:', error);
           }
         }
         
@@ -296,12 +302,14 @@ export const useBudget = (userId?: string) => {
         if ((!existingSettings || existingSettings.length === 0) && localBudget) {
           const parsedBudget = parseInt(localBudget) || 0;
           
-          await supabase
+          const { error } = await supabase
             .from('budget_settings')
             .insert({
               user_id: userId,
               total_budget: parsedBudget
             });
+          
+          if (error) console.error('Error migrating budget setting:', error);
         }
         
         // After migration, reload data from Supabase
