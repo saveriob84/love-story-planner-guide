@@ -1,26 +1,35 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@/types/auth";
+import { sessionService } from "./sessionService";
 
 class AuthService {
-  private readonly maxRetries = 2;
-  private readonly timeoutMs = 10000; // Increased to 10 seconds
+  private readonly maxRetries = 1;
+  private readonly timeoutMs = 5000; // Ridotto a 5 secondi
 
   async fetchUserRoleWithRetry(userId: string): Promise<string> {
     console.log(`Fetching user role for user:`, userId);
     
-    // Strategy 1: Try database first with increased timeout
+    // Prima controlla la cache
+    const cachedRole = sessionService.getCachedUserRole(userId);
+    if (cachedRole) {
+      console.log(`Role from cache: ${cachedRole}`);
+      return cachedRole;
+    }
+    
+    // Strategia 1: Prova il database con timeout ridotto
     try {
       const roleFromDb = await this.fetchRoleFromDatabaseWithTimeout(userId);
       if (roleFromDb) {
         console.log(`Role fetched from database: ${roleFromDb}`);
+        sessionService.cacheUserRole(userId, roleFromDb);
         return roleFromDb;
       }
     } catch (dbError) {
       console.log('Database role fetch failed, using fallback:', dbError);
     }
 
-    // Strategy 2: Get role from user metadata as fallback
+    // Strategia 2: Usa i metadata dell'utente
     try {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
@@ -30,7 +39,8 @@ class AuthService {
         
         console.log(`Role determined from user metadata: ${roleFromMetadata}`);
         
-        // Start background sync to update database (non-blocking)
+        // Cache il ruolo e sincronizza in background
+        sessionService.cacheUserRole(userId, roleFromMetadata);
         this.syncRoleToDatabase(userId, roleFromMetadata as 'couple' | 'vendor');
         
         return roleFromMetadata;
@@ -39,9 +49,11 @@ class AuthService {
       console.log('Error getting user metadata:', metadataError);
     }
 
-    // Final fallback: default role
+    // Fallback finale
     console.log('Using fallback role: couple');
-    return 'couple';
+    const fallbackRole = 'couple';
+    sessionService.cacheUserRole(userId, fallbackRole);
+    return fallbackRole;
   }
 
   private async fetchRoleFromDatabaseWithTimeout(userId: string): Promise<string | null> {
@@ -78,7 +90,7 @@ class AuthService {
   }
 
   private async syncRoleToDatabase(userId: string, role: 'couple' | 'vendor') {
-    // Non-blocking operation to sync role to database
+    // Operazione non bloccante per sincronizzare il ruolo nel database
     setTimeout(async () => {
       try {
         console.log(`Background sync: updating role ${role} for user ${userId}`);
@@ -90,15 +102,13 @@ class AuthService {
             role: role 
           });
         
-        if (error) {
-          console.log('Background role sync failed (non-critical):', error);
-        } else {
+        if (!error) {
           console.log('Background role sync completed successfully');
         }
       } catch (error) {
         console.log('Background role sync error (non-critical):', error);
       }
-    }, 500); // Slight delay to avoid blocking
+    }, 100);
   }
 
   async createUserWithRole(user: any): Promise<User | null> {
@@ -128,7 +138,9 @@ class AuthService {
     } catch (error: any) {
       console.error("Error creating user with role:", error);
       
-      // Return a fallback user object to prevent app crashes
+      // Fallback user object con ruolo dalla cache o default
+      const cachedRole = sessionService.getCachedUserRole(user.id) || 'couple';
+      
       return {
         id: user.id,
         email: user.email || '',
@@ -137,7 +149,7 @@ class AuthService {
         weddingDate: user.user_metadata?.weddingDate 
           ? new Date(user.user_metadata.weddingDate) 
           : undefined,
-        role: 'couple',
+        role: cachedRole as 'couple' | 'vendor',
         businessName: user.user_metadata?.businessName,
       };
     }
@@ -148,10 +160,16 @@ class AuthService {
       user: user ? { id: user.id, email: user.email, role: user.role } : null,
       hasSession: !!session
     });
+
+    // Cache la sessione se presente
+    if (session) {
+      sessionService.cacheSession(session);
+    }
   }
 
   cleanup() {
     console.log("AuthService cleanup called");
+    sessionService.clearSessionData();
   }
 
   isMaster(): boolean {

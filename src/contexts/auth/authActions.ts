@@ -6,6 +6,7 @@ import { useAuthLogout } from "./useAuthLogout";
 import { useAuthUserUpdate } from "./useAuthUserUpdate";
 import { useEffect, useRef } from "react";
 import { authService } from "@/services/authService";
+import { sessionService } from "@/services/sessionService";
 
 export const useAuthActions = (
   authState: AuthState, 
@@ -17,7 +18,6 @@ export const useAuthActions = (
   const { logout } = useAuthLogout(setAuthState);
   const { updateUser } = useAuthUserUpdate(authState, setAuthState);
   
-  // Optimized cleanup on unmount
   useEffect(() => {
     return () => {
       if (!cleanupExecutedRef.current) {
@@ -25,9 +25,10 @@ export const useAuthActions = (
         cleanupExecutedRef.current = true;
         loginCleanup();
         authService.cleanup();
+        sessionService.clearSessionData();
       }
     };
-  }, []); // Empty dependency array to run only once
+  }, []);
   
   return {
     login,

@@ -1,9 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { User } from "@/types/auth";
 import { AuthState } from "./types";
 import { supabase } from "@/integrations/supabase/client";
 import { authService } from "@/services/authService";
+import { sessionService } from "@/services/sessionService";
 
 // Initial auth state
 const initialState: AuthState = {
@@ -15,24 +16,48 @@ const initialState: AuthState = {
 
 export const useAuthState = () => {
   const [authState, setAuthState] = useState<AuthState>(initialState);
+  const processingUserRef = useRef(false);
+  const initializationCompleteRef = useRef(false);
 
   useEffect(() => {
     console.log("Setting up auth state management");
     let mounted = true;
-    let processingUser = false;
     
-    // Function to process authenticated user
-    const processAuthenticatedUser = async (session: any) => {
-      if (!mounted || processingUser || !session?.user) return;
+    // Funzione ottimizzata per processare l'utente autenticato
+    const processAuthenticatedUser = async (session: any, skipIfExists = false) => {
+      if (!mounted || processingUserRef.current || !session?.user) return;
       
-      processingUser = true;
+      // Skip se l'utente è già caricato e la sessione è la stessa
+      if (skipIfExists && authState.user?.id === session.user.id) {
+        console.log("User already loaded, skipping processing");
+        return;
+      }
+      
+      processingUserRef.current = true;
       
       try {
         console.log("Processing authenticated user:", session.user.id);
+        
+        // Verifica se la sessione è valida
+        if (!sessionService.isSessionValid(session)) {
+          console.log("Session is expired, attempting refresh");
+          const refreshed = await sessionService.forceRefresh();
+          if (!refreshed) {
+            console.log("Could not refresh expired session");
+            setAuthState({
+              ...initialState,
+              loading: false,
+              error: "Sessione scaduta",
+            });
+            processingUserRef.current = false;
+            return;
+          }
+        }
+        
         const userData = await authService.createUserWithRole(session.user);
         
         if (!mounted) {
-          processingUser = false;
+          processingUserRef.current = false;
           return;
         }
         
@@ -59,7 +84,7 @@ export const useAuthState = () => {
           setAuthState({
             ...initialState,
             loading: false,
-            error: "Error processing user data",
+            error: "Errore nel caricamento dei dati utente",
           });
         }
       } catch (error: any) {
@@ -70,18 +95,17 @@ export const useAuthState = () => {
           error: error.message,
         });
       } finally {
-        processingUser = false;
+        processingUserRef.current = false;
       }
     };
 
-    // Set up auth state change listener FIRST
+    // Listener per eventi di auth ottimizzato
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
         
         console.log("Auth state changed:", event, "Session:", session ? "exists" : "null");
         
-        // Handle different auth events
         switch (event) {
           case 'SIGNED_IN':
             if (session?.user) {
@@ -91,17 +115,22 @@ export const useAuthState = () => {
             break;
             
           case 'TOKEN_REFRESHED':
-            // Don't re-process user on token refresh if we already have user data
-            if (session?.user && !authState.user) {
-              console.log("Token refreshed and no existing user, processing");
-              await processAuthenticatedUser(session);
-            } else {
-              console.log("Token refreshed, user already loaded");
+            // Solo aggiorna la cache della sessione senza riprocessare l'utente
+            if (session?.user) {
+              console.log("Token refreshed, updating session cache");
+              sessionService.cacheSession(session);
+              
+              // Solo se non abbiamo dati utente, riprocessa
+              if (!authState.user) {
+                console.log("No user data, processing after token refresh");
+                await processAuthenticatedUser(session);
+              }
             }
             break;
             
           case 'SIGNED_OUT':
             console.log("User signed out, clearing state");
+            sessionService.clearSessionData();
             setAuthState({
               ...initialState,
               loading: false,
@@ -110,13 +139,12 @@ export const useAuthState = () => {
             break;
             
           case 'PASSWORD_RECOVERY':
-            // Don't change auth state for password recovery
+            // Non cambiare lo stato auth per il recovery password
             break;
             
           default:
-            // For other events, check if we have a valid session
             if (session?.user) {
-              await processAuthenticatedUser(session);
+              await processAuthenticatedUser(session, true);
             } else {
               setAuthState({
                 ...initialState,
@@ -128,10 +156,17 @@ export const useAuthState = () => {
       }
     );
 
-    // Check for existing session AFTER setting up the listener
+    // Inizializzazione della sessione con recovery
     const initializeSession = async () => {
       try {
         console.log("Checking for existing session at app startup");
+        
+        // Prima prova la session recovery
+        const recovered = await sessionService.recoverSession();
+        if (recovered) {
+          console.log("Session recovered, getting fresh session");
+        }
+        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -151,28 +186,57 @@ export const useAuthState = () => {
             loading: false,
           });
         }
+        
+        initializationCompleteRef.current = true;
       } catch (error: any) {
         if (!mounted) return;
         console.error("Error checking existing session:", error);
         setAuthState({
           ...initialState,
           loading: false,
-          error: "Failed to restore session: " + error.message,
+          error: "Errore nel caricamento della sessione: " + error.message,
         });
+        initializationCompleteRef.current = true;
       }
     };
 
-    // Initialize session
+    // Event listener per quando Chrome si riattiva
+    const handleVisibilityChange = () => {
+      if (!document.hidden && initializationCompleteRef.current && authState.isAuthenticated) {
+        console.log("Tab became visible, verifying session");
+        setTimeout(async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session && authState.isAuthenticated) {
+              console.log("Session lost while tab was hidden");
+              sessionService.clearSessionData();
+              setAuthState({
+                ...initialState,
+                loading: false,
+                error: "Sessione persa, effettua nuovamente il login",
+              });
+            }
+          } catch (error) {
+            console.error("Error checking session on visibility change:", error);
+          }
+        }, 100);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Inizializza la sessione
     initializeSession();
     
-    // Cleanup function
+    // Cleanup
     return () => {
       console.log("Cleaning up auth state listener");
       mounted = false;
-      processingUser = false;
+      processingUserRef.current = false;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       subscription.unsubscribe();
     };
-  }, []); // Empty dependency array to prevent re-initialization
+  }, []); // Empty dependency array
 
   return { authState, setAuthState };
 };

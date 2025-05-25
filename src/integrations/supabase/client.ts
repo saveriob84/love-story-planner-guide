@@ -15,6 +15,69 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: false,
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    // Configurazioni specifiche per Chrome e stabilità della sessione
+    storageKey: 'sb-auth-token',
+    debug: false,
+    refreshOnWindowFocus: true,
+    refreshOnServerError: true
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'wedding-planner@1.0.0'
+    }
+  },
+  realtime: {
+    heartbeatIntervalMs: 30000,
+    reconnectAfterMs: () => 1000
   }
 });
+
+// Configurazione per gestire la visibilità del documento
+if (typeof window !== 'undefined') {
+  // Gestione quando la tab diventa visibile/nascosta
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      // Tab è diventata visibile - verifica la sessione
+      console.log('Tab became visible, checking session');
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        if (error) {
+          console.error('Error checking session on visibility change:', error);
+        } else if (session) {
+          console.log('Session verified on tab focus');
+        }
+      });
+    }
+  });
+
+  // Heartbeat per mantenere viva la sessione
+  let heartbeatInterval: NodeJS.Timeout;
+  
+  const startHeartbeat = () => {
+    heartbeatInterval = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log('Session heartbeat - alive');
+        }
+      } catch (error) {
+        console.error('Heartbeat error:', error);
+      }
+    }, 60000); // Ogni minuto
+  };
+
+  const stopHeartbeat = () => {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+    }
+  };
+
+  // Avvia heartbeat quando la sessione è attiva
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      startHeartbeat();
+    } else if (event === 'SIGNED_OUT') {
+      stopHeartbeat();
+    }
+  });
+}
