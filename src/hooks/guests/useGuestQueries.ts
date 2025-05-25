@@ -1,9 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Guest } from "@/types/guest";
 import { useAuth } from "@/contexts/auth/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { GuestRow, GroupMemberRow } from "@/types/supabase-types";
 
 export const useGuestQueries = () => {
   const { user } = useAuth();
@@ -31,7 +31,7 @@ export const useGuestQueries = () => {
             *,
             group_members(*)
           `)
-          .eq('profile_id', authUser.id); // Use the actual Supabase auth user ID
+          .eq('profile_id', authUser.id as any); // Use the actual Supabase auth user ID
             
         if (error) {
           console.error("Error fetching guests from Supabase:", error);
@@ -40,7 +40,7 @@ export const useGuestQueries = () => {
         
         if (supabaseGuests && supabaseGuests.length > 0) {
           // Map Supabase data to our Guest type
-          const formattedGuests: Guest[] = supabaseGuests.map((guest: GuestRow & { group_members: GroupMemberRow[] }) => ({
+          const formattedGuests: Guest[] = (supabaseGuests as any).map((guest: any) => ({
             id: guest.id,
             name: guest.name,
             email: guest.email || '',
@@ -50,7 +50,7 @@ export const useGuestQueries = () => {
             plusOne: guest.plus_one || false,
             dietaryRestrictions: guest.dietary_restrictions || '',
             notes: guest.notes || '',
-            groupMembers: guest.group_members.map(member => ({
+            groupMembers: guest.group_members.map((member: any) => ({
               id: member.id,
               name: member.name,
               dietaryRestrictions: member.dietary_restrictions || '',

@@ -114,7 +114,7 @@ export const useGuestMutations = (
           dietary_restrictions: updatedData.dietaryRestrictions,
           notes: updatedData.notes
         } as any)
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (guestError) {
         console.error("Error updating guest:", guestError);
@@ -127,25 +127,25 @@ export const useGuestMutations = (
         const { data: currentMembers, error: fetchError } = await supabase
           .from('group_members')
           .select('id')
-          .eq('guest_id', id);
+          .eq('guest_id', id as any);
 
         if (fetchError) {
           console.error("Error fetching group members:", fetchError);
           throw fetchError;
         }
 
-        const currentIds = currentMembers ? currentMembers.map(m => m.id) : [];
+        const currentIds = currentMembers ? (currentMembers as any).map((m: any) => m.id) : [];
         const updatedIds = updatedData.groupMembers.filter(m => m.id && m.id.includes('-') === false).map(m => m.id);
         
         // Find members to delete (in current but not in updated)
-        const idsToDelete = currentIds.filter(currentId => !updatedIds.includes(currentId));
+        const idsToDelete = currentIds.filter((currentId: string) => !updatedIds.includes(currentId));
         
         // Delete removed members
         if (idsToDelete.length > 0) {
           const { error: deleteError } = await supabase
             .from('group_members')
             .delete()
-            .in('id', idsToDelete);
+            .in('id', idsToDelete as any);
 
           if (deleteError) {
             console.error("Error deleting group members:", deleteError);
@@ -168,7 +168,7 @@ export const useGuestMutations = (
                 dietary_restrictions: member.dietaryRestrictions,
                 is_child: member.isChild
               } as any)
-              .eq('id', memberId);
+              .eq('id', memberId as any);
 
             if (updateError) {
               console.error("Error updating group member:", updateError);
@@ -227,7 +227,7 @@ export const useGuestMutations = (
       const { error } = await supabase
         .from('guests')
         .delete()
-        .eq('id', id);
+        .eq('id', id as any);
 
       if (error) {
         console.error("Error removing guest:", error);
