@@ -44,7 +44,7 @@ export const useBudget = (userId?: string) => {
       }
 
       // Transform data for our component
-      const transformedItems = items.map(item => ({
+      const transformedItems = (items || []).map(item => ({
         id: item.id,
         category: item.category,
         description: item.description || "",
@@ -60,7 +60,7 @@ export const useBudget = (userId?: string) => {
         .from('budget_settings')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (settingsError && settingsError.code !== 'PGRST116') { // Not found error
         throw settingsError;
@@ -102,7 +102,7 @@ export const useBudget = (userId?: string) => {
         .from('budget_settings')
         .select('id')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (existingSettings) {
         // Update existing settings
@@ -293,7 +293,7 @@ export const useBudget = (userId?: string) => {
         }
         
         // Migrate budget setting if needed
-        if (!existingSettings && localBudget) {
+        if ((!existingSettings || existingSettings.length === 0) && localBudget) {
           const parsedBudget = parseInt(localBudget) || 0;
           
           await supabase
