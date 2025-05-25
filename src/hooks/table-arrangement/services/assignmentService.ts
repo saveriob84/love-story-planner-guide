@@ -25,12 +25,12 @@ export const assignmentService = {
         result = await supabase
           .from('table_assignments')
           .delete()
-          .eq('group_member_id', guestId);
+          .eq('group_member_id', guestId as any);
       } else {
         result = await supabase
           .from('table_assignments')
           .delete()
-          .eq('guest_id', guestId);
+          .eq('guest_id', guestId as any);
       }
       
       if (result.error) {
@@ -58,7 +58,7 @@ export const assignmentService = {
     
     const { data, error } = await supabase
       .from('table_assignments')
-      .insert(assignmentData)
+      .insert(assignmentData as any)
       .select();
     
     if (error) {

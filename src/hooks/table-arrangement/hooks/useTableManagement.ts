@@ -22,11 +22,11 @@ export const useTableManagement = (
       
       if (data) {
         const newTable: Table = {
-          id: data.id,
-          name: data.name,
-          capacity: data.capacity,
+          id: (data as any).id,
+          name: (data as any).name,
+          capacity: (data as any).capacity,
           guests: [],
-          isSpecial: data.is_special
+          isSpecial: (data as any).is_special
         };
         
         setTables([...tables, newTable]);
@@ -54,11 +54,11 @@ export const useTableManagement = (
       
       if (data) {
         const newTable: Table = {
-          id: data.id,
-          name: data.name,
-          capacity: data.capacity,
+          id: (data as any).id,
+          name: (data as any).name,
+          capacity: (data as any).capacity,
           guests: [],
-          isSpecial: data.is_special
+          isSpecial: (data as any).is_special
         };
         
         setTables([...tables, newTable]);

@@ -43,7 +43,7 @@ export const tableAssignmentService = {
           profile_id: user.id,
           relationship: 'Sposa/Sposo',
           rsvp: 'confirmed'
-        })
+        } as any)
         .select('id')
         .single();
         
@@ -53,8 +53,8 @@ export const tableAssignmentService = {
           .from('table_assignments')
           .insert({
             table_id: sposiTableId,
-            guest_id: guestData.id
-          });
+            guest_id: (guestData as any).id
+          } as any);
       }
     }
     
@@ -70,7 +70,7 @@ export const tableAssignmentService = {
           profile_id: user.id,
           relationship: 'Sposa/Sposo',
           rsvp: 'confirmed'
-        })
+        } as any)
         .select('id')
         .single();
         
@@ -80,8 +80,8 @@ export const tableAssignmentService = {
           .from('table_assignments')
           .insert({
             table_id: sposiTableId,
-            guest_id: partnerData.id
-          });
+            guest_id: (partnerData as any).id
+          } as any);
       }
     }
     

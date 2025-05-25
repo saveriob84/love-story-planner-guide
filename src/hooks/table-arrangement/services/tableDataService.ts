@@ -11,7 +11,7 @@ export const tableDataService = {
     const { data, error } = await supabase
       .from('tables')
       .select('*')
-      .eq('profile_id', userId);
+      .eq('profile_id', userId as any);
     
     if (error) {
       console.error('Error fetching tables:', error);
@@ -47,7 +47,7 @@ export const tableDataService = {
     // Insert the tables
     const { data, error } = await supabase
       .from('tables')
-      .insert(defaultTables)
+      .insert(defaultTables as any)
       .select();
     
     if (error) {
@@ -67,7 +67,7 @@ export const tableDataService = {
         capacity,
         profile_id: userId,
         is_special: isSpecial
-      })
+      } as any)
       .select()
       .single();
     
@@ -83,9 +83,9 @@ export const tableDataService = {
   editTable: async (userId: string, tableId: string, name: string, capacity: number) => {
     const { error } = await supabase
       .from('tables')
-      .update({ name, capacity })
-      .eq('id', tableId)
-      .eq('profile_id', userId);
+      .update({ name, capacity } as any)
+      .eq('id', tableId as any)
+      .eq('profile_id', userId as any);
     
     if (error) {
       console.error("Error updating table:", error);
@@ -98,8 +98,8 @@ export const tableDataService = {
     const { error } = await supabase
       .from('tables')
       .delete()
-      .eq('id', tableId)
-      .eq('profile_id', userId);
+      .eq('id', tableId as any)
+      .eq('profile_id', userId as any);
     
     if (error) {
       console.error("Error deleting table:", error);

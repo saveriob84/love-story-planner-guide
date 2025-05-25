@@ -22,12 +22,12 @@ export const assignmentService = {
         await supabase
           .from('table_assignments')
           .delete()
-          .eq('group_member_id', guestId);
+          .eq('group_member_id', guestId as any);
       } else {
         await supabase
           .from('table_assignments')
           .delete()
-          .eq('guest_id', guestId);
+          .eq('guest_id', guestId as any);
       }
     } catch (error) {
       console.error("Error removing existing assignment:", error);
@@ -43,7 +43,7 @@ export const assignmentService = {
         table_id: tableId,
         guest_id: isGroupMember ? null : guestId,
         group_member_id: isGroupMember ? guestId : null
-      });
+      } as any);
     
     if (error) {
       console.error("Error assigning guest to table:", error);

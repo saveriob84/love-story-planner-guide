@@ -56,18 +56,18 @@ export const useTableCore = () => {
       
       if (tablesData) {
         const formattedTables = (tablesData || []).map((table: any) => ({
-          id: table.id,
-          name: table.name,
-          capacity: table.capacity,
+          id: (table as any).id,
+          name: (table as any).name,
+          capacity: (table as any).capacity,
           guests: [],
-          isSpecial: table.is_special || false
+          isSpecial: (table as any).is_special || false
         }));
         
         setTables(formattedTables);
         
         // If we know user names, assign to the "Sposi" table
-        if (user.name && tablesData[0]?.id) {
-          await tableOperations.addCoupleToSposiTable(user, tablesData[0].id);
+        if (user.name && (tablesData[0] as any)?.id) {
+          await tableOperations.addCoupleToSposiTable(user, (tablesData[0] as any).id);
         }
         
         toast({
