@@ -48,7 +48,7 @@ export const localStorageService = {
             capacity: table.capacity,
             profile_id: userId,
             is_special: table.isSpecial || false
-          })
+          } as any)
           .select()
           .single();
         
@@ -65,16 +65,16 @@ export const localStorageService = {
               await supabase
                 .from('table_assignments')
                 .insert({
-                  table_id: insertedTable.id,
+                  table_id: (insertedTable as any).id,
                   group_member_id: guest.id
-                });
+                } as any);
             } else {
               await supabase
                 .from('table_assignments')
                 .insert({
-                  table_id: insertedTable.id,
+                  table_id: (insertedTable as any).id,
                   guest_id: guest.id
-                });
+                } as any);
             }
           }
         }
@@ -89,7 +89,7 @@ export const localStorageService = {
       const { data } = await supabase
         .from('tables')
         .select('*')
-        .eq('profile_id', userId);
+        .eq('profile_id', userId as any);
       
       return data;
     } catch (error) {

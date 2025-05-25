@@ -10,9 +10,9 @@ export const sposiTableService = {
     const { data, error } = await supabase
       .from('tables')
       .select('*')
-      .eq('profile_id', userId)
-      .eq('name', 'Tavolo Sposi')
-      .eq('is_special', true)
+      .eq('profile_id', userId as any)
+      .eq('name', 'Tavolo Sposi' as any)
+      .eq('is_special', true as any)
       .single();
     
     if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
@@ -38,7 +38,7 @@ export const sposiTableService = {
         
         const { data, error } = await supabase
           .from('tables')
-          .insert(sposiTable)
+          .insert(sposiTable as any)
           .select()
           .single();
           

@@ -30,7 +30,7 @@ export const useVendorProfile = (userId: string | undefined) => {
         const { data, error } = await supabase
           .from('vendors')
           .select('*')
-          .eq('user_id', userId)
+          .eq('user_id', userId as any)
           .single();
 
         if (error) {
@@ -45,15 +45,15 @@ export const useVendorProfile = (userId: string | undefined) => {
 
         if (data) {
           setProfileData({
-            business_name: data.business_name || '',
-            ragione_sociale: data.ragione_sociale || '',
-            codice_fiscale: data.codice_fiscale || '',
-            partita_iva: data.partita_iva || '',
-            email: data.email || '',
-            phone: data.phone || '',
-            website: data.website || '',
-            description: data.description || '',
-            logo_url: data.logo_url || ''
+            business_name: (data as any).business_name || '',
+            ragione_sociale: (data as any).ragione_sociale || '',
+            codice_fiscale: (data as any).codice_fiscale || '',
+            partita_iva: (data as any).partita_iva || '',
+            email: (data as any).email || '',
+            phone: (data as any).phone || '',
+            website: (data as any).website || '',
+            description: (data as any).description || '',
+            logo_url: (data as any).logo_url || ''
           });
         }
       } catch (error) {
@@ -95,8 +95,8 @@ export const useVendorProfile = (userId: string | undefined) => {
           website: profileData.website,
           description: profileData.description,
           logo_url: profileData.logo_url
-        })
-        .eq('user_id', userId);
+        } as any)
+        .eq('user_id', userId as any);
 
       if (error) {
         console.error('Error updating profile:', error);
