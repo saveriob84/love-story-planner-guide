@@ -13,13 +13,13 @@ export const migrationService = {
       const { data: existingItems } = await supabase
         .from('budget_items')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', userId as any)
         .limit(1);
       
       const { data: existingSettings } = await supabase
         .from('budget_settings')
         .select('id')
-        .eq('user_id', userId)
+        .eq('user_id', userId as any)
         .limit(1);
       
       // If no data in Supabase but data exists in localStorage, migrate it
@@ -37,7 +37,7 @@ export const migrationService = {
               estimated_cost: item.estimatedCost,
               actual_cost: item.actualCost || null,
               paid: item.paid
-            });
+            } as any);
           
           if (error) console.error('Error migrating item:', error);
         }
@@ -52,7 +52,7 @@ export const migrationService = {
           .insert({
             user_id: userId,
             total_budget: parsedBudget
-          });
+          } as any);
         
         if (error) console.error('Error migrating budget setting:', error);
       }

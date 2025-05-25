@@ -19,33 +19,12 @@ export interface BudgetSettings {
   updatedAt: string;
 }
 
-// Tipi per il database - semplificati per evitare conflitti
-interface DbBudgetItem {
-  id: string;
-  user_id: string;
-  category: string;
-  description: string | null;
-  estimated_cost: number;
-  actual_cost: number | null;
-  paid: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface DbBudgetSettings {
-  id: string;
-  user_id: string;
-  total_budget: number;
-  created_at: string;
-  updated_at: string;
-}
-
 export const budgetService = {
   async loadBudgetItems(userId: string): Promise<BudgetItem[]> {
     const { data, error } = await supabase
       .from('budget_items')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', userId as any)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -66,7 +45,7 @@ export const budgetService = {
     const { data, error } = await supabase
       .from('budget_settings')
       .select('*')
-      .eq('user_id', userId)
+      .eq('user_id', userId as any)
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') throw error;
@@ -80,7 +59,7 @@ export const budgetService = {
     const { data: existingData } = await supabase
       .from('budget_settings')
       .select('id')
-      .eq('user_id', userId)
+      .eq('user_id', userId as any)
       .maybeSingle();
 
     if (existingData) {
@@ -91,7 +70,7 @@ export const budgetService = {
           total_budget: totalBudget,
           updated_at: new Date().toISOString()
         } as any)
-        .eq('user_id', userId);
+        .eq('user_id', userId as any);
 
       if (error) throw error;
     } else {
@@ -158,8 +137,8 @@ export const budgetService = {
     const { error } = await supabase
       .from('budget_items')
       .update(dbUpdates)
-      .eq('id', id)
-      .eq('user_id', userId);
+      .eq('id', id as any)
+      .eq('user_id', userId as any);
 
     if (error) throw error;
   },
@@ -168,8 +147,8 @@ export const budgetService = {
     const { error } = await supabase
       .from('budget_items')
       .delete()
-      .eq('id', id)
-      .eq('user_id', userId);
+      .eq('id', id as any)
+      .eq('user_id', userId as any);
 
     if (error) throw error;
   },
@@ -178,8 +157,8 @@ export const budgetService = {
     const { data, error } = await supabase
       .from('budget_items')
       .select('actual_cost')
-      .eq('user_id', userId)
-      .eq('paid', true);
+      .eq('user_id', userId as any)
+      .eq('paid', true as any);
 
     if (error) throw error;
     if (!data) return 0;
@@ -193,7 +172,7 @@ export const budgetService = {
     const { data, error } = await supabase
       .from('budget_items')
       .select('estimated_cost')
-      .eq('user_id', userId);
+      .eq('user_id', userId as any);
 
     if (error) throw error;
     if (!data) return 0;
