@@ -21,7 +21,7 @@ export const budgetService = {
       throw error;
     }
 
-    return (items || []).map((item: BudgetItemRow) => ({
+    return (items || []).map((item) => ({
       id: item.id,
       category: item.category,
       description: item.description || "",
@@ -94,15 +94,13 @@ export const budgetService = {
 
     if (error) throw error;
     
-    const item = data as BudgetItemRow;
-    
     return {
-      id: item.id,
-      category: item.category,
-      description: item.description || "",
-      estimatedCost: Number(item.estimated_cost),
-      actualCost: item.actual_cost ? Number(item.actual_cost) : null,
-      paid: item.paid
+      id: data.id,
+      category: data.category,
+      description: data.description || "",
+      estimatedCost: Number(data.estimated_cost),
+      actualCost: data.actual_cost ? Number(data.actual_cost) : null,
+      paid: data.paid
     };
   },
 
