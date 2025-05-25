@@ -1,4 +1,5 @@
 
+
 import { WeddingTask } from '../types';
 import { generateDefaultTasks } from '../utils';
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +13,7 @@ export function useTaskQueries(userId: string | undefined) {
       const { data: timelines, error: timelinesError } = await supabase
         .from('timelines')
         .select('*')
-        .eq('profile_id', userId)
+        .eq('profile_id', userId as any)
         .order('display_order', { ascending: true });
       
       if (timelinesError) {
@@ -40,31 +41,31 @@ export function useTaskQueries(userId: string | undefined) {
             profile_id: userId,
             name: defaultTimelines[i],
             display_order: i
-          });
+          } as any);
         }
         
         const { data: createdTimelines } = await supabase
           .from('timelines')
           .select('*')
-          .eq('profile_id', userId)
+          .eq('profile_id', userId as any)
           .order('display_order', { ascending: true });
           
         // Now create default tasks
         const defaultTasks = generateDefaultTasks(weddingDate);
         for (const task of defaultTasks) {
           // Find the timeline with the matching name
-          const timeline = createdTimelines?.find(t => t.name === task.timeline);
+          const timeline = createdTimelines?.find(t => (t as any).name === task.timeline);
           if (timeline) {
             await supabase.from('tasks').insert({
               profile_id: userId,
-              timeline_id: timeline.id,
+              timeline_id: (timeline as any).id,
               title: task.title,
               description: task.description,
               due_date: task.dueDate,
               completed: task.completed,
               category: task.category,
               notes: task.notes || null
-            });
+            } as any);
           }
         }
         
@@ -76,7 +77,7 @@ export function useTaskQueries(userId: string | undefined) {
       const { data: tasks, error: tasksError } = await supabase
         .from('tasks')
         .select('*, timelines(*)')
-        .eq('profile_id', userId);
+        .eq('profile_id', userId as any);
         
       if (tasksError) {
         console.error('Error fetching tasks:', tasksError);
@@ -85,14 +86,14 @@ export function useTaskQueries(userId: string | undefined) {
       
       // Map the database tasks to our WeddingTask interface
       return tasks.map(task => ({
-        id: task.id,
-        title: task.title,
-        description: task.description || "",
-        timeline: task.timelines.name,
-        dueDate: task.due_date || new Date().toISOString(),
-        completed: task.completed || false,
-        notes: task.notes || "",
-        category: task.category || "Altro"
+        id: (task as any).id,
+        title: (task as any).title,
+        description: (task as any).description || "",
+        timeline: (task as any).timelines.name,
+        dueDate: (task as any).due_date || new Date().toISOString(),
+        completed: (task as any).completed || false,
+        notes: (task as any).notes || "",
+        category: (task as any).category || "Altro"
       }));
     } catch (error) {
       console.error('Error in getStoredTasks:', error);

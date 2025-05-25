@@ -1,3 +1,4 @@
+
 import { getMonthsFromTimeline } from './utils';
 import { supabase } from "@/integrations/supabase/client";
 
@@ -10,7 +11,7 @@ export function useTimelineManager(userId: string | undefined) {
       const { data: timelines, error } = await supabase
         .from('timelines')
         .select('*')
-        .eq('profile_id', userId)
+        .eq('profile_id', userId as any)
         .order('display_order', { ascending: true });
         
       if (error) {
@@ -24,7 +25,7 @@ export function useTimelineManager(userId: string | undefined) {
       }
       
       // Map database timelines to string array
-      return timelines.map(timeline => timeline.name);
+      return timelines.map(timeline => (timeline as any).name);
     } catch (error) {
       console.error('Error in getStoredTimelines:', error);
       return getDefaultTimelines();
@@ -58,7 +59,7 @@ export function useTimelineManager(userId: string | undefined) {
           profile_id: userId,
           name: timelineName,
           display_order: timelines.length // Add to the end
-        });
+        } as any);
         
       if (error) {
         console.error('Error adding timeline:', error);
@@ -87,8 +88,8 @@ export function useTimelineManager(userId: string | undefined) {
       const { data: timeline } = await supabase
         .from('timelines')
         .select('id')
-        .eq('profile_id', userId)
-        .eq('name', timelineName)
+        .eq('profile_id', userId as any)
+        .eq('name', timelineName as any)
         .single();
         
       if (!timeline) {
@@ -99,7 +100,7 @@ export function useTimelineManager(userId: string | undefined) {
       const { error } = await supabase
         .from('timelines')
         .delete()
-        .eq('id', timeline.id);
+        .eq('id', (timeline as any).id as any);
         
       if (error) {
         console.error('Error removing timeline:', error);
@@ -113,9 +114,9 @@ export function useTimelineManager(userId: string | undefined) {
       for (let i = 0; i < updatedTimelines.length; i++) {
         const { error: updateError } = await supabase
           .from('timelines')
-          .update({ display_order: i })
-          .eq('profile_id', userId)
-          .eq('name', updatedTimelines[i]);
+          .update({ display_order: i } as any)
+          .eq('profile_id', userId as any)
+          .eq('name', updatedTimelines[i] as any);
           
         if (updateError) {
           console.error('Error updating timeline display order:', updateError);
@@ -144,8 +145,8 @@ export function useTimelineManager(userId: string | undefined) {
       const { data: dbTimelines, error } = await supabase
         .from('timelines')
         .select('id, name, display_order')
-        .eq('profile_id', userId)
-        .in('name', [timelineName, timelines[direction === 'up' ? index - 1 : index + 1]])
+        .eq('profile_id', userId as any)
+        .in('name', [timelineName, timelines[direction === 'up' ? index - 1 : index + 1]] as any)
         .order('display_order', { ascending: true });
         
       if (error || !dbTimelines || dbTimelines.length !== 2) {
@@ -154,8 +155,8 @@ export function useTimelineManager(userId: string | undefined) {
       }
       
       // Swap display order
-      const timeline1 = dbTimelines.find(t => t.name === timelineName);
-      const timeline2 = dbTimelines.find(t => t.name !== timelineName);
+      const timeline1 = dbTimelines.find(t => (t as any).name === timelineName);
+      const timeline2 = dbTimelines.find(t => (t as any).name !== timelineName);
       
       if (!timeline1 || !timeline2) {
         return timelines;
@@ -164,13 +165,13 @@ export function useTimelineManager(userId: string | undefined) {
       // Update display orders in database
       await supabase
         .from('timelines')
-        .update({ display_order: timeline2.display_order })
-        .eq('id', timeline1.id);
+        .update({ display_order: (timeline2 as any).display_order } as any)
+        .eq('id', (timeline1 as any).id as any);
         
       await supabase
         .from('timelines')
-        .update({ display_order: timeline1.display_order })
-        .eq('id', timeline2.id);
+        .update({ display_order: (timeline1 as any).display_order } as any)
+        .eq('id', (timeline2 as any).id as any);
       
       // Create new array with swapped positions
       const newTimelines = [...timelines];
