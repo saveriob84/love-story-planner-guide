@@ -1,28 +1,15 @@
 
-import { Database } from "@/integrations/supabase/types";
+// Esportiamo i tipi principali dal budgetService
+export { BudgetItem, BudgetSettings } from './budgetService';
 
-// Usa i tipi generati da Supabase per le tabelle
-export type BudgetItemRow = Database['public']['Tables']['budget_items']['Row'];
-export type BudgetSettingsRow = Database['public']['Tables']['budget_settings']['Row'];
-export type BudgetItemInsert = Database['public']['Tables']['budget_items']['Insert'];
-export type BudgetItemUpdate = Database['public']['Tables']['budget_items']['Update'];
-
-// Tipo per l'interfaccia dell'app (mapping dai tipi DB)
-export interface BudgetItem {
-  id: string;
-  category: string;
-  description: string;
-  estimatedCost: number;
-  actualCost: number | null;
-  paid: boolean;
-}
-
+// Tipo per lo stato del budget nell'hook
 export interface BudgetState {
   budgetItems: BudgetItem[];
   totalBudget: number;
   isLoading: boolean;
 }
 
+// Azioni disponibili per gestire il budget
 export interface BudgetActions {
   handleBudgetChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   saveBudget: () => Promise<void>;
@@ -30,3 +17,6 @@ export interface BudgetActions {
   updateBudgetItem: (id: string, updates: Partial<BudgetItem>) => Promise<void>;
   deleteBudgetItem: (id: string) => Promise<void>;
 }
+
+// Import per compatibilità
+import { BudgetItem } from './budgetService';
