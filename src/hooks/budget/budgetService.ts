@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { BudgetItem } from "./types";
+import { BudgetItem, BudgetItemRow, BudgetSettingsRow } from "./types";
 
 export const budgetService = {
   async loadBudgetItems(userId: string): Promise<BudgetItem[]> {
@@ -13,7 +13,7 @@ export const budgetService = {
       throw error;
     }
 
-    return (items || []).map(item => ({
+    return (items || []).map((item: BudgetItemRow) => ({
       id: item.id,
       category: item.category,
       description: item.description || "",
@@ -34,7 +34,7 @@ export const budgetService = {
       throw error;
     }
 
-    return settings ? Number(settings.total_budget) : 0;
+    return settings ? Number((settings as BudgetSettingsRow).total_budget) : 0;
   },
 
   async saveBudgetSettings(userId: string, totalBudget: number): Promise<void> {
@@ -75,13 +75,15 @@ export const budgetService = {
 
     if (error) throw error;
     
+    const item = data as BudgetItemRow;
+    
     return {
-      id: data.id,
-      category: data.category,
-      description: data.description || "",
-      estimatedCost: Number(data.estimated_cost),
-      actualCost: data.actual_cost ? Number(data.actual_cost) : null,
-      paid: data.paid
+      id: item.id,
+      category: item.category,
+      description: item.description || "",
+      estimatedCost: Number(item.estimated_cost),
+      actualCost: item.actual_cost ? Number(item.actual_cost) : null,
+      paid: item.paid
     };
   },
 

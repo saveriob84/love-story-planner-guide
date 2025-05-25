@@ -32,3 +32,11 @@ export type TaskRow = TablesRow['tasks']['Row'];
 // Timelines
 export type TimelineInsert = TablesInsert['timelines']['Insert'];
 export type TimelineRow = TablesRow['timelines']['Row'];
+
+// Budget Items
+export type BudgetItemInsert = TablesInsert['budget_items']['Insert'];
+export type BudgetItemRow = TablesRow['budget_items']['Row'];
+
+// Budget Settings
+export type BudgetSettingsInsert = TablesInsert['budget_settings']['Insert'];
+export type BudgetSettingsRow = TablesRow['budget_settings']['Row'];

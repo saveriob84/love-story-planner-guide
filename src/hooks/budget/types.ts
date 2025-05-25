@@ -1,4 +1,13 @@
 
+import { Database } from "@/integrations/supabase/types";
+
+// Usa i tipi generati da Supabase per le tabelle
+export type BudgetItemRow = Database['public']['Tables']['budget_items']['Row'];
+export type BudgetSettingsRow = Database['public']['Tables']['budget_settings']['Row'];
+export type BudgetItemInsert = Database['public']['Tables']['budget_items']['Insert'];
+export type BudgetItemUpdate = Database['public']['Tables']['budget_items']['Update'];
+
+// Tipo per l'interfaccia dell'app (mapping dai tipi DB)
 export interface BudgetItem {
   id: string;
   category: string;

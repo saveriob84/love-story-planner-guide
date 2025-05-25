@@ -4,17 +4,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-
-// Budget item interface
-export interface BudgetItem {
-  id: string;
-  category: string;
-  description: string;
-  estimatedCost: number;
-  actualCost: number | null;
-  paid: boolean;
-}
+import { BudgetItem } from "@/hooks/budget/types";
 
 interface BudgetItemsListProps {
   budgetItems: BudgetItem[];
